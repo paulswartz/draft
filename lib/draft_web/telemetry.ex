@@ -1,4 +1,7 @@
 defmodule DraftWeb.Telemetry do
+  @moduledoc """
+  This module is responsible for managing the lifecycle of your Telemetry processes
+  """
   use Supervisor
   import Telemetry.Metrics
 
