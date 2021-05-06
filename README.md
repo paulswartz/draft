@@ -11,3 +11,9 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
+
+Useful when developing:
+
+  * Test elixir code with `mix test --coverage`
+  * Format elixir code with `mix format`
+  * Lint elixir code with `mix dialyzer` and `mix credo --strict`
