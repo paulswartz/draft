@@ -20,3 +20,10 @@ config :draft, DraftWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :draft, DraftWeb.AuthManager, secret_key: "test"
+
+config :ueberauth, Ueberauth,
+  providers: [
+    cognito: {Draft.Ueberauth.Strategy.Fake, []}
+  ]

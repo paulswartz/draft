@@ -13,10 +13,37 @@ defmodule DraftWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :auth do
+    plug(DraftWeb.AuthManager.Pipeline)
+  end
+
+  pipeline :ensure_auth do
+    plug(Guardian.Plug.EnsureAuthenticated)
+  end
+
+  pipeline :ensure_admin do
+    plug(DraftWeb.EnsureAdminGroup)
+  end
+
+
   scope "/", DraftWeb do
     pipe_through :browser
 
     get "/", PageController, :index
+  end
+
+  scope "/auth", DraftWeb do
+    pipe_through([:browser])
+    get("/:provider", AuthController, :request)
+    get("/:provider/callback", AuthController, :callback)
+  end
+
+  scope "/admin", DraftWeb do
+    pipe_through ([:browser,
+    :auth,
+    :ensure_auth, :ensure_admin])
+
+    get "/", AdminController, :index
   end
 
   # Other scopes may use custom stacks.

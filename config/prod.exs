@@ -16,6 +16,19 @@ config :draft, DraftWeb.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :ueberauth, Ueberauth,
+  providers: [
+    cognito: {Ueberauth.Strategy.Cognito, []}
+  ]
+
+  config :draft, DraftWeb.AuthManager, secret_key: "test"
+
+  config :ueberauth, Ueberauth.Strategy.Cognito,
+  auth_domain: {System, :get_env, ["COGNITO_DOMAIN"]},
+  client_id: {System, :get_env, ["COGNITO_CLIENT_ID"]},
+  user_pool_id: {System, :get_env, ["COGNITO_USER_POOL_ID"]},
+  aws_region: {System, :get_env, ["COGNITO_AWS_REGION"]}
+
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key
