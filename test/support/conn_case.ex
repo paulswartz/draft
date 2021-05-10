@@ -40,22 +40,17 @@ defmodule DraftWeb.ConnCase do
       Sandbox.mode(Draft.Repo, {:shared, self()})
     end
 
-    conn =
-      cond do
-        tags[:authenticated_admin] ->
-          user = "test_user"
+    if tags[:authenticated_admin] do
+      user = "test_user"
 
-          conn =
-            Phoenix.ConnTest.build_conn()
-            |> init_test_session(%{})
-            |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{"groups" => ["draft-admin"]})
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> init_test_session(%{})
+        |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{"groups" => ["draft-admin"]})
 
-          conn
-
-        true ->
-          Phoenix.ConnTest.build_conn()
-      end
-
-    {:ok, conn: conn}
+      {:ok, conn: conn}
+    else
+      {:ok, conn: Phoenix.ConnTest.build_conn()}
+    end
   end
 end

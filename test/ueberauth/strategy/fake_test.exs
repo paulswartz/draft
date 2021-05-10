@@ -1,4 +1,4 @@
-defmodule Skate.Ueberauth.Strategy.FakeTest do
+defmodule Draft.Ueberauth.Strategy.FakeTest do
   use ExUnit.Case, async: true
 
   alias Draft.Ueberauth.Strategy.Fake

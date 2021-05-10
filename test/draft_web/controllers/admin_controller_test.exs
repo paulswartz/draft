@@ -2,7 +2,7 @@ defmodule DraftWeb.AdminControllerTest do
   use DraftWeb.ConnCase
 
   @tag :authenticated_admin
-  test "GET /admin as an admin", %{conn: conn} do
+  test "GET /admin as an admin successful", %{conn: conn} do
     conn = get(conn, "/admin")
     assert html_response(conn, 200) =~ "Admin only view!"
   end

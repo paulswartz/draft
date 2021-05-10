@@ -20,7 +20,7 @@ defmodule DraftWeb.AuthManager.EnsureAdminGroupTest do
   end
 
   describe "init/1" do
-    test "init passes through options", %{conn: conn} do
+    test "init passes through options" do
       assert EnsureAdminGroup.init([]) == []
     end
   end
