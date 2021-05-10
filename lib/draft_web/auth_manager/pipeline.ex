@@ -1,6 +1,8 @@
 defmodule DraftWeb.AuthManager.Pipeline do
-
-  require Logger
+  @moduledoc """
+  Pipeline for locating the token. This module only finds a token if it exists, it does *not* check if
+  that token meets a certain access level.
+  """
   use Guardian.Plug.Pipeline,
     otp_app: :draft,
     error_handler: DraftWeb.AuthManager.ErrorHandler,

@@ -1,11 +1,12 @@
 defmodule DraftWeb.AuthManager do
+  @moduledoc """
+  AuthManager is a guardian implementation for token verification.
+  """
   use Guardian, otp_app: :draft
 
   @type access_level :: :none | :operator | :admin
 
   @draft_admin_group "draft-admin"
-
-  require Logger
 
   def subject_for_token(resource, _claims) do
     {:ok, resource}
@@ -28,6 +29,7 @@ defmodule DraftWeb.AuthManager do
   end
 
   def claims_access_level(_claims) do
-    :none # Skate had this as :general (analogous to our :operator), when would this be hit? No groups?
+    # Skate had this as :general (analogous to our :operator), when would this be hit? No groups?
+    :none
   end
 end

@@ -58,7 +58,7 @@ defmodule Draft.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:ueberauth, "~> 0.6"},
       {:ueberauth_cognito, "~> 0.2"},
-      {:guardian, "~> 2.0"},
+      {:guardian, "~> 2.0"}
     ]
   end
 

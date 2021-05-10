@@ -22,9 +22,8 @@ defmodule DraftWeb.Router do
   end
 
   pipeline :ensure_admin do
-    plug(DraftWeb.EnsureAdminGroup)
+    plug(DraftWeb.AuthManager.EnsureAdminGroup)
   end
-
 
   scope "/", DraftWeb do
     pipe_through :browser
@@ -39,9 +38,7 @@ defmodule DraftWeb.Router do
   end
 
   scope "/admin", DraftWeb do
-    pipe_through ([:browser,
-    :auth,
-    :ensure_auth, :ensure_admin])
+    pipe_through [:browser, :auth, :ensure_auth, :ensure_admin]
 
     get "/", AdminController, :index
   end

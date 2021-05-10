@@ -26,7 +26,7 @@ config :draft, DraftWeb.AuthManager,
   issuer: "draft",
   secret_key: "test key"
 
-  config :ueberauth, Ueberauth,
+config :ueberauth, Ueberauth,
   providers: [
     cognito: {Draft.Ueberauth.Strategy.Fake, []}
   ]

@@ -1,4 +1,7 @@
 defmodule Draft.Ueberauth.Strategy.Fake do
+  @moduledoc """
+  A fake ueberauth strategy for development purposes.
+  """
   use Ueberauth.Strategy
 
   @impl Ueberauth.Strategy

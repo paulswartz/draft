@@ -21,9 +21,9 @@ config :ueberauth, Ueberauth,
     cognito: {Ueberauth.Strategy.Cognito, []}
   ]
 
-  config :draft, DraftWeb.AuthManager, secret_key: "test"
+config :draft, DraftWeb.AuthManager, secret_key: "test"
 
-  config :ueberauth, Ueberauth.Strategy.Cognito,
+config :ueberauth, Ueberauth.Strategy.Cognito,
   auth_domain: {System, :get_env, ["COGNITO_DOMAIN"]},
   client_id: {System, :get_env, ["COGNITO_CLIENT_ID"]},
   user_pool_id: {System, :get_env, ["COGNITO_USER_POOL_ID"]},
