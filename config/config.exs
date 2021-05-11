@@ -22,13 +22,9 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :draft, DraftWeb.AuthManager,
-  issuer: "draft",
-  secret_key: "test key"
-
 config :ueberauth, Ueberauth,
   providers: [
-    cognito: {Draft.Ueberauth.Strategy.Fake, []}
+    cognito: nil
   ]
 
 # Use Jason for JSON parsing in Phoenix

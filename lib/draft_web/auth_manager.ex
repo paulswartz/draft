@@ -29,7 +29,6 @@ defmodule DraftWeb.AuthManager do
   end
 
   def claims_access_level(_claims) do
-    # Skate had this as :general (analogous to our :operator), when would this be hit? No groups?
     :none
   end
 end
