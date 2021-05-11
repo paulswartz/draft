@@ -26,9 +26,6 @@ defmodule DraftWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
-    # Maybe return 403 instead?
-    conn
-    |> Guardian.Plug.sign_out(AuthManager, [])
-    |> redirect(to: Helpers.page_path(conn, :index))
+    send_resp(conn, 401, "unauthenticated")
   end
 end

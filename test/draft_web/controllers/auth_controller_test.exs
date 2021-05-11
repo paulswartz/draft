@@ -17,15 +17,15 @@ defmodule DraftWeb.AuthControllerTest do
       assert Plug.Conn.get_session(conn, :username) == "fake_uid"
     end
 
-    test "handles generic failure - redirect to home page", %{conn: conn} do
+    test "handles generic failure - 401", %{conn: conn} do
       conn =
         conn
         |> assign(:ueberauth_failure, %Ueberauth.Failure{})
         |> get(Helpers.auth_path(conn, :callback, "cognito"))
 
-      response = response(conn, 302)
+      response = response(conn, 401)
 
-      assert response =~ Helpers.page_path(conn, :index)
+      assert response =~ "unauthenticated"
     end
   end
 

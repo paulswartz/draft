@@ -10,10 +10,13 @@ use Mix.Config
 config :draft,
   ecto_repos: [Draft.Repo]
 
+config :draft, Draft.Repo,
+  show_sensitive_data_on_connection_error: false,
+  pool_size: 10
+
 # Configures the endpoint
 config :draft, DraftWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "RHYHKhSvKKCSLAiQOm7zCHOo4MWoR5HbTdibXrU38MUPVTtAHgxddyXreTzd1LU6",
   render_errors: [view: DraftWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Draft.PubSub
 
