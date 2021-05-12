@@ -11,13 +11,6 @@ use Mix.Config
 # before starting your production server.
 config :draft, DraftWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
-config :ueberauth, Ueberauth.Strategy.Cognito,
-  auth_domain: System.get_env("COGNITO_DOMAIN"),
-  client_id: System.get_env("COGNITO_CLIENT_ID"),
-  client_secret: System.get_env("COGNITO_CLIENT_SECRET"),
-  user_pool_id: System.get_env("COGNITO_USER_POOL_ID"),
-  aws_region: System.get_env("COGNITO_AWS_REGION")
-
 # Do not print debug messages in production
 config :logger, level: :info
 

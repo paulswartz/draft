@@ -25,9 +25,9 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :ueberauth, Ueberauth,
+  config :ueberauth, Ueberauth,
   providers: [
-    cognito: nil
+    cognito: {Ueberauth.Strategy.Cognito, []}
   ]
 
 # Use Jason for JSON parsing in Phoenix
