@@ -16,6 +16,7 @@ defmodule DraftWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+  import Plug.Test
 
   using do
     quote do
@@ -39,6 +40,29 @@ defmodule DraftWeb.ConnCase do
       Sandbox.mode(Draft.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    cond do
+      tags[:authenticated] ->
+        user = "test_user"
+
+        conn =
+          Phoenix.ConnTest.build_conn()
+          |> init_test_session(%{arrow_username: user})
+          |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{})
+
+        {:ok, conn: conn}
+
+      tags[:authenticated_admin] ->
+        user = "test_user"
+
+        conn =
+          Phoenix.ConnTest.build_conn()
+          |> init_test_session(%{})
+          |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{groups: ["draft-admin"]})
+
+        {:ok, conn: conn}
+
+      true ->
+        {:ok, conn: Phoenix.ConnTest.build_conn()}
+    end
   end
 end
