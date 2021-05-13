@@ -8,7 +8,8 @@
 use Mix.Config
 
 config :draft,
-  ecto_repos: [Draft.Repo]
+  ecto_repos: [Draft.Repo],
+  aws_rds_mod: ExAws.RDS
 
 config :draft, Draft.Repo,
   show_sensitive_data_on_connection_error: false,
@@ -25,7 +26,7 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-  config :ueberauth, Ueberauth,
+config :ueberauth, Ueberauth,
   providers: [
     cognito: {Ueberauth.Strategy.Cognito, []}
   ]
