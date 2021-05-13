@@ -4,6 +4,7 @@ config :draft, Draft.Repo,
   username: System.get_env("DATABASE_USER"),
   database: System.get_env("DATABASE_NAME"),
   hostname: System.get_env("DATABASE_HOST"),
+  password: System.get_env("DATABASE_PASSWORD"),
   port: System.get_env("DATABASE_PORT", "5432") |> String.to_integer(),
   configure: {Draft.Repo, :before_connect, []}
 

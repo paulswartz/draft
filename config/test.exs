@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :draft,
-  aws_rds_mod: Draft.Rds.Fake
+  aws_rds_mod: nil
 
 # Configure your database
 config :draft, Draft.Repo,
