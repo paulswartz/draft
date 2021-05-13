@@ -11,6 +11,7 @@ defmodule Draft.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: LcovEx, output: "coverage", ignore_paths: ~w(test/ src/)],
       dialyzer: [
         plt_add_apps: [:mix],
         plt_add_deps: :transitive,
@@ -47,6 +48,7 @@ defmodule Draft.MixProject do
       {:phoenix, "~> 1.5.8"},
       {:phoenix_ecto, "~> 4.1"},
       {:ecto_sql, "~> 3.4"},
+      {:lcov_ex, "~> 0.1.1", only: :test, runtime: false},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
