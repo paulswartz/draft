@@ -11,6 +11,7 @@ defmodule Draft.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: LcovEx, output: "coverage", ignore_paths: ~w(test/ src/)],
       dialyzer: [
         plt_add_apps: [:mix],
         plt_add_deps: :transitive,
