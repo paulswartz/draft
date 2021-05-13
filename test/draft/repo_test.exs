@@ -19,7 +19,7 @@ defmodule Draft.RepoTest do
       Application.put_env(:draft, :aws_rds_mod, FakeAwsRds)
       config = Draft.Repo.before_connect(username: "u", hostname: "h", port: 4000)
       assert Keyword.fetch!(config, :password) == "iam_token"
-      Application.put_env(:draft, :aws_rds_mod, nil)
+      on_exit(fn -> Application.put_env(:draft, :aws_rds_mod, nil) end)
     end
   end
 end

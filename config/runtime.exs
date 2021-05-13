@@ -5,7 +5,7 @@ config :draft, Draft.Repo,
   database: System.get_env("DATABASE_NAME"),
   hostname: System.get_env("DATABASE_HOST"),
   password: System.get_env("DATABASE_PASSWORD"),
-  port: System.get_env("DATABASE_PORT", "5432") |> String.to_integer(),
+  port: "DATABASE_PORT" |> System.get_env("5432") |> String.to_integer(),
   configure: {Draft.Repo, :before_connect, []}
 
 config :draft, DraftWeb.AuthManager, secret_key: System.get_env("DRAFT_AUTH_SECRET")
