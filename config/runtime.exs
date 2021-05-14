@@ -2,9 +2,11 @@ import Config
 
 config :draft, Draft.Repo,
   username: System.get_env("DATABASE_USER"),
-  password: System.get_env("DATABASE_PASSWORD"),
   database: System.get_env("DATABASE_NAME"),
-  hostname: System.get_env("DATABASE_HOST")
+  hostname: System.get_env("DATABASE_HOST"),
+  password: System.get_env("DATABASE_PASSWORD"),
+  port: "DATABASE_PORT" |> System.get_env("5432") |> String.to_integer(),
+  configure: {Draft.Repo, :before_connect, []}
 
 config :draft, DraftWeb.AuthManager, secret_key: System.get_env("DRAFT_AUTH_SECRET")
 

@@ -26,6 +26,10 @@ defmodule DraftWeb.Router do
   end
 
   scope "/", DraftWeb do
+    get "/_health", HealthController, :index
+  end
+
+  scope "/", DraftWeb do
     pipe_through [:browser, :auth, :ensure_auth]
 
     get "/", PageController, :index

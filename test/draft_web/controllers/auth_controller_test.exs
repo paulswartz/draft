@@ -6,9 +6,7 @@ defmodule DraftWeb.AuthControllerTest do
   describe "callback" do
     @tag :authenticated_admin
     test "redirects on success and saves username", %{conn: conn} do
-      conn =
-        conn
-        |> get(Helpers.auth_path(conn, :callback, "cognito"))
+      conn = get(conn, Helpers.auth_path(conn, :callback, "cognito"))
 
       response = html_response(conn, 302)
 

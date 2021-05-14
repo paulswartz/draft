@@ -11,8 +11,9 @@ config :draft,
   ecto_repos: [Draft.Repo]
 
 config :draft, Draft.Repo,
-  show_sensitive_data_on_connection_error: false,
-  pool_size: 10
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10,
+  aws_rds_mod: nil
 
 # Configures the endpoint
 config :draft, DraftWeb.Endpoint,
