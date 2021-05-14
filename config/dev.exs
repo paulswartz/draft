@@ -1,8 +1,5 @@
 use Mix.Config
 
-config :draft,
-  aws_rds_mod: nil
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

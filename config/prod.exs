@@ -1,5 +1,9 @@
 use Mix.Config
 
+config :draft, Draft.Repo,
+  aws_rds_mod: ExAws.RDS,
+  show_sensitive_data_on_connection_error: false
+
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
 # when generating URLs.

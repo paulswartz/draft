@@ -1,8 +1,5 @@
 use Mix.Config
 
-config :draft,
-  aws_rds_mod: nil
-
 # Configure your database
 config :draft, Draft.Repo,
   show_sensitive_data_on_connection_error: true,
