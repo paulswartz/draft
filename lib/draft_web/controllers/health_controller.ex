@@ -5,6 +5,7 @@ defmodule DraftWeb.HealthController do
   """
   use DraftWeb, :controller
 
+  @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
     send_resp(conn, 200, "")
   end

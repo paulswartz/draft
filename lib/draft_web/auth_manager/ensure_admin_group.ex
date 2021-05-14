@@ -6,8 +6,10 @@ defmodule DraftWeb.AuthManager.EnsureAdminGroup do
 
   alias DraftWeb.Router.Helpers
 
+  @spec init(Plug.opts()) :: Plug.opts()
   def init(options), do: options
 
+  @spec call(Plug.Conn.t(), Plug.opts()) :: Plug.Conn.t()
   def call(conn, _opts) do
     claims = Guardian.Plug.current_claims(conn)
 

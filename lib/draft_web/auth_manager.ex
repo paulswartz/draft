@@ -8,16 +8,21 @@ defmodule DraftWeb.AuthManager do
 
   @draft_admin_group "draft-admin"
 
+  @spec subject_for_token(
+          resource :: Guardian.Token.resource(),
+          claims :: Guardian.Token.claims()
+        ) :: {:ok, String.t()} | {:error, atom()}
   def subject_for_token(resource, _claims) do
     {:ok, resource}
   end
 
-  @spec resource_from_claims(any) :: {:error, :invalid_claims} | {:ok, any}
+  @spec resource_from_claims(claims :: Guardian.Token.claims()) ::
+          {:error, :invalid_claims} | {:ok, any}
   def resource_from_claims(%{"sub" => username}) do
     {:ok, username}
   end
 
-  def resource_from_claims(_), do: {:error, :invalid_claims}
+  def resource_from_claims(_claims), do: {:error, :invalid_claims}
 
   @spec claims_access_level(Guardian.Token.claims()) :: access_level()
   def claims_access_level(%{"groups" => groups}) do

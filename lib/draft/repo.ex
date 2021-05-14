@@ -10,6 +10,7 @@ defmodule Draft.Repo do
   invoked prior to each DB connection. `config` is the configured connection values
   and it returns a new set of config values to be used when connecting.
   """
+  @spec before_connect(map()) :: map()
   def before_connect(config) do
     mod = Application.get_env(:draft, :aws_rds_mod)
 

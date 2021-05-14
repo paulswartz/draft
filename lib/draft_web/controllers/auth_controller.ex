@@ -1,12 +1,13 @@
 defmodule DraftWeb.AuthController do
   use DraftWeb, :controller
-  require Logger
-
-  plug(Ueberauth)
 
   alias DraftWeb.AuthManager
   alias DraftWeb.Router.Helpers
 
+  plug(Ueberauth)
+  require Logger
+
+  @spec callback(Plug.Conn.t(), any) :: Plug.Conn.t()
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
     username = auth.uid
     credentials = auth.credentials
