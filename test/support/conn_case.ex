@@ -40,9 +40,7 @@ defmodule DraftWeb.ConnCase do
       Sandbox.mode(Draft.Repo, {:shared, self()})
     end
 
-    conn =
-      Phoenix.ConnTest.build_conn()
-      |> Plug.Conn.put_req_header("x-forwarded-proto", "https")
+    conn = Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "x-forwarded-proto", "https")
 
     cond do
       tags[:authenticated] ->
