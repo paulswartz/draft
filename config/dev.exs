@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :draft, :redirect_http?, false
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

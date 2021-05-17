@@ -8,7 +8,8 @@
 use Mix.Config
 
 config :draft,
-  ecto_repos: [Draft.Repo]
+  ecto_repos: [Draft.Repo],
+  redirect_http?: true
 
 config :draft, Draft.Repo,
   show_sensitive_data_on_connection_error: true,
