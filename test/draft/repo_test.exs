@@ -2,7 +2,13 @@ defmodule Draft.RepoTest do
   use ExUnit.Case, async: false
 
   defmodule FakeAwsRds do
-    def generate_db_auth_token(_, _, _, _) do
+    @spec generate_db_auth_token(
+            hostname :: String.t(),
+            username :: String.t(),
+            port :: integer(),
+            config :: map()
+          ) :: String.t()
+    def generate_db_auth_token(_username, _hostname, _port, _config) do
       "iam_token"
     end
   end

@@ -63,7 +63,7 @@
       #
       # To disable a check put `false` as second element:
       #
-      #     {Credo.Check.Design.DuplicatedCode, false}
+      #     {Credo.Check.Design.DuplicatedCode, []}
       #
       checks: [
         #
@@ -157,25 +157,25 @@
         #
         # Controversial and experimental checks (opt-in, just replace `false` with `[]`)
         #
-        {Credo.Check.Readability.StrictModuleLayout, false},
-        {Credo.Check.Consistency.MultiAliasImportRequireUse, false},
-        {Credo.Check.Consistency.UnusedVariableNames, false},
-        {Credo.Check.Design.DuplicatedCode, false},
+        {Credo.Check.Readability.StrictModuleLayout, []},
+        {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
+        {Credo.Check.Consistency.UnusedVariableNames, []},
+        {Credo.Check.Design.DuplicatedCode, []},
         {Credo.Check.Readability.AliasAs, false},
-        {Credo.Check.Readability.MultiAlias, false},
-        {Credo.Check.Readability.Specs, false},
+        {Credo.Check.Readability.MultiAlias, []},
+        {Credo.Check.Readability.Specs, []},
         {Credo.Check.Readability.SinglePipe, []},
-        {Credo.Check.Readability.WithCustomTaggedTuple, false},
-        {Credo.Check.Refactor.ABCSize, false},
-        {Credo.Check.Refactor.AppendSingleItem, false},
-        {Credo.Check.Refactor.DoubleBooleanNegation, false},
+        {Credo.Check.Readability.WithCustomTaggedTuple, []},
+        {Credo.Check.Refactor.ABCSize, []},
+        {Credo.Check.Refactor.AppendSingleItem, []},
+        {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
-        {Credo.Check.Refactor.NegatedIsNil, false},
+        {Credo.Check.Refactor.NegatedIsNil, []},
         {Credo.Check.Refactor.PipeChainStart, []},
-        {Credo.Check.Refactor.VariableRebinding, false},
-        {Credo.Check.Warning.LeakyEnvironment, false},
-        {Credo.Check.Warning.MapGetUnsafePass, false},
-        {Credo.Check.Warning.UnsafeToAtom, false}
+        {Credo.Check.Refactor.VariableRebinding, []},
+        {Credo.Check.Warning.LeakyEnvironment, []},
+        {Credo.Check.Warning.MapGetUnsafePass, []},
+        {Credo.Check.Warning.UnsafeToAtom, []}
 
         #
         # Custom checks can be created using `mix credo.gen.check`.

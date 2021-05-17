@@ -2,7 +2,9 @@ defmodule Draft.Ueberauth.Strategy.FakeTest do
   use ExUnit.Case, async: true
 
   alias Draft.Ueberauth.Strategy.Fake
-  alias Ueberauth.Auth.{Credentials, Extra, Info}
+  alias Ueberauth.Auth.Credentials
+  alias Ueberauth.Auth.Extra
+  alias Ueberauth.Auth.Info
 
   test "credentials returns a credentials struct" do
     assert Fake.credentials(%{}) == %Credentials{
