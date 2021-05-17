@@ -11,7 +11,7 @@ defmodule DraftWeb.ErrorView do
   # the template name. For example, "404.html" becomes
   # "Not Found".
 
-  @spec template_not_found(String.t(), map()) :: String.t()
+  @spec template_not_found(String.t(), map) :: String.t()
   def template_not_found(template, _assigns) do
     Phoenix.Controller.status_message_from_template(template)
   end
