@@ -8,7 +8,7 @@ defmodule DraftWeb.ErrorHelpers do
   @doc """
   Generates tag for inlined form input errors.
   """
-  @spec error_tag(HTML.form(), String.t()) :: String.t()
+  @spec error_tag(%{:errors => [{String.t(), any()}]}, atom()) :: [any()]
   def error_tag(form, field) do
     Enum.map(Keyword.get_values(form.errors, field), fn error ->
       content_tag(:span, translate_error(error),

@@ -27,6 +27,8 @@ defmodule DraftWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
-    send_resp(conn, 401, "unauthenticated")
+    require Logger
+    Logger.error(_fails)
+    send_resp(conn, 401, "unauthenticated testing")
   end
 end

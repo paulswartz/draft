@@ -17,7 +17,7 @@ defmodule DraftWeb.AuthManager do
   end
 
   @spec resource_from_claims(claims :: Guardian.Token.claims()) ::
-          {:error, :invalid_claims} | {:ok, any}
+          {:error, :invalid_claims} | {:ok, String.t()}
   def resource_from_claims(%{"sub" => username}) do
     {:ok, username}
   end
