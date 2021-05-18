@@ -45,6 +45,9 @@ WORKDIR /root
 EXPOSE 4000
 ENV MIX_ENV=prod TERM=xterm LANG="C.UTF-8" PORT=4000
 
-COPY --from=app-builder /root/_build/prod/rel/draft .
+# add frontend assets with manifests from app build container
+COPY --from=app-builder /root/priv/static ./priv/static
+# add application artifact comipled in app build container
+COPY --from=app-builder /root/_build/prod/rel/screens .
 
 CMD ["bin/draft", "start"]
