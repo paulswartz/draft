@@ -40,13 +40,15 @@ defmodule DraftWeb.ConnCase do
       Sandbox.mode(Draft.Repo, {:shared, self()})
     end
 
+    conn = Plug.Conn.put_req_header(Phoenix.ConnTest.build_conn(), "x-forwarded-proto", "https")
+
     cond do
       tags[:authenticated] ->
         user = "test_user"
 
         conn =
-          Phoenix.ConnTest.build_conn()
-          |> init_test_session(%{arrow_username: user})
+          conn
+          |> init_test_session(%{username: user})
           |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{})
 
         {:ok, conn: conn}
@@ -55,14 +57,14 @@ defmodule DraftWeb.ConnCase do
         user = "test_user"
 
         conn =
-          Phoenix.ConnTest.build_conn()
+          conn
           |> init_test_session(%{})
           |> Guardian.Plug.sign_in(DraftWeb.AuthManager, user, %{groups: ["draft-admin"]})
 
         {:ok, conn: conn}
 
       true ->
-        {:ok, conn: Phoenix.ConnTest.build_conn()}
+        {:ok, conn: conn}
     end
   end
 end

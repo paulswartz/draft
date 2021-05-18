@@ -25,13 +25,18 @@ defmodule DraftWeb.Router do
     plug(DraftWeb.AuthManager.EnsureAdminGroup)
   end
 
+  pipeline :redirect_http do
+    if Application.get_env(:draft, :redirect_http?) do
+      plug(Plug.SSL, rewrite_on: [:x_forwarded_proto])
+    end
+  end
+
   scope "/", DraftWeb do
     get "/_health", HealthController, :index
   end
 
   scope "/", DraftWeb do
-    pipe_through [:browser, :auth, :ensure_auth]
-
+    pipe_through [:redirect_http, :browser, :auth, :ensure_auth]
     get "/", PageController, :index
   end
 
@@ -42,7 +47,7 @@ defmodule DraftWeb.Router do
   end
 
   scope "/admin", DraftWeb do
-    pipe_through [:browser, :auth, :ensure_auth, :ensure_admin]
+    pipe_through [:redirect_http, :browser, :auth, :ensure_auth, :ensure_admin]
 
     get "/", AdminController, :index
   end
