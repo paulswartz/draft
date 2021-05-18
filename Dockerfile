@@ -38,7 +38,7 @@ RUN mix do compile --force, phx.digest, release
 FROM debian:buster
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  libssl1.1 libsctp1 curl \
+  libssl1.1 libsctp1 \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
@@ -48,6 +48,6 @@ ENV MIX_ENV=prod TERM=xterm LANG="C.UTF-8" PORT=4000
 # add frontend assets with manifests from app build container
 COPY --from=app-builder /root/priv/static ./priv/static
 # add application artifact comipled in app build container
-COPY --from=app-builder /root/_build/prod/rel/screens .
+COPY --from=app-builder /root/_build/prod/rel/draft .
 
 CMD ["bin/draft", "start"]
