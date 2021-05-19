@@ -12,7 +12,7 @@ defmodule Draft.Repo do
   """
   @spec before_connect(map()) :: map()
   def before_connect(config) do
-    mod = Application.get_env(:draft, :aws_rds_mod)
+    mod = Application.get_env(:draft, Draft.Repo)[:aws_rds_mod]
 
     if mod do
       :ok = Logger.info("generating_aws_rds_iam_auth_token")

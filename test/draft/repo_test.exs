@@ -22,10 +22,13 @@ defmodule Draft.RepoTest do
     end
 
     test "generates RDS IAM auth token if rds module is configured" do
-      Application.put_env(:draft, :aws_rds_mod, FakeAwsRds)
+      initial_repo_config = Application.get_env(:draft, Draft.Repo)
+      updated_config = Keyword.put(initial_repo_config, :aws_rds_mod, FakeAwsRds)
+
+      Application.put_env(:draft, Draft.Repo, updated_config)
       config = Draft.Repo.before_connect(username: "u", hostname: "h", port: 4000)
       assert Keyword.fetch!(config, :password) == "iam_token"
-      on_exit(fn -> Application.put_env(:draft, :aws_rds_mod, nil) end)
+      on_exit(fn -> Application.put_env(:draft, Draft.Repo, initial_repo_config) end)
     end
   end
 end
