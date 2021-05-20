@@ -7,6 +7,8 @@ defmodule Draft.PickSetup do
   alias Draft.Repo
   alias Draft.PickSetup.ParsingHelpers
   alias Draft.PickSetup.BidRound
+  alias Draft.PickSetup.BidGroup
+  alias Draft.PickSetup.EmployeeRanking
 
   def parse_bid_rounds() do
     first_rows =
@@ -22,19 +24,6 @@ defmodule Draft.PickSetup do
   end
 
   defp parse_row(row_contents) do
-    headers = %{
-      "R" => [],
-      "E" => [
-        "process_id",
-        "round_id",
-        "group_number",
-        "rank",
-        "employee_id",
-        "name",
-        "job_class"
-      ]
-    }
-
     {:ok, [record_type | row]} = row_contents
 
     case record_type do
@@ -90,6 +79,37 @@ defmodule Draft.PickSetup do
           group_number: String.to_integer(group_number),
           cutoff_datetime: ParsingHelpers.to_datetime(cutoff_date, cutoff_time)
         }
+        %BidGroup{}
+        |> BidGroup.changeset(struct)
+        |> Repo.insert()
+
+        struct
+
+      "E" ->
+        [
+          process_id,
+          round_id,
+          group_number,
+          rank,
+          employee_id,
+          name,
+          job_class
+        ] = row
+
+        struct = %{
+          process_id: process_id,
+          round_id: round_id,
+          group_number: String.to_integer(group_number),
+          rank: String.to_integer(rank),
+          employee_id: employee_id,
+          name: name,
+          job_class: job_class
+        }
+        %EmployeeRanking{}
+        |> EmployeeRanking.changeset(struct)
+        |> Repo.insert()
+
+        struct
     end
   end
 end
