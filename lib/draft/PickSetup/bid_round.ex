@@ -1,4 +1,4 @@
-defmodule Draft.BidRound do
+defmodule Draft.PickSetup.BidRound do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -14,7 +14,7 @@ defmodule Draft.BidRound do
           round_closing_date: Date.t(),
           round_id: String.t(),
           round_opening_date: Date.t(),
-          service_context: String.t()
+          service_context: String.t() | nil
         }
 
   schema "bid_rounds" do
@@ -58,7 +58,6 @@ defmodule Draft.BidRound do
       :round_closing_date,
       :bid_type,
       :rank,
-      :service_context,
       :division_id,
       :division_description,
       :booking_id,
