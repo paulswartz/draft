@@ -1,6 +1,7 @@
 defmodule Draft.PickSetup.BidRound do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Draft.PickSetup.ParsingHelpers
 
   @type t :: %__MODULE__{
           bid_type: String.t(),
@@ -31,7 +32,43 @@ defmodule Draft.PickSetup.BidRound do
     field :round_opening_date, :date
     field :service_context, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
+  end
+
+  def parse(row) do
+    [
+      process_id,
+      round_id,
+      round_opening_date,
+      round_closing_date,
+      bid_type,
+      rank,
+      service_context,
+      division_id,
+      division_description,
+      booking_id,
+      rating_period_start_date,
+      rating_period_end_date
+    ] = row
+    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
+
+
+    struct = %{
+      process_id: process_id,
+      round_id: round_id,
+      round_opening_date: ParsingHelpers.to_date(round_opening_date),
+      round_closing_date: ParsingHelpers.to_date(round_closing_date),
+      bid_type: bid_type,
+      rank: String.to_integer(rank),
+      service_context: service_context,
+      division_id: division_id,
+      division_description: division_description,
+      booking_id: booking_id,
+      rating_period_start_date: ParsingHelpers.to_date(rating_period_start_date),
+    rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date),
+    inserted_at: timestamp,
+    updated_at: timestamp
+    }
   end
 
   @doc false

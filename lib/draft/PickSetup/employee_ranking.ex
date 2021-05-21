@@ -21,7 +21,32 @@ defmodule Draft.PickSetup.EmployeeRanking do
     field :rank, :integer
     field :round_id, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
+  end
+
+  def parse(row) do
+    [
+      process_id,
+      round_id,
+      group_number,
+      rank,
+      employee_id,
+      name,
+      job_class
+    ] = row
+    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
+
+    %{
+      process_id: process_id,
+      round_id: round_id,
+      group_number: String.to_integer(group_number),
+      rank: String.to_integer(rank),
+      employee_id: employee_id,
+      name: name,
+      job_class: job_class,
+      inserted_at: timestamp,
+      updated_at: timestamp
+    }
   end
 
   @doc false

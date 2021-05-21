@@ -2,7 +2,7 @@ defmodule Draft.Repo.Migrations.CreateBidRounds do
   use Ecto.Migration
 
   def change do
-    create table(:bid_rounds) do
+    create table(:bid_rounds, primary_key: false) do
       add :process_id, :string
       add :round_id, :string
       add :round_opening_date, :date
@@ -16,7 +16,10 @@ defmodule Draft.Repo.Migrations.CreateBidRounds do
       add :rating_period_start_date, :date
       add :rating_period_end_date, :date
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
+
+    create unique_index(:bid_rounds, [:process_id, :round_id])
+
   end
 end
