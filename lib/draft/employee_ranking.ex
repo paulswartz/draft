@@ -1,4 +1,4 @@
-defmodule Draft.PickSetup.EmployeeRanking do
+defmodule Draft.EmployeeRanking do
   use Ecto.Schema
   import Ecto.Changeset
 

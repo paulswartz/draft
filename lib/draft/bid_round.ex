@@ -1,4 +1,4 @@
-defmodule Draft.PickSetup.BidRound do
+defmodule Draft.BidRound do
   use Ecto.Schema
   import Ecto.Changeset
   alias Draft.PickSetup.ParsingHelpers
