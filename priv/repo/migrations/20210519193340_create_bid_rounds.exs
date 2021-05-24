@@ -3,8 +3,8 @@ defmodule Draft.Repo.Migrations.CreateBidRounds do
 
   def change do
     create table(:bid_rounds, primary_key: false) do
-      add :process_id, :string
-      add :round_id, :string
+      add :process_id, :string, primary_key: true
+      add :round_id, :string, primary_key: true
       add :round_opening_date, :date
       add :round_closing_date, :date
       add :bid_type, :string
@@ -20,6 +20,5 @@ defmodule Draft.Repo.Migrations.CreateBidRounds do
     end
 
     create unique_index(:bid_rounds, [:process_id, :round_id])
-
   end
 end

@@ -1,7 +1,10 @@
 defmodule Draft.BidRound do
+  @moduledoc """
+  A Bid Round defines for a given division what type of selection employees are making (work vs. vacation), what period they will be picking preferences for, and when they will be able to pick.
+  """
   use Ecto.Schema
   import Ecto.Changeset
-  alias Draft.PickSetup.ParsingHelpers
+  alias Draft.PickDataSetup.ParsingHelpers
 
   @type t :: %__MODULE__{
           bid_type: String.t(),
@@ -18,6 +21,7 @@ defmodule Draft.BidRound do
           service_context: String.t() | nil
         }
 
+  @primary_key false
   schema "bid_rounds" do
     field :bid_type, :string
     field :booking_id, :string
@@ -35,7 +39,8 @@ defmodule Draft.BidRound do
     timestamps(type: :utc_datetime)
   end
 
-  def parse(row) do
+  @spec from_parts([String.t()]) :: map()
+  def from_parts(row) do
     [
       process_id,
       round_id,
@@ -50,8 +55,8 @@ defmodule Draft.BidRound do
       rating_period_start_date,
       rating_period_end_date
     ] = row
-    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
 
+    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
 
     struct = %{
       process_id: process_id,
@@ -65,13 +70,14 @@ defmodule Draft.BidRound do
       division_description: division_description,
       booking_id: booking_id,
       rating_period_start_date: ParsingHelpers.to_date(rating_period_start_date),
-    rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date),
-    inserted_at: timestamp,
-    updated_at: timestamp
+      rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date),
+      inserted_at: timestamp,
+      updated_at: timestamp
     }
   end
 
   @doc false
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(bid_round, attrs) do
     bid_round
     |> cast(attrs, [

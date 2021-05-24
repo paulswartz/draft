@@ -1,6 +1,6 @@
 defmodule Draft.ParsingHelpersTest do
   use ExUnit.Case
-  alias Draft.PickDataFetchers.ParsingHelpers
+  alias Draft.PickDataSetup.ParsingHelpers
 
   describe "to_date/1" do
     test "Month less than 10" do
@@ -12,11 +12,11 @@ defmodule Draft.ParsingHelpersTest do
     end
   end
 
-  describe "to_datetime/2" do
+  describe "to_utc_datetime/2" do
     test "PM time less than 10" do
-      parsed_datetime = ParsingHelpers.to_datetime("01/12/2034", "500p")
+      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500p")
 
-      assert [01, 12, 2034, 17, 00, 00, "America/New_York"] = [
+      assert [01, 12, 2034, 22, 00, 00, "Etc/UTC"] = [
                parsed_datetime.month,
                parsed_datetime.day,
                parsed_datetime.year,
@@ -28,9 +28,9 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "AM time less than 10" do
-      parsed_datetime = ParsingHelpers.to_datetime("01/12/2034", "500a")
+      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500a")
 
-      assert [01, 12, 2034, 05, 00, 00, "America/New_York"] = [
+      assert [01, 12, 2034, 10, 00, 00, "Etc/UTC"] = [
                parsed_datetime.month,
                parsed_datetime.day,
                parsed_datetime.year,
@@ -42,9 +42,9 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "PM time greater than 10" do
-      parsed_datetime = ParsingHelpers.to_datetime("01/12/2034", "1100p")
+      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100p")
 
-      assert [01, 12, 2034, 23, 00, 00, "America/New_York"] = [
+      assert [01, 13, 2034, 04, 00, 00, "Etc/UTC"] = [
                parsed_datetime.month,
                parsed_datetime.day,
                parsed_datetime.year,
@@ -56,9 +56,9 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "AM time greater than 10" do
-      parsed_datetime = ParsingHelpers.to_datetime("01/12/2034", "1100a")
+      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100a")
 
-      assert [01, 12, 2034, 11, 00, 00, "America/New_York"] = [
+      assert [01, 12, 2034, 16, 00, 00, "Etc/UTC"] = [
                parsed_datetime.month,
                parsed_datetime.day,
                parsed_datetime.year,

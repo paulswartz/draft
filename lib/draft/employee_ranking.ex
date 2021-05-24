@@ -1,17 +1,21 @@
 defmodule Draft.EmployeeRanking do
+  @moduledoc """
+  EmployeeRanking represents an employee's rank within a particular group for a particular bid round.
+  """
   use Ecto.Schema
   import Ecto.Changeset
 
   @type t :: %__MODULE__{
-    process_id: String.t(),
-    round_id: String.t(),
-    group_number: integer(),
-    employee_id: String.t(),
-    name: String.t(),
-    rank: integer(),
-    job_class: String.t()
-  }
+          process_id: String.t(),
+          round_id: String.t(),
+          group_number: integer(),
+          employee_id: String.t(),
+          name: String.t(),
+          rank: integer(),
+          job_class: String.t()
+        }
 
+  @primary_key false
   schema "employee_rankings" do
     field :employee_id, :string
     field :group_number, :integer
@@ -24,7 +28,8 @@ defmodule Draft.EmployeeRanking do
     timestamps(type: :utc_datetime)
   end
 
-  def parse(row) do
+  @spec from_parts([String.t()]) :: map()
+  def from_parts(row) do
     [
       process_id,
       round_id,
@@ -34,6 +39,7 @@ defmodule Draft.EmployeeRanking do
       name,
       job_class
     ] = row
+
     timestamp = DateTime.truncate(DateTime.utc_now(), :second)
 
     %{
@@ -50,9 +56,18 @@ defmodule Draft.EmployeeRanking do
   end
 
   @doc false
+  @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_ranking, attrs) do
     employee_ranking
     |> cast(attrs, [:process_id, :round_id, :group_number, :rank, :employee_id, :name, :job_class])
-    |> validate_required([:process_id, :round_id, :group_number, :rank, :employee_id, :name, :job_class])
+    |> validate_required([
+      :process_id,
+      :round_id,
+      :group_number,
+      :rank,
+      :employee_id,
+      :name,
+      :job_class
+    ])
   end
 end

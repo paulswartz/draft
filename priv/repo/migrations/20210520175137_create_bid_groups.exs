@@ -3,13 +3,14 @@ defmodule Draft.Repo.Migrations.CreateBidGroups do
 
   def change do
     create table(:bid_groups, primary_key: false) do
-      add :process_id, :string
-      add :round_id, :string
-      add :group_number, :integer
-      add :cutoff_datetime, :utc_datetime
+      add :process_id, :string, primary_key: true
+      add :round_id, :string, primary_key: true
+      add :group_number, :integer, primary_key: true
+      add :cutoff_datetime, :timestamptz
 
       timestamps(type: :timestamptz)
     end
+
     create unique_index(:bid_groups, [:process_id, :round_id, :group_number])
   end
 end
