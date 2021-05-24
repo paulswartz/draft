@@ -35,7 +35,7 @@ defmodule Draft.BidGroup do
 
     timestamp = DateTime.truncate(DateTime.utc_now(), :second)
 
-    struct = %{
+    %{
       process_id: process_id,
       round_id: round_id,
       group_number: String.to_integer(group_number),

@@ -58,7 +58,7 @@ defmodule Draft.BidRound do
 
     timestamp = DateTime.truncate(DateTime.utc_now(), :second)
 
-    struct = %{
+    %{
       process_id: process_id,
       round_id: round_id,
       round_opening_date: ParsingHelpers.to_date(round_opening_date),
