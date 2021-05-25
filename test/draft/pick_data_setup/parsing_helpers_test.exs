@@ -16,57 +16,57 @@ defmodule Draft.ParsingHelpersTest do
     test "PM time less than 10" do
       parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500p")
 
-      assert [01, 12, 2034, 22, 00, 00, "Etc/UTC"] = [
-               parsed_datetime.month,
-               parsed_datetime.day,
-               parsed_datetime.year,
-               parsed_datetime.hour,
-               parsed_datetime.minute,
-               parsed_datetime.second,
-               parsed_datetime.time_zone
-             ]
+      assert %{
+               month: 01,
+               day: 12,
+               year: 2034,
+               hour: 22,
+               minute: 00,
+               second: 00,
+               time_zone: "Etc/UTC"
+             } = parsed_datetime
     end
 
     test "AM time less than 10" do
       parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500a")
 
-      assert [01, 12, 2034, 10, 00, 00, "Etc/UTC"] = [
-               parsed_datetime.month,
-               parsed_datetime.day,
-               parsed_datetime.year,
-               parsed_datetime.hour,
-               parsed_datetime.minute,
-               parsed_datetime.second,
-               parsed_datetime.time_zone
-             ]
+      assert %{
+               month: 01,
+               day: 12,
+               year: 2034,
+               hour: 10,
+               minute: 00,
+               second: 00,
+               time_zone: "Etc/UTC"
+             } = parsed_datetime
     end
 
     test "PM time greater than 10" do
       parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100p")
 
-      assert [01, 13, 2034, 04, 00, 00, "Etc/UTC"] = [
-               parsed_datetime.month,
-               parsed_datetime.day,
-               parsed_datetime.year,
-               parsed_datetime.hour,
-               parsed_datetime.minute,
-               parsed_datetime.second,
-               parsed_datetime.time_zone
-             ]
+      assert %{
+               month: 01,
+               day: 13,
+               year: 2034,
+               hour: 4,
+               minute: 00,
+               second: 00,
+               time_zone: "Etc/UTC"
+             } = parsed_datetime
     end
 
     test "AM time greater than 10" do
       parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100a")
 
-      assert [01, 12, 2034, 16, 00, 00, "Etc/UTC"] = [
-               parsed_datetime.month,
-               parsed_datetime.day,
-               parsed_datetime.year,
-               parsed_datetime.hour,
-               parsed_datetime.minute,
-               parsed_datetime.second,
-               parsed_datetime.time_zone
-             ]
+      assert %{
+               month: 01,
+               day: 12,
+               year: 2034,
+               hour: 16,
+               minute: 00,
+               second: 00,
+               time_zone: "Etc/UTC"
+             } = parsed_datetime
     end
   end
 end

@@ -14,12 +14,12 @@ defmodule Draft.BidGroupTest do
           "500p"
         ])
 
-      assert ["BUS1220_125", "Work", 1, ~U[2021-02-11 22:00:00Z]] == [
-               group_struct.process_id,
-               group_struct.round_id,
-               group_struct.group_number,
-               group_struct.cutoff_datetime
-             ]
+      assert %{
+               process_id: "BUS1220_125",
+               round_id: "Work",
+               group_number: 1,
+               cutoff_datetime: ~U[2021-02-11 22:00:00Z]
+             } = group_struct
     end
   end
 end

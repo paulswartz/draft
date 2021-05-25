@@ -23,10 +23,8 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
     test "Round has expected data changed after importing updated file" do
       initial_round = Repo.get_by!(BidRound, process_id: "BUS22021-122", round_id: "Work")
 
-      assert [~D[2021-03-14], ~D[2021-06-19]] == [
-               initial_round.rating_period_start_date,
-               initial_round.rating_period_end_date
-             ]
+      assert %{rating_period_start_date: ~D[2021-03-14], rating_period_end_date: ~D[2021-06-19]} =
+               initial_round
 
       BidRoundSetup.update_bid_round_data(
         "../../../test/support/test_data/test_rounds_updated_data.csv"
@@ -34,10 +32,8 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
 
       updated_round = Repo.get_by!(BidRound, process_id: "BUS22021-122", round_id: "Work")
 
-      assert [~D[2021-03-15], ~D[2021-06-20]] == [
-               updated_round.rating_period_start_date,
-               updated_round.rating_period_end_date
-             ]
+      assert %{rating_period_start_date: ~D[2021-03-15], rating_period_end_date: ~D[2021-06-20]} =
+               updated_round
     end
 
     test "Group has expected data changed after importing updated file" do
