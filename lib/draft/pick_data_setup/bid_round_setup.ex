@@ -19,9 +19,19 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
       |> parse_data()
       |> group_by_record_type()
 
+      delete_rounds(records_by_type["R"])
     Enum.map(["R", "G", "E"], fn record_type ->
-      batch_upsert_data(record_type, records_by_type[record_type])
+      insert_all_records(record_type, records_by_type[record_type])
     end)
+  end
+
+  defp delete_rounds(rounds) do
+    rounds
+    |> Enum.each(fn round -> Repo.delete_all(from(
+      r in BidRound,
+      where:
+        r.process_id == ^round.process_id and r.round_id == ^round.round_id
+    )) end)
   end
 
   defp parse_data(filename) do
@@ -40,25 +50,19 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
     end)
   end
 
-  defp batch_upsert_data("R", records) do
-    Repo.insert_all(BidRound, records,
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:process_id, :round_id]
-    )
+  defp insert_all_records("R", records) do
+    records |>
+    Enum.each(fn record -> Repo.insert(BidRound.changeset(%BidRound{}, record)) end)
   end
 
-  defp batch_upsert_data("G", records) do
-    Repo.insert_all(BidGroup, records,
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:process_id, :round_id, :group_number]
-    )
+  defp insert_all_records("G", records) do
+    records |>
+    Enum.each( fn record -> Repo.insert(BidGroup.changeset(%BidGroup{}, record)) end)
   end
 
-  defp batch_upsert_data("E", records) do
-    Repo.insert_all(EmployeeRanking, records,
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:process_id, :round_id, :employee_id]
-    )
+  defp insert_all_records("E", records) do
+    records |>
+    Enum.each(fn record -> Repo.insert(EmployeeRanking.changeset(%EmployeeRanking{}, record)) end)
   end
 
   defp from_parts("R", row) do

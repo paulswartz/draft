@@ -27,12 +27,12 @@ defmodule Draft.BidRound do
     field :booking_id, :string
     field :division_description, :string
     field :division_id, :string
-    field :process_id, :string
+    field :process_id, :string, primary_key: true
     field :rank, :integer
     field :rating_period_end_date, :date
     field :rating_period_start_date, :date
     field :round_closing_date, :date
-    field :round_id, :string
+    field :round_id, :string, primary_key: true
     field :round_opening_date, :date
     field :service_context, :string
 

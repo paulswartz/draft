@@ -17,13 +17,13 @@ defmodule Draft.EmployeeRanking do
 
   @primary_key false
   schema "employee_rankings" do
-    field :employee_id, :string
+    field :employee_id, :string, primary_key: true
     field :group_number, :integer
     field :job_class, :string
     field :name, :string
-    field :process_id, :string
+    field :process_id, :string, primary_key: true
     field :rank, :integer
-    field :round_id, :string
+    field :round_id, :string, primary_key: true
 
     timestamps(type: :utc_datetime)
   end

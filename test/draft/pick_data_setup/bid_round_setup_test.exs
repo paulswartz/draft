@@ -7,7 +7,8 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
   alias Draft.PickDataSetup.BidRoundSetup
 
   setup do
-    BidRoundSetup.update_bid_round_data("../../../test/support/test_data/test_rounds.csv")
+    test = BidRoundSetup.update_bid_round_data("../../../test/support/test_data/test_rounds.csv")
+    :ok
   end
 
   describe "update_bid_round_data/1" do
@@ -21,8 +22,11 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
     end
 
     test "Round has expected data changed after importing updated file" do
+      require Logger
+      Logger.error("INITIAL ROUND")
       initial_round = Repo.get_by!(BidRound, process_id: "BUS22021-122", round_id: "Work")
-
+      Logger.error("INITIAL ROUND")
+      Logger.error(initial_round)
       assert %{rating_period_start_date: ~D[2021-03-14], rating_period_end_date: ~D[2021-06-19]} =
                initial_round
 
@@ -37,9 +41,12 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
     end
 
     test "Group has expected data changed after importing updated file" do
+      require Logger
+      Logger.error("STARTING")
       initial_group =
         Repo.get_by!(BidGroup, process_id: "BUS22021-122", round_id: "Work", group_number: 1)
 
+        Logger.error("INITIAL_GROUP")
       assert ~U[2021-02-11 22:00:00Z] == initial_group.cutoff_datetime
 
       BidRoundSetup.update_bid_round_data(

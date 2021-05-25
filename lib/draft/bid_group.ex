@@ -16,9 +16,9 @@ defmodule Draft.BidGroup do
   @primary_key false
   schema "bid_groups" do
     field :cutoff_datetime, :utc_datetime
-    field :group_number, :integer
-    field :process_id, :string
-    field :round_id, :string
+    field :group_number, :integer, primary_key: true
+    field :process_id, :string, primary_key: true
+    field :round_id, :string, primary_key: true
 
     timestamps(type: :utc_datetime)
   end
