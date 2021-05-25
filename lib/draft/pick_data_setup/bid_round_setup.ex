@@ -9,7 +9,6 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
   alias Draft.BidRound
   alias Draft.EmployeeRanking
   alias Draft.Repo
-  alias NimbleCSV.RFC4180, as: CSV
 
   NimbleCSV.define(PipeSeparatedParser, separator: "\|")
 
