@@ -7,7 +7,7 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
   alias Draft.PickDataSetup.BidRoundSetup
 
   setup do
-    BidRoundSetup.update_bid_round_data("../../../test/support/testData/test_rounds.csv")
+    BidRoundSetup.update_bid_round_data("../../../test/support/test_data/test_rounds.csv")
   end
 
   describe "update_bid_round_data/1" do
@@ -29,7 +29,7 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
              ]
 
       BidRoundSetup.update_bid_round_data(
-        "../../../test/support/testData/test_rounds_updated_data.csv"
+        "../../../test/support/test_data/test_rounds_updated_data.csv"
       )
 
       updated_round = Repo.get_by!(BidRound, process_id: "BUS22021-122", round_id: "Work")
@@ -47,7 +47,7 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
       assert ~U[2021-02-11 22:00:00Z] == initial_group.cutoff_datetime
 
       BidRoundSetup.update_bid_round_data(
-        "../../../test/support/testData/test_rounds_updated_data.csv"
+        "../../../test/support/test_data/test_rounds_updated_data.csv"
       )
 
       updated_group =
@@ -67,7 +67,7 @@ defmodule Draft.PickDataSetup.BidRoundSetupTest do
       assert 1 == initial_employee_ranking.rank
 
       BidRoundSetup.update_bid_round_data(
-        "../../../test/support/testData/test_rounds_updated_data.csv"
+        "../../../test/support/test_data/test_rounds_updated_data.csv"
       )
 
       updated_employee_ranking =

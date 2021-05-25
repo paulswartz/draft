@@ -44,13 +44,13 @@ defmodule Draft.MixProject do
   defp deps do
     [
       {:credo, "~> 1.4.0", only: [:dev, :test], runtime: false},
-      {:csv, "~> 2.4.1"},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
       {:phoenix, "~> 1.5.8"},
       {:phoenix_ecto, "~> 4.1"},
       {:ecto_sql, "~> 3.4"},
       {:ex_aws_rds, "~> 2.0"},
       {:lcov_ex, "~> 0.1.1", only: :test, runtime: false},
+      {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
