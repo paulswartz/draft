@@ -8,7 +8,15 @@ defmodule Draft.Parsable do
 
   @callback from_parts([String.t()]) :: t()
 
-  @type t :: BidRound.t() | EmployeeRanking.t() | BidGroup.t()
+  @type t :: struct()
+
+  @spec from_parts(module(), [String.t()]) :: struct()
+  @doc """
+  Returns a struct for the given module type created from the given ordered list of strings.
+  """
+  def from_parts(record_module, parts) do
+    record_module.from_parts(parts)
+  end
 
   @spec from_parts([String.t()]) :: t()
   @doc """

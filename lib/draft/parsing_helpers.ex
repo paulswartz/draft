@@ -3,6 +3,43 @@ defmodule Draft.ParsingHelpers do
   Functions useful for parsing formatted strings into the correct type.
   """
 
+  NimbleCSV.define(PipeSeparatedParser, separator: "\|")
+
+  @spec parse_pipe_separated_file(String.t()) :: Enumerable.t()
+  @doc """
+  Parse a pipe separated file without headers.
+  """
+  def parse_pipe_separated_file(filename) do
+    filename
+    |> Path.expand(__DIR__)
+    |> File.stream!()
+    |> PipeSeparatedParser.parse_stream(skip_headers: false)
+  end
+
+  @spec to_optional_int(String.t() | nil) :: integer() | nil
+  @doc """
+  Parse the given string into an integer if not nil. Otherwise, returns nil.
+  """
+  def to_optional_int(maybe_int) do
+    if maybe_int == nil do
+      nil
+    else
+      String.to_integer(maybe_int)
+    end
+  end
+
+  @spec to_optional_date(String.t() | nil) :: Date.t() | nil
+  @doc """
+  Parse the given string into a date if not nil. Otherwise, returns nil
+  """
+  def to_optional_date(maybe_date) do
+    if maybe_date == nil do
+      nil
+    else
+      to_date(maybe_date)
+    end
+  end
+
   @spec to_date(String.t()) :: Date.t()
   @doc """
   Convert the given formatted date string into a date. Expects date formatted in %m/%d/%y (ex: 1/2/2023)
@@ -11,6 +48,15 @@ defmodule Draft.ParsingHelpers do
     date_string
     |> Timex.parse!("{0M}/{0D}/{YYYY}")
     |> Timex.to_date()
+  end
+
+  @spec to_minutes(String.t()) :: integer()
+  @doc """
+  Convert the given duration string to the number of minutes it represents. Expects formats %Hh%M
+  """
+  def to_minutes(duration_string) do
+    [hours, minutes] = String.split(duration_string, "h")
+    String.to_integer(hours) * 60 + String.to_integer(minutes)
   end
 
   @spec hastus_format_to_utc_datetime(String.t(), String.t()) :: DateTime.t()

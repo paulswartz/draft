@@ -2,6 +2,26 @@ defmodule Draft.ParsingHelpersTest do
   use ExUnit.Case
   alias Draft.ParsingHelpers
 
+  describe "to_optional_int/1" do
+    test "valid integer" do
+      assert ParsingHelpers.to_optional_int("1234") == 1234
+    end
+
+    test "nil" do
+      assert ParsingHelpers.to_optional_int(nil) == nil
+    end
+  end
+
+  describe "to_optional_date/1" do
+    test "valid date" do
+      assert ParsingHelpers.to_optional_date("01/12/2034") == ~D[2034-01-12]
+    end
+
+    test "nil" do
+      assert ParsingHelpers.to_optional_date(nil) == nil
+    end
+  end
+
   describe "to_date/1" do
     test "Month less than 10" do
       assert ParsingHelpers.to_date("01/12/2034") == ~D[2034-01-12]
@@ -9,6 +29,24 @@ defmodule Draft.ParsingHelpersTest do
 
     test "Month greater than 10" do
       assert ParsingHelpers.to_date("11/12/2034") == ~D[2034-11-12]
+    end
+  end
+
+  describe "to_minutes/1" do
+    test "Hours only" do
+      assert ParsingHelpers.to_minutes("10h00") == 600
+    end
+
+    test "Minutes only" do
+      assert ParsingHelpers.to_minutes("00h30") == 30
+    end
+
+    test "Zero minutes" do
+      assert ParsingHelpers.to_minutes("00h00") == 0
+    end
+
+    test "Hours and minutes" do
+      assert ParsingHelpers.to_minutes("10h30") == 630
     end
   end
 
