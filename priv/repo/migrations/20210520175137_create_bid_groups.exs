@@ -6,13 +6,13 @@ defmodule Draft.Repo.Migrations.CreateBidGroups do
       add :process_id, :string, primary_key: true
 
       add :round_id,
-        references(:bid_rounds,
-          column: :round_id,
-          on_delete: :delete_all,
-          type: :string,
-          with: [process_id: :process_id]
-        ), primary_key: true
-
+          references(:bid_rounds,
+            column: :round_id,
+            on_delete: :delete_all,
+            type: :string,
+            with: [process_id: :process_id]
+          ),
+          primary_key: true
 
       add :group_number, :integer, primary_key: true
       add :cutoff_datetime, :timestamptz

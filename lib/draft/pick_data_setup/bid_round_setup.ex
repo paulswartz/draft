@@ -13,25 +13,32 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
   NimbleCSV.define(PipeSeparatedParser, separator: "\|")
 
   @spec update_bid_round_data(String.t()) :: [{integer(), nil | [term()]}]
+  @doc """
+  Reads bid round, group, and employee data from the given file and stores it in the database.
+  If there was already data stored for any round present in the file, that data will be removed & re-inserted.
+  """
   def update_bid_round_data(filename) do
     records_by_type =
       filename
       |> parse_data()
       |> group_by_record_type()
 
-      delete_rounds(records_by_type["R"])
-    Enum.map(["R", "G", "E"], fn record_type ->
-      insert_all_records(record_type, records_by_type[record_type])
+    delete_rounds(records_by_type[BidRound])
+
+    Enum.map([BidRound, BidGroup, EmployeeRanking], fn record_type ->
+      insert_all_records(records_by_type[record_type])
     end)
   end
 
   defp delete_rounds(rounds) do
-    rounds
-    |> Enum.each(fn round -> Repo.delete_all(from(
-      r in BidRound,
-      where:
-        r.process_id == ^round.process_id and r.round_id == ^round.round_id
-    )) end)
+    Enum.each(rounds, fn round ->
+      Repo.delete_all(
+        from(
+          r in BidRound,
+          where: r.process_id == ^round.process_id and r.round_id == ^round.round_id
+        )
+      )
+    end)
   end
 
   defp parse_data(filename) do
@@ -43,26 +50,17 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
   end
 
   defp group_by_record_type(all_records) do
+    record_types = %{"R" => BidRound, "E" => EmployeeRanking, "G" => BidGroup}
+
     all_records
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.into(%{}, fn {record_type, record_data} ->
-      {record_type, Enum.map(record_data, &from_parts(record_type, &1))}
+    |> Enum.into(%{}, fn {record_type_id, record_data} ->
+      {record_types[record_type_id], Enum.map(record_data, &from_parts(record_type_id, &1))}
     end)
   end
 
-  defp insert_all_records("R", records) do
-    records |>
-    Enum.each(fn record -> Repo.insert(BidRound.changeset(%BidRound{}, record)) end)
-  end
-
-  defp insert_all_records("G", records) do
-    records |>
-    Enum.each( fn record -> Repo.insert(BidGroup.changeset(%BidGroup{}, record)) end)
-  end
-
-  defp insert_all_records("E", records) do
-    records |>
-    Enum.each(fn record -> Repo.insert(EmployeeRanking.changeset(%EmployeeRanking{}, record)) end)
+  defp insert_all_records(records) do
+    Enum.each(records, fn record -> Repo.insert(record) end)
   end
 
   defp from_parts("R", row) do

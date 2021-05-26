@@ -12,9 +12,9 @@ defmodule Draft.ParsingHelpersTest do
     end
   end
 
-  describe "to_utc_datetime/2" do
+  describe "hastus_format_to_utc_datetime/2" do
     test "PM time less than 10" do
-      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500p")
+      parsed_datetime = ParsingHelpers.hastus_format_to_utc_datetime("01/12/2034", "500p")
 
       assert %{
                month: 01,
@@ -28,7 +28,7 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "AM time less than 10" do
-      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "500a")
+      parsed_datetime = ParsingHelpers.hastus_format_to_utc_datetime("01/12/2034", "500a")
 
       assert %{
                month: 01,
@@ -42,7 +42,7 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "PM time greater than 10" do
-      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100p")
+      parsed_datetime = ParsingHelpers.hastus_format_to_utc_datetime("01/12/2034", "1100p")
 
       assert %{
                month: 01,
@@ -56,7 +56,7 @@ defmodule Draft.ParsingHelpersTest do
     end
 
     test "AM time greater than 10" do
-      parsed_datetime = ParsingHelpers.to_utc_datetime("01/12/2034", "1100a")
+      parsed_datetime = ParsingHelpers.hastus_format_to_utc_datetime("01/12/2034", "1100a")
 
       assert %{
                month: 01,
@@ -64,6 +64,20 @@ defmodule Draft.ParsingHelpersTest do
                year: 2034,
                hour: 16,
                minute: 00,
+               second: 00,
+               time_zone: "Etc/UTC"
+             } = parsed_datetime
+    end
+
+    test "X time (next day))" do
+      parsed_datetime = ParsingHelpers.hastus_format_to_utc_datetime("01/12/2034", "330x")
+
+      assert %{
+               month: 01,
+               day: 13,
+               year: 2034,
+               hour: 8,
+               minute: 30,
                second: 00,
                time_zone: "Etc/UTC"
              } = parsed_datetime

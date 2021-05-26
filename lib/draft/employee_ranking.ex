@@ -28,7 +28,7 @@ defmodule Draft.EmployeeRanking do
     timestamps(type: :utc_datetime)
   end
 
-  @spec from_parts([String.t()]) :: map()
+  @spec from_parts([String.t()]) :: t()
   def from_parts(row) do
     [
       process_id,
@@ -40,24 +40,20 @@ defmodule Draft.EmployeeRanking do
       job_class
     ] = row
 
-    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
-
-    %{
+    %__MODULE__{
       process_id: process_id,
       round_id: round_id,
       group_number: String.to_integer(group_number),
       rank: String.to_integer(rank),
       employee_id: employee_id,
       name: name,
-      job_class: job_class,
-      inserted_at: timestamp,
-      updated_at: timestamp
+      job_class: job_class
     }
   end
 
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(employee_ranking, attrs) do
+  def changeset(employee_ranking, attrs \\ %{}) do
     employee_ranking
     |> cast(attrs, [:process_id, :round_id, :group_number, :rank, :employee_id, :name, :job_class])
     |> validate_required([

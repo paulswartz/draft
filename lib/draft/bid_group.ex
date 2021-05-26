@@ -33,21 +33,17 @@ defmodule Draft.BidGroup do
       cutoff_time
     ] = row
 
-    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
-
-    %{
+    %__MODULE__{
       process_id: process_id,
       round_id: round_id,
       group_number: String.to_integer(group_number),
-      cutoff_datetime: ParsingHelpers.to_utc_datetime(cutoff_date, cutoff_time),
-      inserted_at: timestamp,
-      updated_at: timestamp
+      cutoff_datetime: ParsingHelpers.hastus_format_to_utc_datetime(cutoff_date, cutoff_time)
     }
   end
 
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(bid_group, attrs) do
+  def changeset(bid_group, attrs \\ %{}) do
     bid_group
     |> cast(attrs, [:process_id, :round_id, :group_number, :cutoff_datetime])
     |> validate_required([:process_id, :round_id, :group_number, :cutoff_datetime])

@@ -56,9 +56,7 @@ defmodule Draft.BidRound do
       rating_period_end_date
     ] = row
 
-    timestamp = DateTime.truncate(DateTime.utc_now(), :second)
-
-    %{
+    %__MODULE__{
       process_id: process_id,
       round_id: round_id,
       round_opening_date: ParsingHelpers.to_date(round_opening_date),
@@ -70,15 +68,13 @@ defmodule Draft.BidRound do
       division_description: division_description,
       booking_id: booking_id,
       rating_period_start_date: ParsingHelpers.to_date(rating_period_start_date),
-      rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date),
-      inserted_at: timestamp,
-      updated_at: timestamp
+      rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date)
     }
   end
 
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(bid_round, attrs) do
+  def changeset(bid_round, attrs \\ %{}) do
     bid_round
     |> cast(attrs, [
       :process_id,
