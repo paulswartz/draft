@@ -23,10 +23,12 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
       |> parse_data()
       |> group_by_record_type()
 
-    delete_rounds(records_by_type[BidRound])
+    Repo.transaction(fn ->
+      delete_rounds(records_by_type[BidRound])
 
-    Enum.map([BidRound, BidGroup, EmployeeRanking], fn record_type ->
-      insert_all_records(records_by_type[record_type])
+      Enum.map([BidRound, BidGroup, EmployeeRanking], fn record_type ->
+        insert_all_records(records_by_type[record_type])
+      end)
     end)
   end
 
@@ -55,23 +57,12 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
     all_records
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> Enum.into(%{}, fn {record_type_id, record_data} ->
-      {record_types[record_type_id], Enum.map(record_data, &from_parts(record_type_id, &1))}
+      {record_types[record_type_id],
+       Enum.map(record_data, fn data -> record_types[record_type_id].from_parts(data) end)}
     end)
   end
 
   defp insert_all_records(records) do
     Enum.each(records, fn record -> Repo.insert(record) end)
-  end
-
-  defp from_parts("R", row) do
-    BidRound.from_parts(row)
-  end
-
-  defp from_parts("E", row) do
-    EmployeeRanking.from_parts(row)
-  end
-
-  defp from_parts("G", row) do
-    BidGroup.from_parts(row)
   end
 end

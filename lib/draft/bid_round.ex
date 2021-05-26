@@ -39,7 +39,7 @@ defmodule Draft.BidRound do
     timestamps(type: :utc_datetime)
   end
 
-  @spec from_parts([String.t()]) :: map()
+  @spec from_parts([String.t()]) :: t()
   def from_parts(row) do
     [
       process_id,
