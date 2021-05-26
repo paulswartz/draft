@@ -2,11 +2,11 @@ defmodule Draft.BidRound do
   @moduledoc """
   A Bid Round defines for a given division what type of selection employees are making (work vs. vacation), what period they will be picking preferences for, and when they will be able to pick.
   """
-  @behaviour Parsable
+  @behaviour Draft.Parsable
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias Draft.PickDataSetup.ParsingHelpers
+  alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
           bid_type: String.t(),
@@ -41,7 +41,7 @@ defmodule Draft.BidRound do
     timestamps(type: :utc_datetime)
   end
 
-  @impl Parsable
+  @impl Draft.Parsable
   def from_parts(row) do
     [
       process_id,

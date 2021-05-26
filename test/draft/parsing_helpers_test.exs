@@ -1,6 +1,6 @@
 defmodule Draft.ParsingHelpersTest do
   use ExUnit.Case
-  alias Draft.PickDataSetup.ParsingHelpers
+  alias Draft.ParsingHelpers
 
   describe "to_date/1" do
     test "Month less than 10" do

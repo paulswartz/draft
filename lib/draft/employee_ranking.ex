@@ -2,7 +2,7 @@ defmodule Draft.EmployeeRanking do
   @moduledoc """
   EmployeeRanking represents an employee's rank within a particular group for a particular bid round.
   """
-  @behaviour Parsable
+  @behaviour Draft.Parsable
 
   use Ecto.Schema
   import Ecto.Changeset
@@ -30,7 +30,7 @@ defmodule Draft.EmployeeRanking do
     timestamps(type: :utc_datetime)
   end
 
-  @impl Parsable
+  @impl Draft.Parsable
   def from_parts(row) do
     [
       process_id,

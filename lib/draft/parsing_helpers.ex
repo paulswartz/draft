@@ -1,4 +1,4 @@
-defmodule Draft.PickDataSetup.ParsingHelpers do
+defmodule Draft.ParsingHelpers do
   @moduledoc """
   Functions useful for parsing formatted strings into the correct type.
   """

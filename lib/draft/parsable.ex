@@ -1,4 +1,4 @@
-defmodule Parsable do
+defmodule Draft.Parsable do
   @moduledoc """
   Defines contract for parsable modules.
   """

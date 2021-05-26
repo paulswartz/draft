@@ -1,4 +1,4 @@
-defmodule Draft.PickDataSetup.BidRoundSetup do
+defmodule Draft.BidRoundSetup do
   @moduledoc """
   Setup the bid rounds -- parse data from an extract and store round / group / employee data in the database.
   """
@@ -8,6 +8,7 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.EmployeeRanking
+  alias Draft.Parsable
   alias Draft.Repo
 
   NimbleCSV.define(PipeSeparatedParser, separator: "\|")
