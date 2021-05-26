@@ -2,6 +2,8 @@ defmodule Draft.BidGroup do
   @moduledoc """
   A Bid Group defines a collection of employees that must select their preferences by a specified cutoff time.
   """
+  @behaviour Parsable
+
   use Ecto.Schema
   import Ecto.Changeset
   alias Draft.PickDataSetup.ParsingHelpers
@@ -23,7 +25,7 @@ defmodule Draft.BidGroup do
     timestamps(type: :utc_datetime)
   end
 
-  @spec from_parts([String.t()]) :: t()
+  @impl Parsable
   def from_parts(row) do
     [
       process_id,

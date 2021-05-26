@@ -18,7 +18,5 @@ defmodule Draft.Repo.Migrations.CreateBidRounds do
 
       timestamps(type: :timestamptz)
     end
-
-    create unique_index(:bid_rounds, [:process_id, :round_id])
   end
 end

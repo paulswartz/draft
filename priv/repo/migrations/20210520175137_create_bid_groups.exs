@@ -19,7 +19,5 @@ defmodule Draft.Repo.Migrations.CreateBidGroups do
 
       timestamps(type: :timestamptz)
     end
-
-    create unique_index(:bid_groups, [:process_id, :round_id, :group_number])
   end
 end

@@ -21,7 +21,5 @@ defmodule Draft.Repo.Migrations.CreateEmployeeRankings do
 
       timestamps(type: :timestamptz)
     end
-
-    create unique_index(:employee_rankings, [:process_id, :round_id, :employee_id])
   end
 end

@@ -43,26 +43,22 @@ defmodule Draft.PickDataSetup.BidRoundSetup do
     end)
   end
 
+  @spec parse_data(String.t()) :: [[String.t()]]
   defp parse_data(filename) do
     filename
     |> Path.expand(__DIR__)
     |> File.stream!()
     |> PipeSeparatedParser.parse_stream(skip_headers: false)
-    |> Enum.map(fn [record_type | record_data] -> {record_type, record_data} end)
   end
 
+  @spec group_by_record_type([{String.t(), [String.t()]}]) :: %{module() => [Parsable.t()]}
   defp group_by_record_type(all_records) do
-    record_types = %{"R" => BidRound, "E" => EmployeeRanking, "G" => BidGroup}
-
     all_records
-    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.into(%{}, fn {record_type_id, record_data} ->
-      {record_types[record_type_id],
-       Enum.map(record_data, fn data -> record_types[record_type_id].from_parts(data) end)}
-    end)
+    |> Enum.map(&Parsable.from_parts(&1))
+    |> Enum.group_by(& &1.__struct__)
   end
 
   defp insert_all_records(records) do
-    Enum.each(records, fn record -> Repo.insert(record) end)
+    Enum.each(records, &Repo.insert(&1))
   end
 end
