@@ -52,7 +52,7 @@ defmodule Draft.BidRoundSetup do
     |> PipeSeparatedParser.parse_stream(skip_headers: false)
   end
 
-  @spec group_by_record_type([{String.t(), [String.t()]}]) :: %{module() => [Parsable.t()]}
+  @spec group_by_record_type([[String.t()]]) :: %{module() => [Parsable.t()]}
   defp group_by_record_type(all_records) do
     all_records
     |> Enum.map(&Parsable.from_parts(&1))
