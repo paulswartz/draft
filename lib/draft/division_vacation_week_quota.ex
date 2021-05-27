@@ -1,4 +1,4 @@
-defmodule Draft.DivisionVacationQuotaWeek do
+defmodule Draft.DivisionVacationWeekQuota do
   @moduledoc """
     Represents the division vacation quota for a given type of employee for a particular week
   """
@@ -17,7 +17,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
         }
 
   @primary_key false
-  schema "division_vacation_quota_weeks" do
+  schema "division_vacation_week_quotas" do
     field :division_id, :string
     field :employee_selection_set, :string
     field :start_date, :date
@@ -52,8 +52,8 @@ defmodule Draft.DivisionVacationQuotaWeek do
 
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
-  def changeset(division_vacation_quota_week, attrs \\ %{}) do
-    division_vacation_quota_week
+  def changeset(division_vacation_week_quota, attrs \\ %{}) do
+    division_vacation_week_quota
     |> cast(attrs, [
       :division_id,
       :employee_selection_set,

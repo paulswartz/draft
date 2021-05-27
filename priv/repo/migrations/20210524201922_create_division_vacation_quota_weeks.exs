@@ -1,8 +1,8 @@
-defmodule Draft.Repo.Migrations.CreateDivisionVacationQuotaWeeks do
+defmodule Draft.Repo.Migrations.CreateDivisionVacationWeekQuotas do
   use Ecto.Migration
 
   def change do
-    create table(:division_vacation_quota_weeks, primary_key: false) do
+    create table(:division_vacation_week_quotas, primary_key: false) do
       add :division_id, :string, primary_key: true
       add :employee_selection_set, :string, primary_key: true
       add :start_date, :date, primary_key: true

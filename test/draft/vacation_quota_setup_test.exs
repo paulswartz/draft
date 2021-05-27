@@ -1,16 +1,16 @@
 defmodule Draft.VacationQuotaSetupTest do
   use ExUnit.Case
   use Draft.DataCase
-  alias Draft.DivisionVacationQuotaDated
-  alias Draft.DivisionVacationQuotaWeek
+  alias Draft.DivisionVacationDayQuota
+  alias Draft.DivisionVacationWeekQuota
   alias Draft.EmployeeVacationQuota
   alias Draft.EmployeeVacationSelection
   alias Draft.VacationQuotaSetup
 
   setup do
     VacationQuotaSetup.update_vacation_quota_data(%{
-      DivisionVacationQuotaDated => "../../test/support/test_data/test_vac_div_quota_dated.csv",
-      DivisionVacationQuotaWeek => "../../test/support/test_data/test_vac_div_quota_weekly.csv",
+      DivisionVacationDayQuota => "../../test/support/test_data/test_vac_div_quota_dated.csv",
+      DivisionVacationWeekQuota => "../../test/support/test_data/test_vac_div_quota_weekly.csv",
       EmployeeVacationSelection => "../../test/support/test_data/test_vac_emp_selections.csv",
       EmployeeVacationQuota => "../../test/support/test_data/test_vac_emp_quota.csv"
     })
@@ -20,9 +20,9 @@ defmodule Draft.VacationQuotaSetupTest do
 
   describe "update_bid_round_data/1" do
     test "Correct number of records present" do
-      all_div_quota_dated = Repo.all(DivisionVacationQuotaDated)
+      all_div_quota_dated = Repo.all(DivisionVacationDayQuota)
       assert length(all_div_quota_dated) == 12
-      all_div_quota_weekly = Repo.all(DivisionVacationQuotaWeek)
+      all_div_quota_weekly = Repo.all(DivisionVacationWeekQuota)
       assert length(all_div_quota_weekly) == 14
       all_emp_quota = Repo.all(EmployeeVacationQuota)
       assert length(all_emp_quota) == 28
@@ -31,15 +31,14 @@ defmodule Draft.VacationQuotaSetupTest do
     end
 
     test "Dated division vacation quota as expected" do
-      date_quota =
-        Repo.get_by(DivisionVacationQuotaDated, date: ~D[2021-01-12], division_id: "112")
+      date_quota = Repo.get_by(DivisionVacationDayQuota, date: ~D[2021-01-12], division_id: "112")
 
       assert 12 = date_quota.quota
     end
 
     test "Weekly division vacation quota as expected" do
       date_quota =
-        Repo.get_by(DivisionVacationQuotaWeek,
+        Repo.get_by(DivisionVacationWeekQuota,
           start_date: ~D[2021-01-03],
           division_id: "112",
           employee_selection_set: "FTVacQuota"

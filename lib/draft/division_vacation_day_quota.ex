@@ -1,4 +1,4 @@
-defmodule Draft.DivisionVacationQuotaDated do
+defmodule Draft.DivisionVacationDayQuota do
   @moduledoc """
     Represents the division vacation quota for a given type of employee for a particular day
   """
@@ -15,7 +15,7 @@ defmodule Draft.DivisionVacationQuotaDated do
         }
 
   @primary_key false
-  schema "division_vacation_quota_days" do
+  schema "division_vacation_day_quotas" do
     field :division_id, :string
     field :employee_selection_set, :string
     field :quota, :integer

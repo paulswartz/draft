@@ -5,8 +5,8 @@ defmodule Draft.VacationQuotaSetup do
 
   import Ecto.Query, warn: false
 
-  alias Draft.DivisionVacationQuotaDated
-  alias Draft.DivisionVacationQuotaWeek
+  alias Draft.DivisionVacationDayQuota
+  alias Draft.DivisionVacationWeekQuota
   alias Draft.EmployeeVacationQuota
   alias Draft.EmployeeVacationSelection
   alias Draft.Parsable
@@ -22,8 +22,8 @@ defmodule Draft.VacationQuotaSetup do
         %{
           EmployeeVacationQuota => _emp_vacation_quota_file_loc,
           EmployeeVacationSelection => _emp_vacation_selection_file_loc,
-          DivisionVacationQuotaDated => _division_vacation_quota_date_file_loc,
-          DivisionVacationQuotaWeek => _division_vacation_quota_week_file_loc
+          DivisionVacationDayQuota => _division_vacation_quota_date_file_loc,
+          DivisionVacationWeekQuota => _division_vacation_week_quota_file_loc
         } = file_map
       ) do
     parsed_records =
@@ -31,8 +31,8 @@ defmodule Draft.VacationQuotaSetup do
       |> Map.take([
         EmployeeVacationQuota,
         EmployeeVacationSelection,
-        DivisionVacationQuotaDated,
-        DivisionVacationQuotaWeek
+        DivisionVacationDayQuota,
+        DivisionVacationWeekQuota
       ])
       |> Enum.into(%{}, fn {record_type, file_name} ->
         {record_type, ParsingHelpers.parse_pipe_separated_file(file_name)}
