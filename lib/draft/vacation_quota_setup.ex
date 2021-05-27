@@ -1,6 +1,6 @@
 defmodule Draft.VacationQuotaSetup do
   @moduledoc """
-  Setup the bid rounds -- parse data from an extract and store round / group / employee data in the database.
+  Setup the vacation data -- parse vacation data(division/employee quotas, employee selections) from an extracts in the database.
   """
 
   import Ecto.Query, warn: false
@@ -15,8 +15,8 @@ defmodule Draft.VacationQuotaSetup do
 
   @spec update_vacation_quota_data(%{module() => String.t()}) :: [{integer(), nil | [term()]}]
   @doc """
-  Reads bid round, group, and employee data from the given file and stores it in the database.
-  If there was already data stored for any round present in the file, that data will be removed & re-inserted.
+  Reads each type of vacation data from the given file and stores it in the database.
+  All previous records are deleted before inserting the data from the given files.
   """
   def update_vacation_quota_data(
         %{
