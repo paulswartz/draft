@@ -60,8 +60,7 @@ defmodule Draft.EmployeeVacationQuota do
       dated_quota: String.to_integer(dated_quota),
       restricted_week_quota: ParsingHelpers.to_int(restricted_week_quota),
       available_after_date: ParsingHelpers.to_optional_date(available_after_date),
-      available_after_weekly_quota:
-        ParsingHelpers.to_int(available_after_weekly_quota),
+      available_after_weekly_quota: ParsingHelpers.to_int(available_after_weekly_quota),
       available_after_dated_quota: ParsingHelpers.to_int(available_after_dated_quota),
       maximum_minutes: ParsingHelpers.to_minutes(maximum_minutes)
     }
