@@ -16,13 +16,13 @@ defmodule Draft.ParsingHelpers do
     |> PipeSeparatedParser.parse_stream(skip_headers: false)
   end
 
-  @spec to_optional_int(String.t() | nil) :: integer() | nil
+  @spec to_int(String.t() | nil) :: integer()
   @doc """
-  Parse the given string into an integer if not nil. Otherwise, returns nil.
+  Parse the given string into an integer. If nil or empty string, return 0.
   """
-  def to_optional_int(maybe_int) do
-    if maybe_int == nil do
-      nil
+  def to_int(maybe_int) do
+    if maybe_int == nil || maybe_int == "" do
+      0
     else
       String.to_integer(maybe_int)
     end
@@ -33,7 +33,7 @@ defmodule Draft.ParsingHelpers do
   Parse the given string into a date if not nil. Otherwise, returns nil
   """
   def to_optional_date(maybe_date) do
-    if maybe_date == nil do
+    if maybe_date == nil || maybe_date == "" do
       nil
     else
       to_date(maybe_date)

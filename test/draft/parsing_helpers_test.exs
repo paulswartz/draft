@@ -2,13 +2,17 @@ defmodule Draft.ParsingHelpersTest do
   use ExUnit.Case
   alias Draft.ParsingHelpers
 
-  describe "to_optional_int/1" do
+  describe "to_int/1" do
     test "valid integer" do
-      assert ParsingHelpers.to_optional_int("1234") == 1234
+      assert ParsingHelpers.to_int("1234") == 1234
     end
 
     test "nil" do
-      assert ParsingHelpers.to_optional_int(nil) == nil
+      assert ParsingHelpers.to_int(nil) == 0
+    end
+
+    test "empty string" do
+      assert ParsingHelpers.to_int("") == 0
     end
   end
 

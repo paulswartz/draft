@@ -12,7 +12,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
           employee_selection_set: String.t(),
           start_date: Date.t(),
           end_date: Date.t(),
-          quota_value: integer(),
+          quota: integer(),
           is_restricted_week: boolean()
         }
 
@@ -22,7 +22,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
     field :employee_selection_set, :string
     field :start_date, :date
     field :end_date, :date
-    field :quota_value, :integer
+    field :quota, :integer
     field :is_restricted_week, :boolean
 
     timestamps()
@@ -33,9 +33,10 @@ defmodule Draft.DivisionVacationQuotaWeek do
     [
       division_id,
       employee_selection_set,
+      _week_number,
       start_date,
       end_date,
-      quota_value,
+      quota,
       is_restricted_week
     ] = row
 
@@ -44,7 +45,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
       employee_selection_set: employee_selection_set,
       start_date: ParsingHelpers.to_date(start_date),
       end_date: ParsingHelpers.to_date(end_date),
-      quota_value: String.to_integer(quota_value),
+      quota: ParsingHelpers.to_int(quota),
       is_restricted_week: is_restricted_week == "1"
     }
   end
@@ -58,7 +59,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
       :employee_selection_set,
       :start_date,
       :end_date,
-      :quota_value,
+      :quota,
       :is_restricted_week
     ])
     |> validate_required([
@@ -66,7 +67,7 @@ defmodule Draft.DivisionVacationQuotaWeek do
       :employee_selection_set,
       :start_date,
       :end_date,
-      :quota_value,
+      :quota,
       :is_restricted_week
     ])
   end

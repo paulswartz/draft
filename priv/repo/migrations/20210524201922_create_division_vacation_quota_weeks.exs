@@ -3,12 +3,12 @@ defmodule Draft.Repo.Migrations.CreateDivisionVacationQuotaWeeks do
 
   def change do
     create table(:division_vacation_quota_weeks, primary_key: false) do
-      add :division_id, :string
-      add :employee_selection_set, :string
-      add :start_date, :date
+      add :division_id, :string, primary_key: true
+      add :employee_selection_set, :string, primary_key: true
+      add :start_date, :date, primary_key: true
       add :end_date, :date
-      add :quota_value, :integer
-      add :is_restricted_week, :boolean, default: false, null: false
+      add :quota, :integer
+      add :is_restricted_week, :boolean
 
       timestamps()
     end

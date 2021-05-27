@@ -28,15 +28,21 @@ defmodule Draft.VacationQuotaSetup do
       ) do
     parsed_records =
       file_map
-      |> Stream.into(%{}, fn {record_type, file_name} ->
+      |> Map.take([
+        EmployeeVacationQuota,
+        EmployeeVacationSelection,
+        DivisionVacationQuotaDated,
+        DivisionVacationQuotaWeek
+      ])
+      |> Enum.into(%{}, fn {record_type, file_name} ->
         {record_type, ParsingHelpers.parse_pipe_separated_file(file_name)}
       end)
-      |> Stream.into(%{}, fn {record_type, parsed_parts} ->
-        {record_type, Parsable.from_parts(record_type, parsed_parts)}
+      |> Enum.into(%{}, fn {record_type, parsed_parts} ->
+        {record_type, Stream.map(parsed_parts, &Parsable.from_parts(record_type, &1))}
       end)
 
-    Repo.transaction(fn ->
-      Enum.each(parsed_records, fn {record_type, records} ->
+    Enum.map(parsed_records, fn {record_type, records} ->
+      Repo.transaction(fn ->
         delete_all(record_type)
         insert_all_records(records)
       end)

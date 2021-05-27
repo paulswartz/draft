@@ -21,14 +21,14 @@ defmodule Draft.EmployeeVacationQuotaTest do
 
       assert %EmployeeVacationQuota{
                employee_id: "00001",
-               quota_interval_start_date: ~D[2021-01-01],
-               quota_interval_end_date: ~D[2021-12-31],
-               weekly_quota_value: 2,
-               dated_quota_value: 5,
-               restricted_week_quota_value: nil,
+               interval_start_date: ~D[2021-01-01],
+               interval_end_date: ~D[2021-12-31],
+               weekly_quota: 2,
+               dated_quota: 5,
+               restricted_week_quota: 0,
                available_after_date: ~D[2021-06-30],
-               available_after_weekly_quota_value: 1,
-               available_after_dated_quota_value: 5,
+               available_after_weekly_quota: 1,
+               available_after_dated_quota: 5,
                maximum_minutes: 630
              } = emp_quota
     end

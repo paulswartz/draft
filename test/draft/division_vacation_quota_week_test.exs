@@ -9,6 +9,7 @@ defmodule Draft.DivisionVacationQuotaWeekTest do
         DivisionVacationQuotaWeek.from_parts([
           "125",
           "FTVacQuota",
+          "1",
           "02/11/2021",
           "02/17/2021",
           "5",
@@ -20,7 +21,7 @@ defmodule Draft.DivisionVacationQuotaWeekTest do
                employee_selection_set: "FTVacQuota",
                start_date: ~D[2021-02-11],
                end_date: ~D[2021-02-17],
-               quota_value: 5,
+               quota: 5,
                is_restricted_week: false
              } = div_quota_week
     end

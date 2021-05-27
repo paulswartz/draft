@@ -16,8 +16,8 @@ defmodule Draft.DivisionVacationQuotaDatedTest do
       assert %DivisionVacationQuotaDated{
                division_id: "125",
                employee_selection_set: "FTVacQuota",
-               vacation_date: ~D[2021-02-11],
-               quota_value: 5
+               date: ~D[2021-02-11],
+               quota: 5
              } = div_quota_dated
     end
   end

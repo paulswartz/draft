@@ -10,16 +10,16 @@ defmodule Draft.DivisionVacationQuotaDated do
   @type t :: %__MODULE__{
           division_id: String.t(),
           employee_selection_set: String.t(),
-          quota_value: integer(),
-          vacation_date: Date.t()
+          quota: integer(),
+          date: Date.t()
         }
 
   @primary_key false
   schema "division_vacation_quota_days" do
     field :division_id, :string
     field :employee_selection_set, :string
-    field :quota_value, :integer
-    field :vacation_date, :date
+    field :quota, :integer
+    field :date, :date
 
     timestamps()
   end
@@ -29,15 +29,15 @@ defmodule Draft.DivisionVacationQuotaDated do
     [
       division_id,
       employee_selection_set,
-      vacation_date,
-      quota_value
+      date,
+      quota
     ] = row
 
     %__MODULE__{
       division_id: division_id,
       employee_selection_set: employee_selection_set,
-      vacation_date: ParsingHelpers.to_date(vacation_date),
-      quota_value: String.to_integer(quota_value)
+      date: ParsingHelpers.to_date(date),
+      quota: ParsingHelpers.to_int(quota)
     }
   end
 
@@ -45,7 +45,7 @@ defmodule Draft.DivisionVacationQuotaDated do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(division_vacation_quota_dated, attrs \\ %{}) do
     division_vacation_quota_dated
-    |> cast(attrs, [:division_id, :employee_selection_set, :vacation_date, :quota_value])
-    |> validate_required([:division_id, :employee_selection_set, :vacation_date, :quota_value])
+    |> cast(attrs, [:division_id, :employee_selection_set, :date, :quota])
+    |> validate_required([:division_id, :employee_selection_set, :date, :quota])
   end
 end
