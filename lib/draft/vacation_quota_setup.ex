@@ -18,16 +18,15 @@ defmodule Draft.VacationQuotaSetup do
   Reads each type of vacation data from the given files and stores it in the database.
   All previous records are deleted before inserting the data from the given files.
   """
-  def update_vacation_quota_data(
-        [
-          {DivisionVacationDayQuota, _division_vacation_quota_date_file_loc},
-          {DivisionVacationWeekQuota, _division_vacation_week_quota_file_loc},
-          {EmployeeVacationSelection, _emp_vacation_selection_file_loc},
-          {EmployeeVacationQuota, _emp_vacation_quota_file_loc}
-        ] = vacation_files
-      ) do
+  def update_vacation_quota_data(vacation_files) do
     parsed_records =
       vacation_files
+      |> Keyword.take([
+        DivisionVacationDayQuota,
+        DivisionVacationWeekQuota,
+        EmployeeVacationSelection,
+        EmployeeVacationQuota
+      ])
       |> Enum.map(fn {record_type, file_name} ->
         {record_type, ParsingHelpers.parse_pipe_separated_file(file_name)}
       end)
