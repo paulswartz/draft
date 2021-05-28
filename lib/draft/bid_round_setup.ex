@@ -9,9 +9,8 @@ defmodule Draft.BidRoundSetup do
   alias Draft.BidRound
   alias Draft.EmployeeRanking
   alias Draft.Parsable
+  alias Draft.ParsingHelpers
   alias Draft.Repo
-
-  NimbleCSV.define(PipeSeparatedParser, separator: "\|")
 
   @spec update_bid_round_data(String.t()) :: [{integer(), nil | [term()]}]
   @doc """
@@ -21,7 +20,7 @@ defmodule Draft.BidRoundSetup do
   def update_bid_round_data(filename) do
     records_by_type =
       filename
-      |> parse_data()
+      |> ParsingHelpers.parse_pipe_separated_file()
       |> group_by_record_type()
 
     Repo.transaction(fn ->
@@ -44,15 +43,7 @@ defmodule Draft.BidRoundSetup do
     end)
   end
 
-  @spec parse_data(String.t()) :: [[String.t()]]
-  defp parse_data(filename) do
-    filename
-    |> Path.expand(__DIR__)
-    |> File.stream!()
-    |> PipeSeparatedParser.parse_stream(skip_headers: false)
-  end
-
-  @spec group_by_record_type([[String.t()]]) :: %{module() => [Parsable.t()]}
+  @spec group_by_record_type(Enumerable.t()) :: %{module() => [Parsable.t()]}
   defp group_by_record_type(all_records) do
     all_records
     |> Enum.map(&Parsable.from_parts(&1))
