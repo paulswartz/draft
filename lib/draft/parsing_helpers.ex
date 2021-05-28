@@ -20,25 +20,20 @@ defmodule Draft.ParsingHelpers do
   @doc """
   Parse the given string into an integer. If nil or empty string, return 0.
   """
-  def to_int(maybe_int) do
-    if maybe_int == nil || maybe_int == "" do
-      0
-    else
-      String.to_integer(maybe_int)
-    end
-  end
+  def to_int(string_or_nil)
+  def to_int(nil), do: 0
+  def to_int(""), do: 0
+  def to_int(string), do: String.to_integer(string)
 
   @spec to_optional_date(String.t() | nil) :: Date.t() | nil
   @doc """
   Parse the given string into a date if not nil. Otherwise, returns nil
   """
-  def to_optional_date(maybe_date) do
-    if maybe_date == nil || maybe_date == "" do
-      nil
-    else
-      to_date(maybe_date)
-    end
-  end
+  def to_optional_date(date_or_nil)
+
+  def to_optional_date(nil), do: nil
+  def to_optional_date(""), do: nil
+  def to_optional_date(date_string), do: to_date(date_string)
 
   @spec to_date(String.t()) :: Date.t()
   @doc """

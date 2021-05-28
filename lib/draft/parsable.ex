@@ -24,7 +24,9 @@ defmodule Draft.Parsable do
   by the first string in the list.
   """
   def from_parts([record_type | rest]) do
-    record_struct(record_type).from_parts(rest)
+    record_type
+    |> record_struct()
+    |> from_parts(rest)
   end
 
   defp record_struct("R"), do: BidRound

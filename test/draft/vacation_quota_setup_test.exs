@@ -8,12 +8,12 @@ defmodule Draft.VacationQuotaSetupTest do
   alias Draft.VacationQuotaSetup
 
   setup do
-    VacationQuotaSetup.update_vacation_quota_data(%{
-      DivisionVacationDayQuota => "../../test/support/test_data/test_vac_div_quota_dated.csv",
-      DivisionVacationWeekQuota => "../../test/support/test_data/test_vac_div_quota_weekly.csv",
-      EmployeeVacationSelection => "../../test/support/test_data/test_vac_emp_selections.csv",
-      EmployeeVacationQuota => "../../test/support/test_data/test_vac_emp_quota.csv"
-    })
+    VacationQuotaSetup.update_vacation_quota_data([
+      {DivisionVacationDayQuota, "../../test/support/test_data/test_vac_div_quota_dated.csv"},
+      {DivisionVacationWeekQuota, "../../test/support/test_data/test_vac_div_quota_weekly.csv"},
+      {EmployeeVacationSelection, "../../test/support/test_data/test_vac_emp_selections.csv"},
+      {EmployeeVacationQuota, "../../test/support/test_data/test_vac_emp_quota.csv"}
+    ])
 
     :ok
   end
