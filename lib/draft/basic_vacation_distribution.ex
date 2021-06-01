@@ -1,4 +1,10 @@
 defmodule Draft.BasicVacationDistribution do
+  @moduledoc """
+  Simulate distributing vacation for all employees based on their rank in the given rounds / groups.
+  If an employee has at least a week in their vacation balance, they will be assigned the soonest week available for their division.
+  Otherwise, they will be assigned the soonest vacation days available for their division, capped by the number of days in their balance.
+  """
+  import Ecto.Query
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.DivisionVacationDayQuota
@@ -7,9 +13,9 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.EmployeeVacationQuota
   alias Draft.Repo
 
-  import Ecto.Query
   require Logger
 
+  @spec basic_vacation_distribution :: :ok
   def basic_vacation_distribution do
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     Enum.each(bid_rounds, &assign_vacation_for_round(&1))
@@ -58,14 +64,16 @@ defmodule Draft.BasicVacationDistribution do
       "Initial division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks "
     )
 
-    {div_dated_quota, div_weekly_quota} =
+    {ending_div_dated_quota, ending_div_week_quota} =
       Enum.reduce(bid_groups, {div_dated_quota, div_weekly_quota}, fn group,
                                                                       {dated_quota, weekly_quota} ->
         assign_vacation_for_group(group, round, dated_quota, weekly_quota)
       end)
 
     Logger.info(
-      "\nEnding division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks"
+      "\nEnding division quota: #{length(ending_div_dated_quota)} days, #{
+        length(ending_div_week_quota)
+      } weeks"
     )
   end
 
@@ -120,11 +128,11 @@ defmodule Draft.BasicVacationDistribution do
       employee_balance = List.first(employee_balances)
 
       Logger.info(
-        "Employee balance for period #{
-          employee_balance.interval_start_date
-        } - #{employee_balance.interval_end_date}: #{employee_balance.weekly_quota} max weeks, #{
-          employee_balance.dated_quota
-        } max days, #{employee_balance.maximum_minutes} max minutes"
+        "Employee balance for period #{employee_balance.interval_start_date} - #{
+          employee_balance.interval_end_date
+        }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
+          employee_balance.maximum_minutes
+        } max minutes"
       )
 
       max_minutes = employee_balance.maximum_minutes
@@ -159,18 +167,25 @@ defmodule Draft.BasicVacationDistribution do
     end
   end
 
-  def distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days) when max_days == length(emp_selected_days) or length(div_day_quota) == 0 do
+  defp distribute_days_balance(_employee, max_days, div_day_quota, emp_selected_days)
+       when max_days == length(emp_selected_days) or div_day_quota == [] do
     div_day_quota
   end
-  def distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days) do
+
+  defp distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days) do
     {selected_day, remaining_quota} = List.pop_at(div_day_quota, 0)
 
-         Logger.info("assigned day - #{selected_day.date}")
-    div_day_quota = distribute_days_balance(employee, max_days, remaining_quota, [selected_day.date | emp_selected_days])
+    Logger.info("assigned day - #{selected_day.date}")
+
+    div_day_quota =
+      distribute_days_balance(employee, max_days, remaining_quota, [
+        selected_day.date | emp_selected_days
+      ])
+
     div_day_quota
   end
 
-  defp distribute_first_available_week(employee, div_weekly_quota) do
+  defp distribute_first_available_week(_employee, div_weekly_quota) do
     first_avail_quota = List.first(div_weekly_quota)
     new_quota = first_avail_quota.quota - 1
     div_weekly_quota = update_division_quota(div_weekly_quota, 0, new_quota)
