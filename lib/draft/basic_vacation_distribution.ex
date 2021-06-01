@@ -148,15 +148,7 @@ defmodule Draft.BasicVacationDistribution do
 
         max_days = min(div(max_minutes, 8 * 60), employee_balance.dated_quota)
 
-        if max_days > 0 do
-          {distribute_days_balance(employee, max_days, div_dated_quota, []), div_weekly_quota}
-        else
-          Logger.info(
-            "Skipping vacation day assignment - employee cannot take any days off in this rating period."
-          )
-
-          {div_dated_quota, div_weekly_quota}
-        end
+        {distribute_days_balance(employee, max_days, div_dated_quota, []), div_weekly_quota}
       end
     else
       Logger.info(
@@ -165,6 +157,15 @@ defmodule Draft.BasicVacationDistribution do
 
       {div_dated_quota, div_weekly_quota}
     end
+  end
+
+  defp distribute_days_balance(_employee, max_days, div_day_quota, _emp_selected_days)
+       when max_days == 0 do
+    Logger.info(
+      "Skipping vacation day assignment - employee cannot take any days off in this rating period."
+    )
+
+    div_day_quota
   end
 
   defp distribute_days_balance(_employee, max_days, div_day_quota, emp_selected_days)
