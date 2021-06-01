@@ -54,13 +54,19 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: g.group_number]
       )
 
-    Logger.info("Initial division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks ")
+    Logger.info(
+      "Initial division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks "
+    )
 
-    {div_dated_quota, div_weekly_quota} = Enum.reduce(bid_groups, {div_dated_quota, div_weekly_quota}, fn group,
-                                                                    {dated_quota, weekly_quota} ->
-      assign_vacation_for_group(group, round, dated_quota, weekly_quota)
-    end)
-    Logger.info("Ending division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks")
+    {div_dated_quota, div_weekly_quota} =
+      Enum.reduce(bid_groups, {div_dated_quota, div_weekly_quota}, fn group,
+                                                                      {dated_quota, weekly_quota} ->
+        assign_vacation_for_group(group, round, dated_quota, weekly_quota)
+      end)
+
+    Logger.info(
+      "\nEnding division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks"
+    )
   end
 
   defp assign_vacation_for_group(group, round, div_dated_quota, div_weekly_quota) do
@@ -79,17 +85,16 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: e.rank]
       )
 
-      Enum.reduce(group_employees, {div_dated_quota, div_weekly_quota}, fn employee,
-                                                                           {dated_quota,
-                                                                            weekly_quota} ->
-        assign_vacation_for_employee(
-          employee,
-          round,
-          dated_quota,
-          weekly_quota
-        )
-      end)
-
+    Enum.reduce(group_employees, {div_dated_quota, div_weekly_quota}, fn employee,
+                                                                         {dated_quota,
+                                                                          weekly_quota} ->
+      assign_vacation_for_employee(
+        employee,
+        round,
+        dated_quota,
+        weekly_quota
+      )
+    end)
   end
 
   defp assign_vacation_for_employee(
@@ -98,8 +103,8 @@ defmodule Draft.BasicVacationDistribution do
          div_dated_quota,
          div_weekly_quota
        ) do
-        Logger.info("-------")
-    Logger.info("Distributing vacation for employee #{employee.rank} - #{employee.employee_id}")
+    Logger.info("-------")
+    Logger.info("Distributing vacation for employee #{employee.rank}")
 
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -108,14 +113,14 @@ defmodule Draft.BasicVacationDistribution do
           where:
             q.employee_id == ^employee.employee_id and
               (q.interval_start_date <= ^round.rating_period_start_date and
-              q.interval_end_date  >= ^round.rating_period_end_date)
+                 q.interval_end_date >= ^round.rating_period_end_date)
       )
 
     if length(employee_balances) == 1 do
       employee_balance = List.first(employee_balances)
 
       Logger.info(
-        "Employee #{employee.employee_id} balance for period #{
+        "Employee balance for period #{
           employee_balance.interval_start_date
         } - #{employee_balance.interval_end_date}: #{employee_balance.weekly_quota} max weeks, #{
           employee_balance.dated_quota
@@ -124,13 +129,7 @@ defmodule Draft.BasicVacationDistribution do
 
       max_minutes = employee_balance.maximum_minutes
 
-      max_weeks = div(max_minutes, 2400)
-
-      max_weeks =
-        if max_weeks <= employee_balance.weekly_quota,
-          do: max_weeks,
-          else: employee_balance.weekly_quota
-
+      max_weeks = min(div(max_minutes, 2400), employee_balance.weekly_quota)
 
       if max_weeks > 0 && !Enum.empty?(div_weekly_quota) do
         {div_dated_quota, distribute_first_available_week(employee, div_weekly_quota)}
@@ -138,63 +137,51 @@ defmodule Draft.BasicVacationDistribution do
         Logger.info(
           "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
         )
-        max_days = div(max_minutes, 8 * 60)
 
-        max_days =
-          if max_days <= employee_balance.dated_quota,
-            do: max_days,
-            else: employee_balance.dated_quota
+        max_days = min(div(max_minutes, 8 * 60), employee_balance.dated_quota)
 
         if max_days > 0 do
-          {distribute_first_available_day(employee, div_dated_quota), div_weekly_quota}
+          {distribute_days_balance(employee, max_days, div_dated_quota, []), div_weekly_quota}
         else
           Logger.info(
             "Skipping vacation day assignment - employee cannot take any days off in this rating period."
           )
+
           {div_dated_quota, div_weekly_quota}
         end
       end
     else
       Logger.info(
-        "Skipping assignment for this employee - multiple interval quotas for this period."
+        "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
       )
 
       {div_dated_quota, div_weekly_quota}
     end
   end
 
-  defp distribute_first_available_week(employee, div_weekly_quota) do
-      first_avail_quota = List.first(div_weekly_quota)
-      new_quota = first_avail_quota.quota - 1
-      div_weekly_quota = update_division_quota(div_weekly_quota, 0, new_quota)
+  def distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days) when max_days == length(emp_selected_days) or length(div_day_quota) == 0 do
+    div_day_quota
+  end
+  def distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days) do
+    {selected_day, remaining_quota} = List.pop_at(div_day_quota, 0)
 
-      Logger.info(
-        "assigned week - #{first_avail_quota.start_date} - #{first_avail_quota.end_date}. #{
-          new_quota
-        } more openings for this week.\n"
-      )
-
-      div_weekly_quota
+         Logger.info("assigned day - #{selected_day.date}")
+    div_day_quota = distribute_days_balance(employee, max_days, remaining_quota, [selected_day.date | emp_selected_days])
+    div_day_quota
   end
 
-  defp distribute_first_available_day(employee, div_dated_quota) do
-    if Enum.empty?(div_dated_quota) do
-      Logger.info(
-        "Skipping vacation day assignment - no available days remaining for division."
-      )
+  defp distribute_first_available_week(employee, div_weekly_quota) do
+    first_avail_quota = List.first(div_weekly_quota)
+    new_quota = first_avail_quota.quota - 1
+    div_weekly_quota = update_division_quota(div_weekly_quota, 0, new_quota)
 
-      div_dated_quota
-    else
-      first_avail_quota = List.first(div_dated_quota)
-      new_quota = max(first_avail_quota.quota - 1, 0)
-      div_dated_quota = update_division_quota(div_dated_quota, 0, new_quota)
+    Logger.info(
+      "assigned week - #{first_avail_quota.start_date} - #{first_avail_quota.end_date}. #{
+        new_quota
+      } more openings for this week.\n"
+    )
 
-      Logger.info(
-        "assigned day - #{first_avail_quota.date}. #{new_quota} more openings for this day."
-      )
-
-      div_dated_quota
-    end
+    div_weekly_quota
   end
 
   defp update_division_quota(division_quota, pos, new_quota)
