@@ -29,7 +29,9 @@ defmodule Draft.EmployeeVacationAssignment do
         assignment.vacation_interval_type,
         ParsingHelpers.to_date_string(assignment.start_date),
         ParsingHelpers.to_date_string(assignment.end_date),
+        # assume always vacation assigned, not cancelled
         1,
+        # assuming given as part of quarterly pick
         1
       ]
     ])
