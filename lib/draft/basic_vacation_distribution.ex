@@ -10,15 +10,14 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.DivisionVacationDayQuota
   alias Draft.DivisionVacationWeekQuota
   alias Draft.EmployeeRanking
+  alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationQuota
   alias Draft.Repo
 
   require Logger
 
-
   @spec basic_vacation_distribution :: :ok
   def basic_vacation_distribution do
-
     output_file_path = "data/" <> DateTime.to_string(DateTime.utc_now()) <> "test_output.csv"
 
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
@@ -27,7 +26,7 @@ defmodule Draft.BasicVacationDistribution do
     File.close(output_file)
   end
 
-  defp assign_vacation_for_round(round, output_file) do
+  defp assign_vacation_for_round(round, output_file_path) do
     Logger.info(
       "===================================================================================================\nSTARTING NEW ROUND: #{
         round.rank
@@ -38,6 +37,7 @@ defmodule Draft.BasicVacationDistribution do
       })\n"
     )
 
+    # This will be determined based on the employee type in the future
     selection_set =
       if String.ends_with?(round.round_id, "_PT"), do: "PTVacQuota", else: "FTVacQuota"
 
@@ -73,7 +73,7 @@ defmodule Draft.BasicVacationDistribution do
     {ending_div_dated_quota, ending_div_week_quota} =
       Enum.reduce(bid_groups, {div_dated_quota, div_weekly_quota}, fn group,
                                                                       {dated_quota, weekly_quota} ->
-        assign_vacation_for_group(group, round, dated_quota, weekly_quota, output_file)
+        assign_vacation_for_group(group, round, dated_quota, weekly_quota, output_file_path)
       end)
 
     Logger.info(
@@ -83,7 +83,13 @@ defmodule Draft.BasicVacationDistribution do
     )
   end
 
-  defp assign_vacation_for_group(group, round, div_dated_quota, div_weekly_quota, output_file) do
+  defp assign_vacation_for_group(
+         group,
+         round,
+         div_dated_quota,
+         div_weekly_quota,
+         output_file_path
+       ) do
     Logger.info(
       "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
         group.group_number
@@ -107,7 +113,7 @@ defmodule Draft.BasicVacationDistribution do
         round,
         dated_quota,
         weekly_quota,
-        output_file
+        output_file_path
       )
     end)
   end
@@ -117,7 +123,7 @@ defmodule Draft.BasicVacationDistribution do
          round,
          div_dated_quota,
          div_weekly_quota,
-         output_file
+         output_file_path
        ) do
     Logger.info("-------")
     Logger.info("Distributing vacation for employee #{employee.rank}")
@@ -148,7 +154,8 @@ defmodule Draft.BasicVacationDistribution do
       max_weeks = min(div(max_minutes, 2400), employee_balance.weekly_quota)
 
       if max_weeks > 0 && !Enum.empty?(div_weekly_quota) do
-        {div_dated_quota, distribute_first_available_week(employee, div_weekly_quota, output_file)}
+        {div_dated_quota,
+         distribute_first_available_week(employee, div_weekly_quota, output_file_path)}
       else
         Logger.info(
           "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
@@ -156,7 +163,7 @@ defmodule Draft.BasicVacationDistribution do
 
         max_days = min(div(max_minutes, 8 * 60), employee_balance.dated_quota)
 
-        {distribute_days_balance(employee, max_days, div_dated_quota, [], output_file),
+        {distribute_days_balance(employee, max_days, div_dated_quota, [], output_file_path),
          div_weekly_quota}
       end
     else
@@ -173,7 +180,7 @@ defmodule Draft.BasicVacationDistribution do
          max_days,
          div_day_quota,
          _emp_selected_days,
-         _output_file
+         _output_file_path
        )
        when max_days == 0 do
     Logger.info(
@@ -188,27 +195,35 @@ defmodule Draft.BasicVacationDistribution do
          max_days,
          div_day_quota,
          emp_selected_days,
-         _output_file
+         _output_file_path
        )
        when max_days == length(emp_selected_days) or div_day_quota == [] do
     div_day_quota
   end
 
-  defp distribute_days_balance(employee, max_days, div_day_quota, emp_selected_days, output_file) do
+  defp distribute_days_balance(
+         employee,
+         max_days,
+         div_day_quota,
+         emp_selected_days,
+         output_file_path
+       ) do
     {selected_day, remaining_quota} = List.pop_at(div_day_quota, 0)
 
     Logger.info("assigned day - #{selected_day.date}")
 
-    File.write(
-       output_file,
-          Draft.EmployeeVacationAssignment.to_parts(%{
-            employee_id: employee.employee_id,
-            vacation_interval_type: "0",
-            forced?: true,
-            start_date: selected_day.date,
-            end_date: selected_day.date
-          }), [:append]
-       )
+    :ok =
+      File.write(
+        output_file_path,
+        EmployeeVacationAssignment.to_csv_row(%EmployeeVacationAssignment{
+          employee_id: employee.employee_id,
+          vacation_interval_type: "0",
+          forced?: true,
+          start_date: selected_day.date,
+          end_date: selected_day.date
+        }),
+        [:append]
+      )
 
     div_day_quota =
       distribute_days_balance(
@@ -218,25 +233,28 @@ defmodule Draft.BasicVacationDistribution do
         [
           selected_day.date | emp_selected_days
         ],
-        output_file
+        output_file_path
       )
 
     div_day_quota
   end
 
-  defp distribute_first_available_week(employee, div_weekly_quota, output_file) do
+  defp distribute_first_available_week(employee, div_weekly_quota, output_file_path) do
     first_avail_quota = List.first(div_weekly_quota)
     new_quota = first_avail_quota.quota - 1
     div_weekly_quota = update_division_quota(div_weekly_quota, 0, new_quota)
-    File.write(
-      output_file,
-         Draft.EmployeeVacationAssignment.to_parts(%{
-           employee_id: employee.employee_id,
-           vacation_interval_type: "1",
-           forced?: true,
-           start_date: first_avail_quota.start_date,
-           end_date: first_avail_quota.end_date
-         }), [:append]
+
+    :ok =
+      File.write(
+        output_file_path,
+        EmployeeVacationAssignment.to_csv_row(%EmployeeVacationAssignment{
+          employee_id: employee.employee_id,
+          vacation_interval_type: "1",
+          forced?: true,
+          start_date: first_avail_quota.start_date,
+          end_date: first_avail_quota.end_date
+        }),
+        [:append]
       )
 
     Logger.info(

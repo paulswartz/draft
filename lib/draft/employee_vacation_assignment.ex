@@ -20,8 +20,18 @@ defmodule Draft.EmployeeVacationAssignment do
           end_date: Date.t(),
           forced?: boolean()
         }
-
-  def to_parts(assignment) do
-    "vacation|#{assignment.employee_id}|#{assignment.vacation_interval_type}|#{ParsingHelpers.to_date_string(assignment.start_date)}|#{ParsingHelpers.to_date_string(assignment.end_date)}|1|1\n"
+  @spec to_csv_row(Draft.EmployeeVacationAssignment.t()) :: iodata()
+  def to_csv_row(assignment) do
+    PipeSeparatedParser.dump_to_iodata([
+      [
+        "vacation",
+        assignment.employee_id,
+        assignment.vacation_interval_type,
+        ParsingHelpers.to_date_string(assignment.start_date),
+        ParsingHelpers.to_date_string(assignment.end_date),
+        1,
+        1
+      ]
+    ])
   end
 end
