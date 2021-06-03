@@ -1,8 +1,8 @@
 defmodule Draft.BasicVacationDistribution do
   @moduledoc """
   Simulate distributing vacation for all employees based on their rank in the given rounds / groups.
-  If an employee has at least a week in their vacation balance, they will be assigned the soonest week available for their division.
-  Otherwise, they will be assigned the soonest vacation days available for their division, capped by the number of days in their balance.
+  If an employee has at least a week in their vacation balance, they will be assigned a week available for their division.
+  Otherwise, they will be assigned days available for their division, capped by the number of days in their balance.
   """
   import Ecto.Query
   alias Draft.BidGroup
@@ -18,7 +18,8 @@ defmodule Draft.BasicVacationDistribution do
 
   @spec basic_vacation_distribution :: :ok
   def basic_vacation_distribution do
-    output_file_path = "data/" <> DateTime.to_string(DateTime.utc_now()) <> "test_output.csv"
+    output_file_path =
+      "data/" <> DateTime.to_string(DateTime.utc_now()) <> "test_vacation_assignment_output.csv"
 
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     {:ok, output_file} = File.open(output_file_path, [:write])
@@ -125,8 +126,16 @@ defmodule Draft.BasicVacationDistribution do
          div_weekly_quota,
          output_file_path
        ) do
+    full_time_job_classes = MapSet.new(["000100", "000300", "000800"])
     Logger.info("-------")
-    Logger.info("Distributing vacation for employee #{employee.rank}")
+
+    Logger.info(
+      "Distributing vacation for employee #{employee.rank} (#{
+        if MapSet.member?(full_time_job_classes, employee.job_class),
+          do: "Part time",
+          else: "Full time"
+      })"
+    )
 
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -151,7 +160,11 @@ defmodule Draft.BasicVacationDistribution do
 
       max_minutes = employee_balance.maximum_minutes
 
-      max_weeks = min(div(max_minutes, 2400), employee_balance.weekly_quota)
+      # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
+      num_hours_per_day =
+        if MapSet.member?(full_time_job_classes, employee.job_class), do: 8, else: 6
+
+      max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
       if max_weeks > 0 && !Enum.empty?(div_weekly_quota) do
         {div_dated_quota,
@@ -161,7 +174,7 @@ defmodule Draft.BasicVacationDistribution do
           "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
         )
 
-        max_days = min(div(max_minutes, 8 * 60), employee_balance.dated_quota)
+        max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
         {distribute_days_balance(employee, max_days, div_dated_quota, [], output_file_path),
          div_weekly_quota}
