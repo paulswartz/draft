@@ -10,18 +10,22 @@ defmodule Draft.EmployeeVacationAssignment do
     :start_date,
     :end_date,
     :pick_period,
-    :forced?
+    :forced?,
+    assigned?: true,
+    quarterly_pick?: true
   ]
 
   @type t :: %__MODULE__{
           employee_id: String.t(),
           vacation_interval_type: String.t(),
           start_date: Date.t(),
-          end_date: Date.t(),
-          forced?: boolean()
+          end_date: Date.t()
         }
   @spec to_csv_row(Draft.EmployeeVacationAssignment.t()) :: iodata()
   def to_csv_row(assignment) do
+    status = if assignment.quarterly_pick?, do: 1, else: 0
+    pick_period = if assignment.quarterly_pick?, do: 1, else: 0
+
     PipeSeparatedParser.dump_to_iodata([
       [
         "vacation",
@@ -29,10 +33,8 @@ defmodule Draft.EmployeeVacationAssignment do
         assignment.vacation_interval_type,
         FormattingHelpers.to_date_string(assignment.start_date),
         FormattingHelpers.to_date_string(assignment.end_date),
-        # assume always vacation assigned, not cancelled
-        1,
-        # assuming given as part of quarterly pick
-        1
+        status,
+        pick_period
       ]
     ])
   end

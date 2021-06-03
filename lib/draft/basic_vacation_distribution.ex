@@ -41,28 +41,6 @@ defmodule Draft.BasicVacationDistribution do
       })\n"
     )
 
-    # This will be determined based on the employee type in the future
-    selection_set =
-      if String.ends_with?(round.round_id, "_PT"), do: "PTVacQuota", else: "FTVacQuota"
-
-    div_dated_quota =
-      Repo.all(
-        from q in DivisionVacationDayQuota,
-          where:
-            q.division_id == ^round.division_id and q.employee_selection_set == ^selection_set and
-              q.date >= ^round.rating_period_start_date and
-              q.date <= ^round.rating_period_end_date
-      )
-
-    div_weekly_quota =
-      Repo.all(
-        from q in DivisionVacationWeekQuota,
-          where:
-            q.division_id == ^round.division_id and q.employee_selection_set == ^selection_set and
-              q.end_date <= ^round.rating_period_end_date and
-              q.start_date >= ^round.rating_period_start_date
-      )
-
     bid_groups =
       Repo.all(
         from g in BidGroup,
@@ -70,28 +48,17 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: g.group_number]
       )
 
-    Logger.info(
-      "Initial division quota: #{length(div_dated_quota)} days, #{length(div_weekly_quota)} weeks "
-    )
-
-    {ending_div_dated_quota, ending_div_week_quota} =
-      Enum.reduce(bid_groups, {div_dated_quota, div_weekly_quota}, fn group,
-                                                                      {dated_quota, weekly_quota} ->
-        assign_vacation_for_group(group, round, dated_quota, weekly_quota, output_file_path)
-      end)
-
-    Logger.info(
-      "\nEnding division quota: #{length(ending_div_dated_quota)} days, #{
-        length(ending_div_week_quota)
-      } weeks"
+    Enum.each(
+      bid_groups,
+      fn group ->
+        assign_vacation_for_group(group, round, output_file_path)
+      end
     )
   end
 
   defp assign_vacation_for_group(
          group,
          round,
-         div_dated_quota,
-         div_weekly_quota,
          output_file_path
        ) do
     Logger.info(
@@ -109,36 +76,26 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: e.rank]
       )
 
-    Enum.reduce(group_employees, {div_dated_quota, div_weekly_quota}, fn employee,
-                                                                         {dated_quota,
-                                                                          weekly_quota} ->
-      assign_vacation_for_employee(
-        employee,
-        round,
-        dated_quota,
-        weekly_quota,
-        output_file_path
-      )
-    end)
+    Enum.each(
+      group_employees,
+      fn employee ->
+        assign_vacation_for_employee(
+          employee,
+          round,
+          output_file_path
+        )
+      end
+    )
   end
 
   defp assign_vacation_for_employee(
          employee,
          round,
-         div_dated_quota,
-         div_weekly_quota,
          output_file_path
        ) do
-    full_time_job_classes = MapSet.new(["000100", "000300", "000800"])
     Logger.info("-------")
 
-    Logger.info(
-      "Distributing vacation for employee #{employee.rank} (#{
-        if MapSet.member?(full_time_job_classes, employee.job_class),
-          do: "Part time",
-          else: "Full time"
-      })"
-    )
+    Logger.info("Distributing vacation for employee #{employee.rank}")
 
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -164,16 +121,17 @@ defmodule Draft.BasicVacationDistribution do
 
         # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
         num_hours_per_day =
-          if MapSet.member?(full_time_job_classes, employee.job_class), do: 8, else: 6
+          if String.starts_with?(get_selection_set(employee.job_class), "FT"),
+            do: 8,
+            else: 6
 
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        can_take_weeks_off = max_weeks > 0 && !Enum.empty?(div_weekly_quota)
+        can_take_weeks_off = max_weeks > 0
 
         if can_take_weeks_off do
-          {div_dated_quota,
-           distribute_first_available_week(employee, div_weekly_quota, output_file_path)}
+          distribute_first_available_week(round, employee, output_file_path)
         else
           Logger.info(
             "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
@@ -181,41 +139,62 @@ defmodule Draft.BasicVacationDistribution do
 
           max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
-          {distribute_days_balance(employee, max_days, div_dated_quota, output_file_path),
-           div_weekly_quota}
+          distribute_days_balance(round, employee, max_days, output_file_path)
         end
 
       _empty_employee_balance ->
         Logger.info(
           "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
         )
-
-        {div_dated_quota, div_weekly_quota}
     end
   end
 
   defp distribute_days_balance(
+         round,
          employee,
          max_days,
-         div_day_quota,
+         output_file_path
+       )
+
+  defp distribute_days_balance(
+         _round,
+         _employee,
+         0,
+         _output_file_path
+       ) do
+    Logger.info(
+      "Skipping vacation day assignment - employee cannot take any days off in this rating period."
+    )
+  end
+
+  defp distribute_days_balance(
+         round,
+         employee,
+         max_days,
          output_file_path
        ) do
-    Enum.reduce(1..max_days, div_day_quota, fn _day_off, quota ->
-      distribute_single_day(employee, quota, output_file_path)
+    selection_set = get_selection_set(employee.job_class)
+
+    first_available_days =
+      Repo.all(
+        from d in DivisionVacationDayQuota,
+          where:
+            d.division_id == ^round.division_id and d.quota > 0 and
+              d.employee_selection_set == ^selection_set and
+              d.date >= ^round.rating_period_start_date and
+              d.date <= ^round.rating_period_end_date,
+          order_by: [asc: d.date],
+          limit: ^max_days
+      )
+
+    Enum.each(first_available_days, fn date_quota ->
+      Repo.update(DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1}))
     end)
+
+    Enum.each(first_available_days, &distribute_single_day(employee, &1, output_file_path))
   end
 
-  defp distribute_single_day(employee, div_day_quota, output_file_path)
-
-  defp distribute_single_day(_employee, [] = div_day_quota, _output_file_path) do
-    Logger.info("No days left to assign")
-
-    div_day_quota
-  end
-
-  defp distribute_single_day(employee, div_day_quota, output_file_path) do
-    {selected_day, remaining_quota} = List.pop_at(div_day_quota, 0)
-
+  defp distribute_single_day(employee, selected_day, output_file_path) do
     Logger.info("assigned day - #{selected_day.date}")
 
     :ok =
@@ -230,44 +209,66 @@ defmodule Draft.BasicVacationDistribution do
         }),
         [:append]
       )
-
-    remaining_quota
   end
 
-  defp distribute_first_available_week(employee, div_weekly_quota, output_file_path) do
-    first_avail_quota = List.first(div_weekly_quota)
-    new_quota = first_avail_quota.quota - 1
-    div_weekly_quota = update_division_quota(div_weekly_quota, 0, new_quota)
+  defp get_selection_set(job_type) do
+    full_time = "FTVacQuota"
+    part_time = "PTVacQuota"
 
-    :ok =
-      File.write(
-        output_file_path,
-        EmployeeVacationAssignment.to_csv_row(%EmployeeVacationAssignment{
-          employee_id: employee.employee_id,
-          vacation_interval_type: "1",
-          forced?: true,
-          start_date: first_avail_quota.start_date,
-          end_date: first_avail_quota.end_date
-        }),
-        [:append]
+    job_class_map = %{
+      "000100" => full_time,
+      "000300" => full_time,
+      "000800" => full_time,
+      "001100" => part_time,
+      "000200" => part_time,
+      "000900" => part_time
+    }
+
+    job_class_map[job_type]
+  end
+
+  defp distribute_first_available_week(round, employee, output_file_path) do
+    selection_set = get_selection_set(employee.job_class)
+
+    first_avail_week =
+      Repo.all(
+        from w in DivisionVacationWeekQuota,
+          where:
+            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+              w.employee_selection_set == ^selection_set and
+              ^round.rating_period_start_date <= w.start_date and
+              ^round.rating_period_end_date >= w.end_date,
+          order_by: [asc: w.start_date],
+          limit: 1
       )
 
-    Logger.info(
-      "assigned week - #{first_avail_quota.start_date} - #{first_avail_quota.end_date}. #{
-        new_quota
-      } more openings for this week.\n"
-    )
+    case first_avail_week do
+      [first_avail_week] ->
+        new_quota = first_avail_week.quota - 1
+        changeset = DivisionVacationWeekQuota.changeset(first_avail_week, %{quota: new_quota})
+        Repo.update(changeset)
 
-    div_weekly_quota
-  end
+        :ok =
+          File.write(
+            output_file_path,
+            EmployeeVacationAssignment.to_csv_row(%EmployeeVacationAssignment{
+              employee_id: employee.employee_id,
+              vacation_interval_type: "1",
+              forced?: true,
+              start_date: first_avail_week.start_date,
+              end_date: first_avail_week.end_date
+            }),
+            [:append]
+          )
 
-  defp update_division_quota(division_quota, pos, new_quota)
+        Logger.info(
+          "assigned week - #{first_avail_week.start_date} - #{first_avail_week.end_date}. #{
+            new_quota
+          } more openings for this week.\n"
+        )
 
-  defp update_division_quota(division_quota, pos, 0) do
-    List.delete_at(division_quota, pos)
-  end
-
-  defp update_division_quota(division_quota, pos, new_quota) do
-    List.update_at(division_quota, pos, fn q -> %{q | quota: new_quota} end)
+      _no_available_weeks ->
+        Logger.info("No more vacation weeks available")
+    end
   end
 end
