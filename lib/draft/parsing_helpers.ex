@@ -45,14 +45,6 @@ defmodule Draft.ParsingHelpers do
     |> Timex.to_date()
   end
 
-  @spec to_date_string(Date.t()) :: String.t()
-  @doc """
-  Convert the given date into a String formatted %m/%d/%y (ex: 1/2/2023)
-  """
-  def to_date_string(date) do
-    Timex.format!(date, "{0M}/{0D}/{YYYY}")
-  end
-
   @spec to_minutes(String.t()) :: integer()
   @doc """
   Convert the given duration string to the number of minutes it represents. Expects formats %Hh%M

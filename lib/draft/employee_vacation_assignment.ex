@@ -2,7 +2,7 @@ defmodule Draft.EmployeeVacationAssignment do
   @moduledoc """
     Represents vacation time an employee has been assigned.
   """
-  alias Draft.ParsingHelpers
+  alias Draft.FormattingHelpers
 
   defstruct [
     :employee_id,
@@ -27,8 +27,8 @@ defmodule Draft.EmployeeVacationAssignment do
         "vacation",
         assignment.employee_id,
         assignment.vacation_interval_type,
-        ParsingHelpers.to_date_string(assignment.start_date),
-        ParsingHelpers.to_date_string(assignment.end_date),
+        FormattingHelpers.to_date_string(assignment.start_date),
+        FormattingHelpers.to_date_string(assignment.end_date),
         # assume always vacation assigned, not cancelled
         1,
         # assuming given as part of quarterly pick

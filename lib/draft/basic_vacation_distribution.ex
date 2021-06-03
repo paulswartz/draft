@@ -17,9 +17,12 @@ defmodule Draft.BasicVacationDistribution do
   require Logger
 
   @spec basic_vacation_distribution :: :ok
+  @doc """
+  Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
+  and creates a CSV file in the required HASTUS format.
+  """
   def basic_vacation_distribution do
-    output_file_path =
-      "data/" <> DateTime.to_string(DateTime.utc_now()) <> "test_vacation_assignment_output.csv"
+    output_file_path = "data/test_vacation_assignment_output.csv"
 
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     {:ok, output_file} = File.open(output_file_path, [:write])
@@ -147,80 +150,70 @@ defmodule Draft.BasicVacationDistribution do
                  q.interval_end_date >= ^round.rating_period_end_date)
       )
 
-    if length(employee_balances) == 1 do
-      employee_balance = List.first(employee_balances)
-
-      Logger.info(
-        "Employee balance for period #{employee_balance.interval_start_date} - #{
-          employee_balance.interval_end_date
-        }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
-          employee_balance.maximum_minutes
-        } max minutes"
-      )
-
-      max_minutes = employee_balance.maximum_minutes
-
-      # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
-      num_hours_per_day =
-        if MapSet.member?(full_time_job_classes, employee.job_class), do: 8, else: 6
-
-      max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
-
-      if max_weeks > 0 && !Enum.empty?(div_weekly_quota) do
-        {div_dated_quota,
-         distribute_first_available_week(employee, div_weekly_quota, output_file_path)}
-      else
+    case employee_balances do
+      [employee_balance] ->
         Logger.info(
-          "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
+          "Employee balance for period #{employee_balance.interval_start_date} - #{
+            employee_balance.interval_end_date
+          }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
+            employee_balance.maximum_minutes
+          } max minutes"
         )
 
-        max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+        max_minutes = employee_balance.maximum_minutes
 
-        {distribute_days_balance(employee, max_days, div_dated_quota, [], output_file_path),
-         div_weekly_quota}
-      end
-    else
-      Logger.info(
-        "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
-      )
+        # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
+        num_hours_per_day =
+          if MapSet.member?(full_time_job_classes, employee.job_class), do: 8, else: 6
 
-      {div_dated_quota, div_weekly_quota}
+        max_weeks =
+          min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+
+        can_take_weeks_off = max_weeks > 0 && !Enum.empty?(div_weekly_quota)
+
+        if can_take_weeks_off do
+          {div_dated_quota,
+           distribute_first_available_week(employee, div_weekly_quota, output_file_path)}
+        else
+          Logger.info(
+            "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
+          )
+
+          max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+
+          {distribute_days_balance(employee, max_days, div_dated_quota, output_file_path),
+           div_weekly_quota}
+        end
+
+      _empty_employee_balance ->
+        Logger.info(
+          "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
+        )
+
+        {div_dated_quota, div_weekly_quota}
     end
-  end
-
-  defp distribute_days_balance(
-         _employee,
-         max_days,
-         div_day_quota,
-         _emp_selected_days,
-         _output_file_path
-       )
-       when max_days == 0 do
-    Logger.info(
-      "Skipping vacation day assignment - employee cannot take any days off in this rating period."
-    )
-
-    div_day_quota
-  end
-
-  defp distribute_days_balance(
-         _employee,
-         max_days,
-         div_day_quota,
-         emp_selected_days,
-         _output_file_path
-       )
-       when max_days == length(emp_selected_days) or div_day_quota == [] do
-    div_day_quota
   end
 
   defp distribute_days_balance(
          employee,
          max_days,
          div_day_quota,
-         emp_selected_days,
          output_file_path
        ) do
+    Enum.reduce(1..max_days, div_day_quota, fn _day_off, quota ->
+      distribute_single_day(employee, quota, output_file_path)
+    end)
+  end
+
+  defp distribute_single_day(employee, div_day_quota, output_file_path)
+
+  defp distribute_single_day(_employee, [] = div_day_quota, _output_file_path) do
+    Logger.info("No days left to assign")
+
+    div_day_quota
+  end
+
+  defp distribute_single_day(employee, div_day_quota, output_file_path) do
     {selected_day, remaining_quota} = List.pop_at(div_day_quota, 0)
 
     Logger.info("assigned day - #{selected_day.date}")
@@ -238,18 +231,7 @@ defmodule Draft.BasicVacationDistribution do
         [:append]
       )
 
-    div_day_quota =
-      distribute_days_balance(
-        employee,
-        max_days,
-        remaining_quota,
-        [
-          selected_day.date | emp_selected_days
-        ],
-        output_file_path
-      )
-
-    div_day_quota
+    remaining_quota
   end
 
   defp distribute_first_available_week(employee, div_weekly_quota, output_file_path) do
