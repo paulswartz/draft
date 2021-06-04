@@ -17,19 +17,14 @@ defmodule Draft.BasicVacationDistribution do
 
   require Logger
 
-  @spec basic_vacation_distribution :: [EmployeeVacationAssignment]
+  @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
-  def basic_vacation_distribution do
+  def basic_vacation_distribution(vacation_files) do
     _rows_updated =
-      VacationQuotaSetup.update_vacation_quota_data([
-        {DivisionVacationDayQuota, "../../data/BW_Project_Draft-Vac_Div_Quota_Dated.csv"},
-        {DivisionVacationWeekQuota, "../../data/BW_Project_Draft-Vac_Div_Quota_Weekly.csv"},
-        {EmployeeVacationSelection, "../../data/BW_Project_Draft-Vac_Emp_Selections.csv"},
-        {EmployeeVacationQuota, "../../data/BW_Project_Draft-Vac_Emp_Quota.csv"}
-      ])
+      VacationQuotaSetup.update_vacation_quota_data(vacation_files)
 
     output_file_path = "data/test_vacation_assignment_output.csv"
 
