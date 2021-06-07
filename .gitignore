@@ -42,3 +42,5 @@ npm-debug.log
 
 bid-round-group-emp.csv
 /data/
+
+/test/support/test_data/test_vacation_assignment_output.csv

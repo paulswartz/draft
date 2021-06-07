@@ -215,8 +215,7 @@ defmodule Draft.BasicVacationDistribution do
 
     %EmployeeVacationAssignment{
       employee_id: employee.employee_id,
-      vacation_interval_type: "0",
-      forced?: true,
+      is_week?: false,
       start_date: selected_day.date,
       end_date: selected_day.date
     }
@@ -284,8 +283,7 @@ defmodule Draft.BasicVacationDistribution do
 
     %EmployeeVacationAssignment{
       employee_id: employee.employee_id,
-      vacation_interval_type: "1",
-      forced?: true,
+      is_week?: true,
       start_date: assigned_week.start_date,
       end_date: assigned_week.end_date
     }

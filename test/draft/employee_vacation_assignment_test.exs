@@ -10,8 +10,7 @@ defmodule Draft.EmployeeVacationAssignmentTest do
                    employee_id: "0001",
                    start_date: ~D[2021-01-01],
                    end_date: ~D[2021-01-08],
-                   forced?: true,
-                   vacation_interval_type: "1"
+                   is_week?: true
                  })
                )
     end

@@ -5,16 +5,19 @@ defmodule Draft.OutputVacationDistribution do
   alias Draft.EmployeeVacationAssignment
 
   @spec output_vacation_distribution_file([Draft.EmployeeVacationAssignment.t()], String.t()) ::
-          :ok
+          [String.t()]
   def output_vacation_distribution_file(vacation_assignments, output_file_path) do
     {:ok, output_file} = File.open(output_file_path, [:write])
+
+    formatted_data = Enum.map(vacation_assignments, &EmployeeVacationAssignment.to_csv_row(&1))
 
     :ok =
       File.write(
         output_file_path,
-        Enum.map(vacation_assignments, &EmployeeVacationAssignment.to_csv_row(&1))
+        formatted_data
       )
 
     :ok = File.close(output_file)
+    formatted_data
   end
 end
