@@ -23,14 +23,12 @@ defmodule Draft.BasicVacationDistribution do
   and creates a CSV file in the required HASTUS format.
   """
   def basic_vacation_distribution(vacation_files) do
-    _rows_updated =
-      VacationQuotaSetup.update_vacation_quota_data(vacation_files)
+    _rows_updated = VacationQuotaSetup.update_vacation_quota_data(vacation_files)
 
     output_file_path = "data/test_vacation_assignment_output.csv"
 
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     {:ok, output_file} = File.open(output_file_path, [:write])
-
     vacation_assignments = Enum.flat_map(bid_rounds, &assign_vacation_for_round(&1))
 
     :ok =
@@ -40,7 +38,6 @@ defmodule Draft.BasicVacationDistribution do
       )
 
     :ok = File.close(output_file)
-
     vacation_assignments
   end
 
