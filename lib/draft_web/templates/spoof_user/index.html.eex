@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <p>Input the badge number of the user to spoof.</p>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+  </head>
+
+
+  <%= form_for @conn, Routes.spoof_user_path(@conn, :create), [method: :post, as: :user], fn f -> %>
+
+  <div class="form-group">
+    <%= text_input f, :badge_number, placeholder: "badge number" %>
+      <p><%= get_flash(@conn, :error) %>
+  </div>
+     <%= submit "Submit" %>
+  <% end %>
+
+</html>
