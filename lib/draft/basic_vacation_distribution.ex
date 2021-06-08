@@ -17,7 +17,7 @@ defmodule Draft.BasicVacationDistribution do
 
   require Logger
 
-  @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment]
+  @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
@@ -132,7 +132,14 @@ defmodule Draft.BasicVacationDistribution do
 
         assigned_weeks ++ assigned_days
 
-      _empty_employee_balance ->
+      [] ->
+        Logger.info(
+          "Skipping assignment for this employee - no quota interval encompassing the rating period."
+        )
+
+        []
+
+      _employee_balances ->
         Logger.info(
           "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
         )

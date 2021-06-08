@@ -51,10 +51,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "First operator is assigned two weeks", context do
-      vacation_assignments =
-        Enum.filter(context[:vacation_assignments], fn x ->
-          x.employee_id == "00001"
-        end)
+      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00001")
 
       assert length(vacation_assignments) == 2
 
