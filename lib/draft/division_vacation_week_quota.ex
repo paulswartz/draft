@@ -18,9 +18,9 @@ defmodule Draft.DivisionVacationWeekQuota do
 
   @primary_key false
   schema "division_vacation_week_quotas" do
-    field :division_id, :string
-    field :employee_selection_set, :string
-    field :start_date, :date
+    field :division_id, :string, primary_key: true
+    field :employee_selection_set, :string, primary_key: true
+    field :start_date, :date, primary_key: true
     field :end_date, :date
     field :quota, :integer
     field :is_restricted_week, :boolean

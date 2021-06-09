@@ -16,10 +16,10 @@ defmodule Draft.DivisionVacationDayQuota do
 
   @primary_key false
   schema "division_vacation_day_quotas" do
-    field :division_id, :string
-    field :employee_selection_set, :string
+    field :division_id, :string, primary_key: true
+    field :employee_selection_set, :string, primary_key: true
     field :quota, :integer
-    field :date, :date
+    field :date, :date, primary_key: true
 
     timestamps()
   end
