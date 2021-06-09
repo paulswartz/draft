@@ -20,12 +20,21 @@ defmodule Draft.BasicVacationDistribution do
 
   @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment.t()]
   @doc """
-  Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
+  Distirbutes vacation to employees in each round without consideration for preferences, using vacation data from the given files. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
   def basic_vacation_distribution(vacation_files) do
     _rows_updated = VacationQuotaSetup.update_vacation_quota_data(vacation_files)
 
+    basic_vacation_distribution()
+  end
+
+  @spec basic_vacation_distribution() :: [EmployeeVacationAssignment.t()]
+  @doc """
+  Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
+  and creates a CSV file in the required HASTUS format.
+  """
+  def basic_vacation_distribution do
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     Enum.flat_map(bid_rounds, &assign_vacation_for_round(&1))
   end
@@ -180,13 +189,14 @@ defmodule Draft.BasicVacationDistribution do
     conflicting_selected_dates_query =
       from s in EmployeeVacationSelection,
         where:
-          s.start_date == parent_as(:division_quota).date and
+          s.start_date <= parent_as(:division_day_quota).date and
+            s.end_date >= parent_as(:division_day_quota).date and
             s.employee_id == ^employee.employee_id
 
     first_available_days =
       Repo.all(
         from d in DivisionVacationDayQuota,
-          as: :division_quota,
+          as: :division_day_quota,
           where:
             d.division_id == ^round.division_id and d.quota > 0 and
               d.employee_selection_set == ^selection_set and
@@ -197,20 +207,7 @@ defmodule Draft.BasicVacationDistribution do
           limit: ^max_days
       )
 
-    case first_available_days do
-      [] ->
-        Logger.info("No more vacation days available")
-        []
-
-      first_available_days ->
-        Enum.each(first_available_days, fn date_quota ->
-          Repo.update(
-            DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1})
-          )
-        end)
-
-        Enum.map(first_available_days, &distribute_single_day(employee, &1))
-    end
+    distribute_available_days_balance(employee, first_available_days)
   end
 
   defp distribute_days_balance(
@@ -224,6 +221,21 @@ defmodule Draft.BasicVacationDistribution do
     )
 
     []
+  end
+
+  defp distribute_available_days_balance(employee, available_days)
+
+  defp distribute_available_days_balance(_employee, []) do
+    Logger.info("No more vacation days available")
+    []
+  end
+
+  defp distribute_available_days_balance(employee, available_days) do
+    Enum.each(available_days, fn date_quota ->
+      Repo.update(DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1}))
+    end)
+
+    Enum.map(available_days, &distribute_single_day(employee, &1))
   end
 
   defp distribute_single_day(employee, selected_day) do
@@ -266,23 +278,23 @@ defmodule Draft.BasicVacationDistribution do
   defp distribute_weeks_balance(round, employee, max_weeks) do
     selection_set = get_selection_set(employee.job_class)
 
-    conflicting_selected_weeks_query =
+    conflicting_selected_vacation_query =
       from s in EmployeeVacationSelection,
         where:
-          s.start_date == parent_as(:division_quota).start_date and
-            s.end_date == parent_as(:division_quota).end_date and
+          s.start_date <= parent_as(:division_week_quota).end_date and
+            s.end_date >= parent_as(:division_week_quota).start_date and
             s.employee_id == ^employee.employee_id
 
     available_weeks =
       Repo.all(
         from w in DivisionVacationWeekQuota,
-          as: :division_quota,
+          as: :division_week_quota,
           where:
             w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
               w.employee_selection_set == ^selection_set and
               ^round.rating_period_start_date <= w.start_date and
               ^round.rating_period_end_date >= w.end_date and
-              not exists(conflicting_selected_weeks_query),
+              not exists(conflicting_selected_vacation_query),
           order_by: [asc: w.start_date],
           limit: ^max_weeks
       )
