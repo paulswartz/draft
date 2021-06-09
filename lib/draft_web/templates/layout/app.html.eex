@@ -7,10 +7,7 @@
 
     <title>Draft</title>
     <h1>Draft</h1>
-    <p>Welcome!</p>
-
-
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
   </head>
   <body>
     <main role="main" class="container">

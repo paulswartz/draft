@@ -57,11 +57,7 @@ defmodule DraftWeb.Router do
 
     get "/", SpoofUserController, :index
     post "/", SpoofUserController, :create
-  end
-
-  scope "/operator", DraftWeb do
-    pipe_through [:redirect_http, :browser, :auth, :ensure_auth, :ensure_admin]
-    get "/overview", OperatorOverviewController, :show
+    get "/operator", OperatorOverviewController, :show
   end
 
   # Other scopes may use custom stacks.
