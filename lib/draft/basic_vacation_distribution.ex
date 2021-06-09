@@ -12,6 +12,7 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.EmployeeRanking
   alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationQuota
+  alias Draft.EmployeeVacationSelection
   alias Draft.Repo
   alias Draft.VacationQuotaSetup
 
@@ -176,14 +177,22 @@ defmodule Draft.BasicVacationDistribution do
        ) do
     selection_set = get_selection_set(employee.job_class)
 
+    conflicting_selected_dates_query =
+      from s in EmployeeVacationSelection,
+        where:
+          s.start_date == parent_as(:division_quota).date and
+            s.employee_id == ^employee.employee_id
+
     first_available_days =
       Repo.all(
         from d in DivisionVacationDayQuota,
+          as: :division_quota,
           where:
             d.division_id == ^round.division_id and d.quota > 0 and
               d.employee_selection_set == ^selection_set and
               d.date >= ^round.rating_period_start_date and
-              d.date <= ^round.rating_period_end_date,
+              d.date <= ^round.rating_period_end_date and
+              not exists(conflicting_selected_dates_query),
           order_by: [asc: d.date],
           limit: ^max_days
       )
@@ -257,26 +266,39 @@ defmodule Draft.BasicVacationDistribution do
   defp distribute_weeks_balance(round, employee, max_weeks) do
     selection_set = get_selection_set(employee.job_class)
 
+    conflicting_selected_weeks_query =
+      from s in EmployeeVacationSelection,
+        where:
+          s.start_date == parent_as(:division_quota).start_date and
+            s.end_date == parent_as(:division_quota).end_date and
+            s.employee_id == ^employee.employee_id
+
     available_weeks =
       Repo.all(
         from w in DivisionVacationWeekQuota,
+          as: :division_quota,
           where:
             w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
               w.employee_selection_set == ^selection_set and
               ^round.rating_period_start_date <= w.start_date and
-              ^round.rating_period_end_date >= w.end_date,
+              ^round.rating_period_end_date >= w.end_date and
+              not exists(conflicting_selected_weeks_query),
           order_by: [asc: w.start_date],
           limit: ^max_weeks
       )
 
-    case available_weeks do
-      [] ->
-        Logger.info("No more vacation weeks available")
-        []
+    distribute_avaliable_weeks(employee, available_weeks)
+  end
 
-      _available_weeks ->
-        Enum.map(available_weeks, &distribute_single_week(employee, &1))
-    end
+  defp distribute_avaliable_weeks(employee, available_weeks)
+
+  defp distribute_avaliable_weeks(_employee, []) do
+    Logger.info("No more vacation weeks available")
+    []
+  end
+
+  defp distribute_avaliable_weeks(employee, available_weeks) do
+    Enum.map(available_weeks, &distribute_single_week(employee, &1))
   end
 
   defp distribute_single_week(employee, assigned_week) do

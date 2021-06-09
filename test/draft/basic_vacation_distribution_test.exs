@@ -114,6 +114,41 @@ defmodule Draft.BasicVacationDistributionTest do
                %EmployeeVacationAssignment{start_date: ~D[2021-04-04], end_date: ~D[2021-04-10]}
              ] = vacation_assignments
     end
+
+    test "seventh operator is assigned first day that does not conflict with their previously selected dated vacation",
+         context do
+      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00007")
+
+      assert length(vacation_assignments) == 1
+
+      assert Repo.get_by!(DivisionVacationDayQuota,
+               division_id: "112",
+               employee_selection_set: "FTVacQuota",
+               date: ~D[2021-03-19]
+             ).quota == 1
+
+      assert [
+               %EmployeeVacationAssignment{start_date: ~D[2021-03-20], end_date: ~D[2021-03-20]}
+             ] = vacation_assignments
+    end
+
+    test "eight operator is assigned first week that does not conflict with their previously selected week vacation",
+         context do
+      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00008")
+
+      assert length(vacation_assignments) == 1
+
+      assert Repo.get_by!(DivisionVacationWeekQuota,
+               division_id: "112",
+               employee_selection_set: "FTVacQuota",
+               start_date: ~D[2021-04-04],
+               end_date: ~D[2021-04-10]
+             ).quota == 2
+
+      assert [
+               %EmployeeVacationAssignment{start_date: ~D[2021-04-11], end_date: ~D[2021-04-17]}
+             ] = vacation_assignments
+    end
   end
 
   defp get_assignments_for_employee(assignments, employee_id) do
