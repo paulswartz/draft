@@ -1,124 +1,480 @@
 defmodule Draft.BasicVacationDistributionTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Draft.DataCase
   alias Draft.BasicVacationDistribution
-  alias Draft.BidRoundSetup
-  alias Draft.DivisionVacationDayQuota
-  alias Draft.DivisionVacationWeekQuota
   alias Draft.EmployeeVacationAssignment
-  alias Draft.EmployeeVacationQuota
-  alias Draft.EmployeeVacationSelection
-
-  setup do
-    BidRoundSetup.update_bid_round_data(
-      "../../test/support/test_data/basic_distribution/test_rounds.csv"
-    )
-
-    vacation_assignments =
-      BasicVacationDistribution.basic_vacation_distribution([
-        {DivisionVacationDayQuota,
-         "../../test/support/test_data/basic_distribution/test_vac_div_quota_dated.csv"},
-        {DivisionVacationWeekQuota,
-         "../../test/support/test_data/basic_distribution/test_vac_div_quota_weekly.csv"},
-        {EmployeeVacationSelection,
-         "../../test/support/test_data/basic_distribution/test_vac_emp_selections.csv"},
-        {EmployeeVacationQuota,
-         "../../test/support/test_data/basic_distribution/test_vac_emp_quota.csv"}
-      ])
-
-    require Logger
-    Logger.info(vacation_assignments)
-    {:ok, vacation_assignments: vacation_assignments}
-  end
 
   describe "basic_vacation_distribution/1" do
-    test "Earliest week with vacation quota of 0 is never assigned", context do
-      assert Enum.filter(context[:vacation_assignments], fn x ->
-               x.start_date == "03/21/2021" and x.start_date == "03/27/2021"
+    test "Operator is not assigned vacation week with quota of 0" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 1,
+        dated_quota: 0,
+        maximum_minutes: 2400
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 0
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert Enum.filter(vacation_assignments, fn x ->
+               x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-27]
              end) == []
+
+      assert [%EmployeeVacationAssignment{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
+               vacation_assignments
     end
 
-    test "Earliest day with vacation quota of 0 is never assigned", context do
-      assert Enum.filter(context[:vacation_assignments], fn x ->
-               x.start_date == "03/14/2021" and x.end_date == "03/14/2021"
+    test "Operator is not assigned vacation day with quota of 0" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 1,
+        maximum_minutes: 480
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert Enum.filter(vacation_assignments, fn x ->
+               x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-21]
              end) == []
+
+      assert [%EmployeeVacationAssignment{start_date: ~D[2021-03-22], end_date: ~D[2021-03-22]}] =
+               vacation_assignments
     end
 
-    test "Operator with more than two weeks quota ", context do
-      assert Enum.filter(context[:vacation_assignments], fn x ->
-               x.start_date == "03/21/2021" and x.start_date == "03/27/2021"
-             end) == []
+    test "Operator with no vacation time is not assigned vacation" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 0,
+        maximum_minutes: 0
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert vacation_assignments == []
     end
 
-    test "First operator is assigned two weeks", context do
-      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00001")
+    test "Operator with quota of two weeks is assigned two different weeks" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
 
-      assert length(vacation_assignments) == 2
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 0,
+        maximum_minutes: 4830
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 2
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-04-04], end_date: ~D[2021-04-10]}
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-27],
+                 employee_id: "00001"
+               },
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-28],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
              ] = vacation_assignments
     end
 
-    test "Second operator with no vacation time left is not assigned vacation", context do
-      assert get_assignments_for_employee(context[:vacation_assignments], "00002") ==
-               []
-    end
+    test "Operator with quota of two days is assigned two different days" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
 
-    test "third operator is assigned first four available days", context do
-      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00003")
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 2,
+        maximum_minutes: 1000
+      })
 
-      assert length(vacation_assignments) == 4
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-15], end_date: ~D[2021-03-15]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-16], end_date: ~D[2021-03-16]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-17], end_date: ~D[2021-03-17]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-18], end_date: ~D[2021-03-18]}
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-21],
+                 employee_id: "00001"
+               },
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-22],
+                 end_date: ~D[2021-03-22],
+                 employee_id: "00001"
+               }
              ] = vacation_assignments
     end
 
-    test "fourth operator is assigned next available week (not 3/28, which had a quota of 1 and was taken by operator 2)",
-         context do
-      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00004")
+    test "Second operator is not given vacation day where quota has been filled by previous operator" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 2,
+        group_size: 10
+      })
 
-      assert length(vacation_assignments) == 1
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 2,
+        maximum_minutes: 1000
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00002",
+        weekly_quota: 0,
+        dated_quota: 1,
+        maximum_minutes: 480
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{start_date: ~D[2021-04-04], end_date: ~D[2021-04-10]}
-             ] = vacation_assignments
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-23],
+                 end_date: ~D[2021-03-23],
+                 employee_id: "00002"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00002")
     end
 
-    test "fifth operator is assigned first four available days (not 3/15, which had a quota of 1 was taken by operator 3)",
-         context do
-      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00005")
+    test "Second operator is not given vacation week where quota has been filled by previous operator" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 2,
+        group_size: 10
+      })
 
-      assert length(vacation_assignments) == 4
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 0,
+        maximum_minutes: 4800
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00002",
+        weekly_quota: 1,
+        dated_quota: 0,
+        maximum_minutes: 2400
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-04],
+        end_date: ~D[2021-04-10],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-16], end_date: ~D[2021-03-16]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-17], end_date: ~D[2021-03-17]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-18], end_date: ~D[2021-03-18]},
-               %EmployeeVacationAssignment{start_date: ~D[2021-03-19], end_date: ~D[2021-03-19]}
-             ] = vacation_assignments
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-04],
+                 end_date: ~D[2021-04-10],
+                 employee_id: "00002"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00002")
     end
 
-    test "sixth operator is assigned one week (not 3/28, which had a quota of 1 and was taken by operator 2)",
-         context do
-      vacation_assignments = get_assignments_for_employee(context[:vacation_assignments], "00006")
+    test "Operator is given first available week that doesn't conflict with the week they've already selected" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
 
-      assert length(vacation_assignments) == 1
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 0,
+        maximum_minutes: 4800
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        employee_id: "00001"
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{start_date: ~D[2021-04-04], end_date: ~D[2021-04-10]}
-             ] = vacation_assignments
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-28],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00001")
+    end
+
+    test "Operator is given first available week that doesn't conflict with the day they've already selected" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 0,
+        maximum_minutes: 4800
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-03-23],
+        end_date: ~D[2021-03-23],
+        employee_id: "00001"
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-28],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00001")
+    end
+
+    test "Operator is given first available day that doesn't conflict with the day they've already selected" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 2,
+        maximum_minutes: 1000
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-03-21],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-03-22],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-21],
+        employee_id: "00001"
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-03-22],
+                 end_date: ~D[2021-03-22],
+                 employee_id: "00001"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00001")
+    end
+
+    test "Operator is given first available day that doesn't conflict with the week they've already selected" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      Draft.Factory.insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 0,
+        dated_quota: 2,
+        maximum_minutes: 1000
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-03-22],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-04-01],
+        quota: 1
+      })
+
+      Draft.Factory.insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        employee_id: "00001"
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-01],
+                 end_date: ~D[2021-04-01],
+                 employee_id: "00001"
+               }
+             ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
   end
 
   defp get_assignments_for_employee(assignments, employee_id) do
     Enum.filter(assignments, fn x ->
       x.employee_id == employee_id
+    end)
+  end
+
+  defp insert_round_with_employees(%{
+         round_rank: round_rank,
+         round_opening_date: round_opening_date,
+         round_closing_date: round_closing_date,
+         employee_count: employee_count,
+         group_size: group_size
+       }) do
+    Draft.Factory.insert!(:round, %{
+      round_opening_date: round_opening_date,
+      round_closing_date: round_closing_date,
+      rank: round_rank
+    })
+
+    grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
+
+    Enum.each(grouped_employees, fn {group, index} ->
+      Draft.Factory.insert!(:group, %{group_number: index})
+
+      Enum.each(Enum.with_index(group, 1), fn {emp_id, emp_rank} ->
+        Draft.Factory.insert!(
+          :employee_ranking,
+          %{
+            group_number: index,
+            rank: emp_rank,
+            employee_id: String.pad_leading(Integer.to_string(emp_id), 5, "0")
+          }
+        )
+      end)
     end)
   end
 end
