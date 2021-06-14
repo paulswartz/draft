@@ -6,7 +6,7 @@ defmodule Draft.BasicVacationDistributionTest do
 
   describe "basic_vacation_distribution/1" do
     test "Operator is not assigned vacation week with quota of 0" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -44,7 +44,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is not assigned vacation day with quota of 0" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -73,7 +73,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with no vacation time is not assigned vacation" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -96,7 +96,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with quota of two weeks is assigned two different weeks" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -140,7 +140,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with quota of two days is assigned two different days" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -175,7 +175,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Second operator is not given vacation day where quota has been filled by previous operator" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -213,7 +213,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Second operator is not given vacation week where quota has been filled by previous operator" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -265,7 +265,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the week they've already selected" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -310,7 +310,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the day they've already selected" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -355,7 +355,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the day they've already selected" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -398,7 +398,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the week they've already selected" do
-      insert_round_with_employees(%{
+      Draft.Factory.insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -444,37 +444,6 @@ defmodule Draft.BasicVacationDistributionTest do
   defp get_assignments_for_employee(assignments, employee_id) do
     Enum.filter(assignments, fn x ->
       x.employee_id == employee_id
-    end)
-  end
-
-  defp insert_round_with_employees(%{
-         round_rank: round_rank,
-         round_opening_date: round_opening_date,
-         round_closing_date: round_closing_date,
-         employee_count: employee_count,
-         group_size: group_size
-       }) do
-    Draft.Factory.insert!(:round, %{
-      round_opening_date: round_opening_date,
-      round_closing_date: round_closing_date,
-      rank: round_rank
-    })
-
-    grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
-
-    Enum.each(grouped_employees, fn {group, index} ->
-      Draft.Factory.insert!(:group, %{group_number: index})
-
-      Enum.each(Enum.with_index(group, 1), fn {emp_id, emp_rank} ->
-        Draft.Factory.insert!(
-          :employee_ranking,
-          %{
-            group_number: index,
-            rank: emp_rank,
-            employee_id: String.pad_leading(Integer.to_string(emp_id), 5, "0")
-          }
-        )
-      end)
     end)
   end
 end
