@@ -22,7 +22,7 @@ defmodule Draft.EmployeeVacationAssignment do
         }
   @spec to_csv_row(Draft.EmployeeVacationAssignment.t()) :: iodata()
   def to_csv_row(assignment) do
-    status = if assignment.quarterly_pick?, do: 1, else: 0
+    status = if assignment.assigned?, do: 1, else: 0
     pick_period = if assignment.quarterly_pick?, do: 1, else: 0
     vacation_interval_type = if assignment.is_week?, do: "1", else: "0"
 
