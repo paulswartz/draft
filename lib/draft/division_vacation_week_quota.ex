@@ -5,7 +5,11 @@ defmodule Draft.DivisionVacationWeekQuota do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
+  alias Draft.Repo
+
+  @derive {Jason.Encoder, only: [:start_date, :end_date, :quota]}
 
   @type t :: %__MODULE__{
           division_id: String.t(),
@@ -70,5 +74,17 @@ defmodule Draft.DivisionVacationWeekQuota do
       :quota,
       :is_restricted_week
     ])
+  end
+
+  def all_available_weeks(division_id, job_class) do
+    selection_set = Draft.JobClassHelpers.get_selection_set(job_class)
+
+    Repo.all(
+      from w in Draft.DivisionVacationWeekQuota,
+        where:
+          w.division_id == ^division_id and w.quota > 0 and
+            w.employee_selection_set == ^selection_set,
+        order_by: [asc: w.start_date]
+    )
   end
 end

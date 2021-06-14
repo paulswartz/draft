@@ -79,9 +79,11 @@ defmodule Draft.EmployeeRanking do
         on:
           e.group_number == g.group_number and g.process_id == e.process_id and
             g.round_id == e.round_id,
+        join: r in Draft.BidRound,
+        on: g.round_id == r.round_id and g.process_id == r.process_id,
         where: e.employee_id == ^badge_number,
         order_by: [desc: g.cutoff_datetime],
-        select: %{cutoff_time: g.cutoff_datetime, employee_id: e.employee_id, rank: e.rank},
+        select: %{cutoff_time: g.cutoff_datetime, employee_id: e.employee_id, rank: e.rank, division_id: r.division_id, job_class: e.job_class},
         limit: 1
     )
   end

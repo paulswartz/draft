@@ -6,3 +6,20 @@ declare function require(name: string): string
 require("../css/app.scss")
 
 import "phoenix_html"
+import * as React from "react"
+import VacationQuotaIndex from "./vacation/vacationQuotaIndex"
+import ReactDOM from "react-dom"
+import { BrowserRouter, Route, Switch } from "react-router-dom"
+
+const App = (): JSX.Element => {
+    return (
+      <BrowserRouter>
+        <Switch>
+          <Route exact={true} path="/asdf" component={VacationQuotaIndex} />
+        
+        </Switch>
+      </BrowserRouter>
+    )
+  }
+  
+  ReactDOM.render(<App />, document.getElementById("app"))
