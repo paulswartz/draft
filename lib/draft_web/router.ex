@@ -38,7 +38,6 @@ defmodule DraftWeb.Router do
   scope "/", DraftWeb do
     pipe_through [:redirect_http, :browser, :auth, :ensure_auth]
     get "/", PageController, :index
-    get "/asdf", PageController, :index
   end
 
   scope "/auth", DraftWeb do
