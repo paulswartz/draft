@@ -1,0 +1,9 @@
+<p>Input the badge number of the user to spoof.</p>
+<%= form_for @conn, Routes.spoof_user_path(@conn, :create), [method: :post, as: :user], fn f -> %>
+
+<div class="form-group">
+  <%= text_input f, :badge_number, placeholder: "badge number" %>
+  <p><%= get_flash(@conn, :error) %>
+</div>
+<%= submit "Submit" %>
+<% end %>

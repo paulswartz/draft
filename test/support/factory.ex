@@ -125,4 +125,46 @@ defmodule Draft.Factory do
   def insert!(factory_name, attributes) do
     factory_name |> build(attributes) |> Repo.insert!()
   end
+
+  @spec insert_round_with_employees(%{
+          :employee_count => integer(),
+          :group_size => integer(),
+          :round_closing_date => Date.t(),
+          :round_opening_date => Date.t(),
+          :round_rank => integer()
+        }) :: :ok
+  @doc """
+  Insert a single round with the specified number of employees, broken into the specified number of groups.
+  Employee ids are created with 0 padding to be 5 digits.
+  """
+  def insert_round_with_employees(%{
+        round_rank: round_rank,
+        round_opening_date: round_opening_date,
+        round_closing_date: round_closing_date,
+        employee_count: employee_count,
+        group_size: group_size
+      }) do
+    Draft.Factory.insert!(:round, %{
+      round_opening_date: round_opening_date,
+      round_closing_date: round_closing_date,
+      rank: round_rank
+    })
+
+    grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
+
+    Enum.each(grouped_employees, fn {group, index} ->
+      Draft.Factory.insert!(:group, %{group_number: index})
+
+      Enum.each(Enum.with_index(group, 1), fn {emp_id, emp_rank} ->
+        Draft.Factory.insert!(
+          :employee_ranking,
+          %{
+            group_number: index,
+            rank: emp_rank,
+            employee_id: String.pad_leading(Integer.to_string(emp_id), 5, "0")
+          }
+        )
+      end)
+    end)
+  end
 end

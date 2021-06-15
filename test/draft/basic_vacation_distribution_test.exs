@@ -1,6 +1,7 @@
 defmodule Draft.BasicVacationDistributionTest do
   use ExUnit.Case, async: true
   use Draft.DataCase
+  import Draft.Factory
   alias Draft.BasicVacationDistribution
   alias Draft.EmployeeVacationAssignment
 
@@ -14,20 +15,20 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 1,
         dated_quota: 0,
         maximum_minutes: 2400
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 0
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
@@ -52,15 +53,15 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 1,
         maximum_minutes: 480
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -81,14 +82,14 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 0,
         maximum_minutes: 0
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -104,20 +105,20 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4830
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 2
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
@@ -148,15 +149,15 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -183,23 +184,23 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00002",
         weekly_quota: 0,
         dated_quota: 1,
         maximum_minutes: 480
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -221,33 +222,33 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00002",
         weekly_quota: 1,
         dated_quota: 0,
         maximum_minutes: 2400
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-04],
         end_date: ~D[2021-04-10],
         quota: 1
@@ -273,26 +274,26 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         employee_id: "00001"
@@ -318,26 +319,26 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-23],
         end_date: ~D[2021-03-23],
         employee_id: "00001"
@@ -363,24 +364,24 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-21],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-22],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-21],
         employee_id: "00001"
@@ -406,24 +407,24 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-22],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-04-01],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         employee_id: "00001"
@@ -444,37 +445,6 @@ defmodule Draft.BasicVacationDistributionTest do
   defp get_assignments_for_employee(assignments, employee_id) do
     Enum.filter(assignments, fn x ->
       x.employee_id == employee_id
-    end)
-  end
-
-  defp insert_round_with_employees(%{
-         round_rank: round_rank,
-         round_opening_date: round_opening_date,
-         round_closing_date: round_closing_date,
-         employee_count: employee_count,
-         group_size: group_size
-       }) do
-    Draft.Factory.insert!(:round, %{
-      round_opening_date: round_opening_date,
-      round_closing_date: round_closing_date,
-      rank: round_rank
-    })
-
-    grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
-
-    Enum.each(grouped_employees, fn {group, index} ->
-      Draft.Factory.insert!(:group, %{group_number: index})
-
-      Enum.each(Enum.with_index(group, 1), fn {emp_id, emp_rank} ->
-        Draft.Factory.insert!(
-          :employee_ranking,
-          %{
-            group_number: index,
-            rank: emp_rank,
-            employee_id: String.pad_leading(Integer.to_string(emp_id), 5, "0")
-          }
-        )
-      end)
     end)
   end
 end

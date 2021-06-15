@@ -1,0 +1,3 @@
+<p>Badge Number: <%= @overview.employee_id %></p>
+<p>Rank in group: <%= @overview.rank %></p>
+<p>Cutoff time: <%= @overview.cutoff_time %></p>
