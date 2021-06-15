@@ -6,8 +6,6 @@ defmodule Draft.EmployeeRanking do
 
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
-  alias Draft.Repo
 
   @type t :: %__MODULE__{
           process_id: String.t(),
