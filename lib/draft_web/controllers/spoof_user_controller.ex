@@ -10,15 +10,15 @@ defmodule DraftWeb.SpoofUserController do
   def create(conn, %{"user" => credentials}) do
     badge_number = Map.get(credentials, "badge_number")
 
-    case Draft.EmployeeRanking.get_latest_ranking(badge_number) do
+    case Draft.EmployeePickOverview.get_latest(badge_number) do
       nil ->
         conn
         |> put_flash(:error, "No record of employee with that badge number. Please try again.")
         |> render("index.html")
 
-      employee_ranking ->
+      employee_pick ->
         conn
-        |> put_session(:user_id, employee_ranking.employee_id)
+        |> put_session(:user_id, employee_pick.employee_id)
         |> configure_session(renew: true)
         |> redirect(to: Routes.operator_overview_path(conn, :show))
     end

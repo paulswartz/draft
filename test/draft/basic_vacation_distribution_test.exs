@@ -1,12 +1,13 @@
 defmodule Draft.BasicVacationDistributionTest do
   use ExUnit.Case, async: true
   use Draft.DataCase
+  import Draft.Factory
   alias Draft.BasicVacationDistribution
   alias Draft.EmployeeVacationAssignment
 
   describe "basic_vacation_distribution/1" do
     test "Operator is not assigned vacation week with quota of 0" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -14,20 +15,20 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 1,
         dated_quota: 0,
         maximum_minutes: 2400
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 0
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
@@ -44,7 +45,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is not assigned vacation day with quota of 0" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -52,15 +53,15 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 1,
         maximum_minutes: 480
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -73,7 +74,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with no vacation time is not assigned vacation" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -81,14 +82,14 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 0,
         maximum_minutes: 0
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -96,7 +97,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with quota of two weeks is assigned two different weeks" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -104,20 +105,20 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4830
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 2
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
@@ -140,7 +141,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator with quota of two days is assigned two different days" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -148,15 +149,15 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -175,7 +176,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Second operator is not given vacation day where quota has been filled by previous operator" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -183,23 +184,23 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00002",
         weekly_quota: 0,
         dated_quota: 1,
         maximum_minutes: 480
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
-      Draft.Factory.insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
 
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
@@ -213,7 +214,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Second operator is not given vacation week where quota has been filled by previous operator" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -221,33 +222,33 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00002",
         weekly_quota: 1,
         dated_quota: 0,
         maximum_minutes: 2400
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-04],
         end_date: ~D[2021-04-10],
         quota: 1
@@ -265,7 +266,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the week they've already selected" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -273,26 +274,26 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         employee_id: "00001"
@@ -310,7 +311,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the day they've already selected" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -318,26 +319,26 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 2,
         dated_quota: 0,
         maximum_minutes: 4800
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_week_quota, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-23],
         end_date: ~D[2021-03-23],
         employee_id: "00001"
@@ -355,7 +356,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the day they've already selected" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -363,24 +364,24 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-21],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-22],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-21],
         employee_id: "00001"
@@ -398,7 +399,7 @@ defmodule Draft.BasicVacationDistributionTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the week they've already selected" do
-      Draft.Factory.insert_round_with_employees(%{
+      insert_round_with_employees(%{
         round_rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -406,24 +407,24 @@ defmodule Draft.BasicVacationDistributionTest do
         group_size: 10
       })
 
-      Draft.Factory.insert!(:employee_vacation_quota, %{
+      insert!(:employee_vacation_quota, %{
         employee_id: "00001",
         weekly_quota: 0,
         dated_quota: 2,
         maximum_minutes: 1000
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-22],
         quota: 1
       })
 
-      Draft.Factory.insert!(:division_vacation_day_quota, %{
+      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-04-01],
         quota: 1
       })
 
-      Draft.Factory.insert!(:employee_vacation_selection, %{
+      insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
         employee_id: "00001"
