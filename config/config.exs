@@ -16,8 +16,6 @@ config :draft, Draft.Repo,
   pool_size: 10,
   aws_rds_mod: nil
 
-
-
 # Configures the endpoint
 config :draft, DraftWeb.Endpoint,
   url: [host: "localhost"],

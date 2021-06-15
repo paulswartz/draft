@@ -1,5 +1,13 @@
 defmodule Draft.JobClassHelpers do
-  def get_selection_set(job_type) do
+  @moduledoc """
+  Helper functions for interpreting job class data
+  """
+
+  @spec get_selection_set(String.t()) :: String.t()
+  @doc """
+  Get the vacation selection set identifier for the givne job class
+  """
+  def get_selection_set(job_class) do
     full_time = "FTVacQuota"
     part_time = "PTVacQuota"
 
@@ -12,6 +20,6 @@ defmodule Draft.JobClassHelpers do
       "000900" => part_time
     }
 
-    job_class_map[job_type]
+    job_class_map[job_class]
   end
 end

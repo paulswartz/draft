@@ -14,25 +14,24 @@ export interface VacationQuotaSummary {
   weeks: VacationWeekQuota[];
 }
 
-
 const checkResponseStatus = (response: Response) => {
   if (response.status === 200) {
-    return response
+    return response;
   }
 
-  throw new Error(`Response error: ${response.status}`)
-}
+  throw new Error(`Response error: ${response.status}`);
+};
 
-const parseJson = (response: Response) => response.json()
+const parseJson = (response: Response) => response.json();
 
 export const apiCall = <T>({
   url,
   parser,
   defaultResult,
 }: {
-  url: string
-  parser: (data: any) => T
-  defaultResult?: T
+  url: string;
+  parser: (data: any) => T;
+  defaultResult?: T;
 }): Promise<T> =>
   fetch(url)
     .then(checkResponseStatus)
@@ -40,14 +39,15 @@ export const apiCall = <T>({
     .then(({ data: data }: { data: any }) => parser(data))
     .catch((error) => {
       if (defaultResult === undefined) {
-        throw error
+        throw error;
       } else {
-        return defaultResult
+        return defaultResult;
       }
-    })
+    });
 
 export const fetchAvailableVacationQuotas = (): Promise<VacationQuotaSummary> =>
   apiCall({
     url: "/api/vacation_availability",
-    parser: (vacationQuotaSummary: VacationQuotaSummary) => vacationQuotaSummary
-  })
+    parser: (vacationQuotaSummary: VacationQuotaSummary) =>
+      vacationQuotaSummary,
+  });

@@ -3,7 +3,7 @@ defmodule DraftWeb.OperatorOverviewController do
 
   @spec show(Plug.Conn.t(), any) :: Plug.Conn.t()
   def show(conn, _params) do
-    latest_ranking = Draft.EmployeeRanking.get_latest_ranking(get_session(conn, :user_id))
-    render(conn, "show.html", latest_ranking)
+    latest_pick_overview = Draft.EmployeePickOverview.get_latest(get_session(conn, :user_id))
+    render(conn, "show.html", overview: latest_pick_overview)
   end
 end

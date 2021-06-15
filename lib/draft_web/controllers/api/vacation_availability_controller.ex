@@ -3,9 +3,23 @@ defmodule DraftWeb.API.VacationAvailabilityController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    latest_ranking = Draft.EmployeeRanking.get_latest_ranking(get_session(conn, :user_id))
-    all_available_vacation = %{days: Draft.DivisionVacationDayQuota.all_available_days(latest_ranking.division_id, latest_ranking.job_class),
-  weeks: Draft.DivisionVacationWeekQuota.all_available_weeks(latest_ranking.division_id, latest_ranking.job_class)}
+    pick_overview = Draft.EmployeePickOverview.get_latest(get_session(conn, :user_id))
+
+    all_available_vacation = %{
+      days:
+        Draft.DivisionVacationDayQuota.all_available_days(
+          pick_overview.job_class,
+          pick_overview.process_id,
+          pick_overview.round_id
+        ),
+      weeks:
+        Draft.DivisionVacationWeekQuota.all_available_weeks(
+          pick_overview.job_class,
+          pick_overview.process_id,
+          pick_overview.round_id
+        )
+    }
+
     json(conn, %{data: all_available_vacation})
   end
 end

@@ -144,22 +144,50 @@ defmodule Draft.Factory do
         employee_count: employee_count,
         group_size: group_size
       }) do
-    Draft.Factory.insert!(:round, %{
-      round_opening_date: round_opening_date,
-      round_closing_date: round_closing_date,
-      rank: round_rank
-    })
+    insert_round_with_employees(
+      %{
+        rank: round_rank,
+        round_opening_date: round_opening_date,
+        round_closing_date: round_closing_date
+      },
+      %{
+        employee_count: employee_count,
+        group_size: group_size
+      }
+    )
+  end
+
+  @spec insert_round_with_employees(map(), %{
+          :employee_count => integer(),
+          :group_size => integer()
+        }) :: :ok
+  @doc """
+  Insert a single round with the given specifications the specified number of employees, broken into the specified number of groups.
+  Employee ids are created with 0 padding to be 5 digits.
+  """
+  def insert_round_with_employees(round_attrs, %{
+        employee_count: employee_count,
+        group_size: group_size
+      }) do
+    inserted_round = Draft.Factory.insert!(:round, round_attrs)
 
     grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
 
     Enum.each(grouped_employees, fn {group, index} ->
-      Draft.Factory.insert!(:group, %{group_number: index})
+      inserted_group =
+        Draft.Factory.insert!(:group, %{
+          group_number: index,
+          round_id: inserted_round.round_id,
+          process_id: inserted_round.process_id
+        })
 
       Enum.each(Enum.with_index(group, 1), fn {emp_id, emp_rank} ->
         Draft.Factory.insert!(
           :employee_ranking,
           %{
             group_number: index,
+            round_id: inserted_group.round_id,
+            process_id: inserted_group.process_id,
             rank: emp_rank,
             employee_id: String.pad_leading(Integer.to_string(emp_id), 5, "0")
           }
