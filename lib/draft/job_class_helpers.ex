@@ -3,10 +3,10 @@ defmodule Draft.JobClassHelpers do
   Helper functions for interpreting job class data
   """
 
-  @full_time_vacation_group  "FTVacQuota"
-  @part_time_vacation_group  "PTVacQuota"
+  @full_time_vacation_group "FTVacQuota"
+  @part_time_vacation_group "PTVacQuota"
 
-  @job_class_to_selection_set  %{
+  @job_class_to_selection_set %{
     "000100" => @full_time_vacation_group,
     "000300" => @full_time_vacation_group,
     "000800" => @full_time_vacation_group,
@@ -20,6 +20,6 @@ defmodule Draft.JobClassHelpers do
   Get the vacation selection set identifier for the givne job class
   """
   def get_selection_set(job_class) do
-      @job_class_to_selection_set[job_class]
+    @job_class_to_selection_set[job_class]
   end
 end
