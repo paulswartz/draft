@@ -1,12 +1,13 @@
 defmodule Draft.EmployeeVacationPreferenceSet do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Draft.EmployeeVacationPreference
 
   @type t :: %__MODULE__{
     employee_id: String.t(),
     process_id: String.t(),
     round_id: String.t(),
-    previous_preference_set_id: integer()
+    previous_preference_set_id: integer() | nil
   }
 
   schema "employee_vacation_preference_sets" do
@@ -14,8 +15,9 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     field :process_id, :string
     field :round_id, :string
     field :previous_preference_set_id, :integer
+    has_many :employee_vacation_preferences, EmployeeVacationPreference
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
