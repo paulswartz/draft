@@ -3,7 +3,10 @@ defmodule DraftWeb.API.VacationAvailabilityController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    pick_overview = Draft.EmployeePickOverview.get_latest(get_session(conn, :user_id))
+    pick_overview =
+      conn
+      |> get_session(:user_id)
+      |> Draft.EmployeePickOverview.get_latest()
 
     all_available_vacation = %{
       days:

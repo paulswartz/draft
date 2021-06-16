@@ -1,15 +1,15 @@
 import * as React from "react";
 import {
-  fetchAvailableVacationQuotas,
-  VacationQuotaSummary,
-  VacationDayQuota,
-  VacationWeekQuota,
-} from "../api";
-import { useEffect, useState } from "react";
+  DivisionAvailableVacationQuotaData,
+  VacationDayQuotaData,
+  VacationWeekQuotaData,
+} from "../models/divisionVacationQuotaData";
+import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
+import { useState } from "react";
 
 const VacationPreferenceForm = (): JSX.Element => {
-  const [selectedWeeks, setSelectedWeeks] = useState<String[] | []>([]);
-  const [selectedDays, setSelectedDays] = useState<String[] | []>([]);
+  const [selectedWeeks, setSelectedWeeks] = useState<String[]>([]);
+  const [selectedDays, setSelectedDays] = useState<String[]>([]);
 
   const handleWeekInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -29,7 +29,7 @@ const VacationPreferenceForm = (): JSX.Element => {
         );
   };
 
-  const VacationDayDisplay = (day: VacationDayQuota): JSX.Element => {
+  const VacationDayDisplay = (day: VacationDayQuotaData): JSX.Element => {
     return (
       <div>
         <label>
@@ -38,13 +38,13 @@ const VacationPreferenceForm = (): JSX.Element => {
             type="checkbox"
             value={day.date}
             onChange={(e) => handleDayInputChange(e)}
-          />{" "}
+          />
         </label>
       </div>
     );
   };
 
-  const VacationWeekDisplay = (week: VacationWeekQuota): JSX.Element => {
+  const VacationWeekDisplay = (week: VacationWeekQuotaData): JSX.Element => {
     return (
       <div>
         <label>
@@ -59,38 +59,26 @@ const VacationPreferenceForm = (): JSX.Element => {
     );
   };
 
-  const useVacationQuotaSummary = (): VacationQuotaSummary | null => {
-    const [availableVacationQuotas, setAvailableVacationQuotas] =
-      useState<VacationQuotaSummary | null>(null);
-    useEffect(() => {
-      fetchAvailableVacationQuotas().then(setAvailableVacationQuotas);
-    }, []);
-    return availableVacationQuotas;
-  };
-
-  const availQuota: VacationQuotaSummary | null = useVacationQuotaSummary();
+  const availQuota: DivisionAvailableVacationQuotaData | null =
+    useDivisionAvailableVacationQuotas();
 
   return (
     <div>
       <h3>Preferred Vacation</h3>
       <h4>Weeks</h4>
-      {selectedWeeks.map((week) => {
-        return <p>{week}</p>;
-      })}
+      {selectedWeeks.map((week) => (
+        <p>{week}</p>
+      ))}
       <h4>Days</h4>
-      {selectedDays.map((day) => {
-        return <p>{day}</p>;
-      })}
+      {selectedDays.map((day) => (
+        <p>{day}</p>
+      ))}
       <h3>Available Vacation Time</h3>
       <h4>Weeks</h4>
-      {availQuota?.weeks.map((week) => {
-        return VacationWeekDisplay(week);
-      })}
+      {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}
 
       <h4>Days</h4>
-      {availQuota?.days.map((day) => {
-        return VacationDayDisplay(day);
-      })}
+      {availQuota?.days.map((day) => VacationDayDisplay(day))}
     </div>
   );
 };
