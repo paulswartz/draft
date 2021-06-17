@@ -1,18 +1,4 @@
-export interface VacationDayQuota {
-  date: number;
-  quota: number;
-}
-
-export interface VacationWeekQuota {
-  start_date: Date;
-  end_date: Date;
-  quota: number;
-}
-
-export interface VacationQuotaSummary {
-  days: VacationDayQuota[];
-  weeks: VacationWeekQuota[];
-}
+import { DivisionAvailableVacationQuotaData } from "./models/divisionVacationQuotaData";
 
 const checkResponseStatus = (response: Response) => {
   if (response.status === 200) {
@@ -45,9 +31,10 @@ export const apiCall = <T>({
       }
     });
 
-export const fetchAvailableVacationQuotas = (): Promise<VacationQuotaSummary> =>
-  apiCall({
-    url: "/api/vacation_availability",
-    parser: (vacationQuotaSummary: VacationQuotaSummary) =>
-      vacationQuotaSummary,
-  });
+export const fetchDivisionAvailableVacationQuota =
+  (): Promise<DivisionAvailableVacationQuotaData> =>
+    apiCall({
+      url: "/api/vacation_availability",
+      parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData) =>
+        divisionVacationQuotas,
+    });

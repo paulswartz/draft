@@ -7,7 +7,7 @@ require("../css/app.scss");
 
 import "phoenix_html";
 import * as React from "react";
-import VacationPreferenceForm from "./vacation/vacationPreferenceForm";
+import VacationPreferenceForm from "./components/vacationPreferenceForm";
 import ReactDOM from "react-dom";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 
