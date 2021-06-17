@@ -32,9 +32,10 @@ export const apiCall = <T>({
     });
 
 export const fetchDivisionAvailableVacationQuota =
-  (): Promise<DivisionAvailableVacationQuotaData> =>
+  (): Promise<DivisionAvailableVacationQuotaData | null> =>
     apiCall({
       url: "/api/vacation_availability",
       parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData) =>
         divisionVacationQuotas,
+        defaultResult: null
     });

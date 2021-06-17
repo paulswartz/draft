@@ -25,6 +25,8 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     timestamps(type: :utc_datetime)
   end
 
+
+
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_vacation_preference_set, attrs \\ %{}) do
@@ -34,7 +36,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   end
 
   @spec get_latest_preferences(String.t(), String.t(), String.t()) ::
-          Draft.EmployeeVacationPreferenceSet.t()
+          __MODULE__.t()
   @doc """
   Get the most recently entered preferences entered by the given operator for the given pick.
   """

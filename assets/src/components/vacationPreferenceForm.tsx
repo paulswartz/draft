@@ -66,13 +66,13 @@ const VacationPreferenceForm = (): JSX.Element => {
     <div>
       <h3>Preferred Vacation</h3>
       <h4>Weeks</h4>
-      {selectedWeeks.map((week) => (
-        <p>{week}</p>
-      ))}
+      <ul>{selectedWeeks.map((week) => (
+        <li key={week.toString()}>{week}</li>
+      ))}</ul>
       <h4>Days</h4>
-      {selectedDays.map((day) => (
-        <p>{day}</p>
-      ))}
+      <ul>{selectedDays.map((day) => (
+        <li key={day.toString()}>{day}</li>
+      ))}</ul>
       <h3>Available Vacation Time</h3>
       <h4>Weeks</h4>
       {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}

@@ -64,6 +64,8 @@ defmodule DraftWeb.Router do
     pipe_through [:redirect_http, :browser, :auth, :ensure_auth, :api]
 
     get "/vacation_availability", VacationAvailabilityController, :index
+    post "/vacation/preferences", VacationPreferenceController, :create
+    get "/vacation/preferences", VacationPreferenceController, :show
   end
 
   # Enables LiveDashboard only for development
