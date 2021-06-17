@@ -5,7 +5,11 @@ defmodule Draft.DivisionVacationDayQuota do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
+  alias Draft.Repo
+
+  @derive {Jason.Encoder, only: [:date, :quota]}
 
   @type t :: %__MODULE__{
           division_id: String.t(),
@@ -47,5 +51,31 @@ defmodule Draft.DivisionVacationDayQuota do
     division_vacation_quota_dated
     |> cast(attrs, [:division_id, :employee_selection_set, :date, :quota])
     |> validate_required([:division_id, :employee_selection_set, :date, :quota])
+  end
+
+  @spec all_available_days(String.t(), String.t(), String.t()) :: [Draft.DivisionVacationDayQuota]
+  @doc """
+  Get all vacation days that are available for an employee of the given job class in the specified round
+  """
+  def all_available_days(job_class, process_id, round_id) do
+    %Draft.BidRound{
+      rating_period_start_date: rating_period_start_date,
+      rating_period_end_date: rating_period_end_date,
+      division_id: division_id
+    } =
+      Repo.one!(
+        from r in Draft.BidRound, where: r.round_id == ^round_id and r.process_id == ^process_id
+      )
+
+    selection_set = Draft.JobClassHelpers.get_selection_set(job_class)
+
+    Repo.all(
+      from d in Draft.DivisionVacationDayQuota,
+        where:
+          d.division_id == ^division_id and d.quota > 0 and
+            d.date >= ^rating_period_start_date and d.date <= ^rating_period_end_date and
+            d.employee_selection_set == ^selection_set,
+        order_by: [asc: d.date]
+    )
   end
 end

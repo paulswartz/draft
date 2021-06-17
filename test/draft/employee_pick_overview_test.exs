@@ -12,8 +12,13 @@ defmodule Draft.EmployeePickOverviewTest do
         group_size: 10
       })
 
-      assert %EmployeePickOverview{employee_id: "00002", rank: 2} =
-               EmployeePickOverview.get_latest("00002")
+      assert %EmployeePickOverview{
+               employee_id: "00002",
+               rank: 2,
+               job_class: "000100",
+               round_id: "Vacation",
+               process_id: "BUS22021-122"
+             } = EmployeePickOverview.get_latest("00002")
     end
 
     test "Returns nil if employee not present" do

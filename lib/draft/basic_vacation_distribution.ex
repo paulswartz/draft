@@ -127,9 +127,12 @@ defmodule Draft.BasicVacationDistribution do
 
         # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
         num_hours_per_day =
-          if String.starts_with?(get_selection_set(employee.job_class), "FT"),
-            do: 8,
-            else: 6
+          if String.starts_with?(
+               Draft.JobClassHelpers.get_selection_set(employee.job_class),
+               "FT"
+             ),
+             do: 8,
+             else: 6
 
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
@@ -184,7 +187,7 @@ defmodule Draft.BasicVacationDistribution do
          max_days,
          [] = _assigned_weeks
        ) do
-    selection_set = get_selection_set(employee.job_class)
+    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     conflicting_selected_dates_query =
       from s in EmployeeVacationSelection,
@@ -249,22 +252,6 @@ defmodule Draft.BasicVacationDistribution do
     }
   end
 
-  defp get_selection_set(job_type) do
-    full_time = "FTVacQuota"
-    part_time = "PTVacQuota"
-
-    job_class_map = %{
-      "000100" => full_time,
-      "000300" => full_time,
-      "000800" => full_time,
-      "001100" => part_time,
-      "000200" => part_time,
-      "000900" => part_time
-    }
-
-    job_class_map[job_type]
-  end
-
   defp distribute_weeks_balance(round, employee, max_weeks)
 
   defp distribute_weeks_balance(_round, _employee, 0) do
@@ -276,7 +263,7 @@ defmodule Draft.BasicVacationDistribution do
   end
 
   defp distribute_weeks_balance(round, employee, max_weeks) do
-    selection_set = get_selection_set(employee.job_class)
+    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     conflicting_selected_vacation_query =
       from s in EmployeeVacationSelection,

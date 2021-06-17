@@ -6,12 +6,16 @@ defmodule Draft.EmployeePickOverview do
   alias Draft.Repo
 
   @type t :: %__MODULE__{
+          division_id: String.t(),
           employee_id: String.t(),
           cutoff_time: DateTime.t(),
-          rank: integer()
+          job_class: String.t(),
+          rank: integer(),
+          process_id: String.t(),
+          round_id: String.t()
         }
 
-  defstruct [:cutoff_time, :employee_id, :rank]
+  defstruct [:division_id, :employee_id, :cutoff_time, :job_class, :rank, :process_id, :round_id]
 
   @spec get_latest(String.t()) :: Draft.EmployeePickOverview.t() | nil
   @doc """
@@ -24,12 +28,18 @@ defmodule Draft.EmployeePickOverview do
         on:
           e.group_number == g.group_number and g.process_id == e.process_id and
             g.round_id == e.round_id,
+        join: r in Draft.BidRound,
+        on: g.round_id == r.round_id and g.process_id == r.process_id,
         where: e.employee_id == ^badge_number,
         order_by: [desc: g.cutoff_datetime],
         select: %Draft.EmployeePickOverview{
           cutoff_time: g.cutoff_datetime,
           employee_id: e.employee_id,
-          rank: e.rank
+          rank: e.rank,
+          division_id: r.division_id,
+          job_class: e.job_class,
+          round_id: r.round_id,
+          process_id: r.process_id
         },
         limit: 1
     )

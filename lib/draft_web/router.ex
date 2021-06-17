@@ -60,10 +60,11 @@ defmodule DraftWeb.Router do
     get "/operator", OperatorOverviewController, :show
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", DraftWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", DraftWeb.API do
+    pipe_through [:redirect_http, :browser, :auth, :ensure_auth, :api]
+
+    get "/vacation_availability", VacationAvailabilityController, :index
+  end
 
   # Enables LiveDashboard only for development
   #

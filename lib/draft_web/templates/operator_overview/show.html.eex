@@ -1,3 +1,5 @@
 <p>Badge Number: <%= @overview.employee_id %></p>
 <p>Rank in group: <%= @overview.rank %></p>
 <p>Cutoff time: <%= @overview.cutoff_time %></p>
+<div id="app"></div>
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
