@@ -28,7 +28,14 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     timestamps(type: :utc_datetime)
   end
 
+  @spec create(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def create(preference_set_attrs) do
+    preference_set_changeset =
+      %__MODULE__{}
+      |> changeset(preference_set_attrs)
 
+    Repo.insert(preference_set_changeset)
+  end
 
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
@@ -40,7 +47,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   end
 
   @spec get_latest_preferences(String.t(), String.t(), String.t()) ::
-          __MODULE__.t()
+          __MODULE__.t() | nil
   @doc """
   Get the most recently entered preferences entered by the given operator for the given pick.
   """

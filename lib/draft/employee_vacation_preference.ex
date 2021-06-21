@@ -14,14 +14,17 @@ defmodule Draft.EmployeeVacationPreference do
           preference_rank: integer()
         }
 
-  @derive {Jason.Encoder, only: [:preference_set_id, :interval_type, :start_date, :end_date, :preference_rank]}
+  @derive {Jason.Encoder,
+           only: [:preference_set_id, :interval_type, :start_date, :end_date, :preference_rank]}
 
   schema "employee_vacation_preferences" do
     field :interval_type, :string
     field :start_date, :date
     field :end_date, :date
     field :preference_rank, :integer
-    belongs_to :employee_vacation_preference_sets, EmployeeVacationPreferenceSet, foreign_key: :preference_set_id
+
+    belongs_to :employee_vacation_preference_sets, EmployeeVacationPreferenceSet,
+      foreign_key: :preference_set_id
 
     timestamps(type: :utc_datetime)
   end
