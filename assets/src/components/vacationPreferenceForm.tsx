@@ -5,20 +5,26 @@ import {
   VacationWeekQuotaData,
 } from "../models/divisionVacationQuotaData";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
+import {apiSend} from "../api"
 import { useState } from "react";
 
 const VacationPreferenceForm = (): JSX.Element => {
-  const [selectedWeeks, setSelectedWeeks] = useState<String[]>([]);
+  const [selectedWeeks, setSelectedWeeks] = useState<any[]>([]);
   const [selectedDays, setSelectedDays] = useState<String[]>([]);
 
   const handleWeekInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    const updatedWeekPreferences = 
     event.target.checked
-      ? setSelectedWeeks([...selectedWeeks, event.target.value])
-      : setSelectedWeeks(
+      ? [...selectedWeeks, event.target.value]
+      : 
           selectedWeeks.filter((week) => week !== event.target.value)
-        );
+        ;
+    setSelectedWeeks(updatedWeekPreferences)
+    console.log(updatedWeekPreferences)
+    const formatted_preferences = updatedWeekPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}))
+    apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({weeks: formatted_preferences})})
   };
 
   const handleDayInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {

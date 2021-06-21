@@ -12,8 +12,11 @@ defmodule Draft.EmployeeVacationPreferenceSet do
           employee_id: String.t(),
           process_id: String.t(),
           round_id: String.t(),
+          vacation_preferences: [EmployeeVacationPreference.t()],
           previous_preference_set_id: integer() | nil
         }
+
+  @derive {Jason.Encoder, only: [:employee_id, :process_id, :round_id, :vacation_preferences]}
 
   schema "employee_vacation_preference_sets" do
     field :employee_id, :string
@@ -32,6 +35,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   def changeset(employee_vacation_preference_set, attrs \\ %{}) do
     employee_vacation_preference_set
     |> cast(attrs, [:employee_id, :process_id, :round_id, :previous_preference_set_id])
+    |> cast_assoc(:vacation_preferences)
     |> validate_required([:employee_id, :process_id, :round_id])
   end
 
