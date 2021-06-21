@@ -1,4 +1,6 @@
 import { DivisionAvailableVacationQuotaData } from "./models/divisionVacationQuotaData";
+import { VacationPreferenceSet } from "./models/vacationPreferenceSet";
+
 interface Result<T, E> {
   ok?: T
   error?: E
@@ -78,6 +80,15 @@ export const fetchDivisionAvailableVacationQuota =
         divisionVacationQuotas,
         defaultResult: null
     });
+
+    export const fetchVacationPreferenceSet =
+    (): Promise<VacationPreferenceSet | null> =>
+      apiCall({
+        url: "/api/vacation/preferences",
+        parser: (vacationPreferenceSet: VacationPreferenceSet) =>
+        vacationPreferenceSet,
+          defaultResult: null
+      });
 
     export const updateVacationPreferences =
     (): Promise<DivisionAvailableVacationQuotaData | null> =>

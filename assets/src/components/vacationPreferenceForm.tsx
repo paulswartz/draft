@@ -5,11 +5,11 @@ import {
   VacationWeekQuotaData,
 } from "../models/divisionVacationQuotaData";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
-import {apiSend} from "../api"
-import { useState } from "react";
+import {apiSend, fetchVacationPreferenceSet} from "../api"
+import { useState, useEffect } from "react";
 
 const VacationPreferenceForm = (): JSX.Element => {
-  const [selectedWeeks, setSelectedWeeks] = useState<any[]>([]);
+  const [selectedWeeks, setSelectedWeeks] = useState<String[]>([]);
   const [selectedDays, setSelectedDays] = useState<String[]>([]);
 
   const handleWeekInputChange = (
@@ -22,10 +22,19 @@ const VacationPreferenceForm = (): JSX.Element => {
           selectedWeeks.filter((week) => week !== event.target.value)
         ;
     setSelectedWeeks(updatedWeekPreferences)
-    console.log(updatedWeekPreferences)
-    const formatted_preferences = updatedWeekPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}))
-    apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({weeks: formatted_preferences})})
   };
+
+  useEffect(() => {
+  fetchVacationPreferenceSet().then((prefs) => {if (prefs != null) {setSelectedWeeks(prefs.weeks.map(pref => (pref.start_date.toString()))); setSelectedDays(prefs.days.map(pref => (pref.start_date.toString()))) }})
+}, []);
+
+
+    useEffect(() => {
+      const ranked_weeks = selectedWeeks.map((pref, index) => ({start_date: pref, rank: index + 1}));
+      const ranked_days = selectedDays.map((pref, index) => ({start_date: pref, rank: index + 1}));
+    apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({weeks: ranked_weeks, days: ranked_days})})
+  }, [selectedWeeks, selectedDays]);
+  
 
   const handleDayInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.checked
