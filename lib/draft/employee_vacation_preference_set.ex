@@ -9,11 +9,11 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   alias Draft.Repo
 
   @type t :: %__MODULE__{
-          employee_id: String.t() | nil,
-          process_id: String.t() | nil,
-          round_id: String.t() | nil,
+          employee_id: String.t(),
+          process_id: String.t(),
+          round_id: String.t(),
           vacation_preferences: [EmployeeVacationPreference.t()] | Ecto.Association.NotLoaded.t(),
-          previous_preference_set_id: integer() | nil
+          previous_preference_set_id: integer()
         }
 
   @derive {Jason.Encoder, only: [:employee_id, :process_id, :round_id, :vacation_preferences]}
@@ -34,7 +34,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   """
   def create(preference_set_attrs) do
     preference_set_changeset =
-      %__MODULE__{}
+      struct!(__MODULE__, [])
       |> cast(preference_set_attrs, [:employee_id, :process_id, :round_id])
       |> cast_assoc(:vacation_preferences)
       |> validate_required([:employee_id, :process_id, :round_id])
@@ -52,7 +52,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   Update an existing preference set -- inserts a new reference set with a reference to the previous one.
   """
   def update(preference_set_attrs) do
-    preference_set_changeset = changeset(%__MODULE__{}, preference_set_attrs)
+    preference_set_changeset = changeset(struct!(__MODULE__, []), preference_set_attrs)
 
     if preference_set_changeset.valid? do
       Repo.insert(preference_set_changeset)
@@ -106,11 +106,10 @@ defmodule Draft.EmployeeVacationPreferenceSet do
           preference_set.process_id == ^process_id and preference_set.round_id == ^round_id and
             preference_set.employee_id == ^employee_id,
         order_by: [desc: preference_set.id],
-        limit: 1
+        limit: 1,
+        preload: [:vacation_preferences]
       )
 
-    latest_preference_set_query
-    |> Repo.one()
-    |> Repo.preload(:vacation_preferences)
+    Repo.one(latest_preference_set_query)
   end
 end

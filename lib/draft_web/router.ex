@@ -65,9 +65,11 @@ defmodule DraftWeb.Router do
 
     get "/vacation_availability", VacationAvailabilityController, :index
 
-    resources "/vacation/preferences", VacationPreferenceController, only: [:create, :update], param: "previous_preference_set_id"
-    get "/vacation/preferences/latest", VacationPreferenceController, :show_latest
+    resources "/vacation/preferences", VacationPreferenceController,
+      only: [:create, :update],
+      param: "previous_preference_set_id"
 
+    get "/vacation/preferences/latest", VacationPreferenceController, :show_latest
   end
 
   # Enables LiveDashboard only for development

@@ -85,7 +85,10 @@ defmodule DraftWeb.API.VacationPreferenceController do
       |> Map.put(:round_id, pick_overview.round_id)
       |> Map.put(:process_id, pick_overview.process_id)
       |> Map.put(:employee_id, pick_overview.employee_id)
-      |> Map.put(:previous_preference_set_id, Map.get(preference_set, "previous_preference_set_id"))
+      |> Map.put(
+        :previous_preference_set_id,
+        Map.get(preference_set, "previous_preference_set_id")
+      )
       |> Map.put(:vacation_preferences, to_vacation_preferences(preference_set))
       |> EmployeeVacationPreferenceSet.update()
 

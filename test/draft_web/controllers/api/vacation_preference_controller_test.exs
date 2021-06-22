@@ -6,7 +6,9 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
   alias Draft.Repo
 
   @tag :authenticated
-  test "GET /api/vacation/preferences/latest is successful when preferences present", %{conn: conn} do
+  test "GET /api/vacation/preferences/latest is successful when preferences present", %{
+    conn: conn
+  } do
     insert_round_with_employees(
       %{
         rank: 1,
@@ -69,7 +71,9 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
   end
 
   @tag :authenticated
-  test "GET /api/vacation/preferences/latest is successful when no preferences present", %{conn: conn} do
+  test "GET /api/vacation/preferences/latest is successful when no preferences present", %{
+    conn: conn
+  } do
     insert_round_with_employees(
       %{
         rank: 1,
@@ -306,6 +310,7 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         ]
       })
 
-    assert %{"data" => %{"previous_preference_set_id" => _error_message}} = json_response(conn, 500)
+    assert %{"data" => %{"previous_preference_set_id" => _error_message}} =
+             json_response(conn, 500)
   end
 end
