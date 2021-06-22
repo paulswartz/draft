@@ -5,8 +5,7 @@ import {
   VacationWeekQuotaData,
 } from "../models/divisionVacationQuotaData";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
-import {apiSend, fetchVacationPreferenceSet} from "../api"
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const VacationPreferenceForm = (): JSX.Element => {
   const [selectedWeeks, setSelectedWeeks] = useState<String[]>([]);
@@ -15,26 +14,12 @@ const VacationPreferenceForm = (): JSX.Element => {
   const handleWeekInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const updatedWeekPreferences = 
     event.target.checked
-      ? [...selectedWeeks, event.target.value]
-      : 
+      ? setSelectedWeeks([...selectedWeeks, event.target.value])
+      : setSelectedWeeks(
           selectedWeeks.filter((week) => week !== event.target.value)
-        ;
-    setSelectedWeeks(updatedWeekPreferences)
+        );
   };
-
-  useEffect(() => {
-  fetchVacationPreferenceSet().then((prefs) => {if (prefs != null) {setSelectedWeeks(prefs.weeks.map(pref => (pref.start_date.toString()))); setSelectedDays(prefs.days.map(pref => (pref.start_date.toString()))) }})
-}, []);
-
-
-    useEffect(() => {
-      const ranked_weeks = selectedWeeks.map((pref, index) => ({start_date: pref, rank: index + 1}));
-      const ranked_days = selectedDays.map((pref, index) => ({start_date: pref, rank: index + 1}));
-    apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({weeks: ranked_weeks, days: ranked_days})})
-  }, [selectedWeeks, selectedDays]);
-  
 
   const handleDayInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.target.checked
@@ -81,13 +66,13 @@ const VacationPreferenceForm = (): JSX.Element => {
     <div>
       <h3>Preferred Vacation</h3>
       <h4>Weeks</h4>
-      <ul>{selectedWeeks.map((week) => (
-        <li key={week.toString()}>{week}</li>
-      ))}</ul>
+      {selectedWeeks.map((week) => (
+        <p>{week}</p>
+      ))}
       <h4>Days</h4>
-      <ul>{selectedDays.map((day) => (
-        <li key={day.toString()}>{day}</li>
-      ))}</ul>
+      {selectedDays.map((day) => (
+        <p>{day}</p>
+      ))}
       <h3>Available Vacation Time</h3>
       <h4>Weeks</h4>
       {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}
