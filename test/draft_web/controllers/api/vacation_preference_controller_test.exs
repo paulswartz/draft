@@ -1,4 +1,4 @@
-defmodule DraftWeb.VacatoinPreferenceControllerTest do
+defmodule DraftWeb.VacationPreferenceControllerTest do
   use DraftWeb.ConnCase
   import Draft.Factory
   alias Draft.EmployeeVacationPreference
@@ -128,12 +128,11 @@ defmodule DraftWeb.VacatoinPreferenceControllerTest do
         "weeks" => [
           %{
             "start_date" => "2021-02-01",
-            "end_date" => "2021-02-07",
             "rank" => 1
           },
           %{"start_date" => "2021-02-08", "rank" => 2}
-        ]}
-      )
+        ]
+      })
 
     assert %{
              "days" => [
@@ -151,7 +150,7 @@ defmodule DraftWeb.VacatoinPreferenceControllerTest do
   end
 
   @tag :authenticated
-  test "POST /api/vacation/preferences is successful when no preferences present", %{conn: conn} do
+  test "POST /api/vacation/preferences returns 500 when preferences are invalid", %{conn: conn} do
     insert_round_with_employees(
       %{
         rank: 1,
@@ -170,18 +169,29 @@ defmodule DraftWeb.VacatoinPreferenceControllerTest do
     conn =
       conn
       |> put_session(:user_id, "00001")
-      |> get("/api/vacation/preferences")
+      |> post("/api/vacation/preferences", %{
+        "days" => [],
+        "weeks" => [
+          %{
+            "start_date" => "2021-02-01",
+            "rank" => 1
+          },
+          %{"start_date" => "2021-02-01", "rank" => 2}
+        ]
+      })
 
     assert %{
-             "days" => [],
-             "weeks" => []
-           } = json_response(conn, 200)["data"]
+             "data" => %{
+               "vacation_preferences" => [
+                 %{},
+                 %{"preference_set_id" => ["has already been taken"]}
+               ]
+             }
+           } = json_response(conn, 500)
   end
 
   test "POST api/vacation/preferences when not authed is redirected to login", %{conn: conn} do
     conn = post(conn, "/api/vacation/preferences")
     assert redirected_to(conn) == "/auth/cognito"
   end
-
-
 end

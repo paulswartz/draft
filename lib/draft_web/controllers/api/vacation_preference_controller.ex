@@ -59,12 +59,12 @@ defmodule DraftWeb.API.VacationPreferenceController do
     vacation_weeks =
       preference_set
       |> Map.get("weeks", [])
-      |> Enum.map(&format_week_preference(&1))
+      |> Enum.map(&to_vacation_preference("week", &1))
 
     vacation_days =
       preference_set
       |> Map.get("days", [])
-      |> Enum.map(&format_day_preference(&1))
+      |> Enum.map(&to_vacation_preference("day", &1))
 
     preference_attrs =
       %{}
@@ -77,27 +77,37 @@ defmodule DraftWeb.API.VacationPreferenceController do
 
     case new_preference_set do
       {:ok, preference_set} ->
-        json(conn, preference_set)
+        json(conn, %{data: group_vacation_preferences(preference_set)})
 
       {:error, error_changeset} ->
         conn
         |> put_status(500)
-        |> json(error_changeset.errors)
+        |> json(%{
+          data: Ecto.Changeset.traverse_errors(error_changeset, &format_error_messages(&1))
+        })
     end
   end
 
-  defp format_week_preference(week) do
+  defp format_error_messages({msg, opts}) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end)
+  end
+
+  defp to_vacation_preference(interval_type, inverval)
+
+  defp to_vacation_preference("week", week) do
     {:ok, start_date} = Date.from_iso8601(Map.get(week, "start_date"))
 
     %{
       start_date: start_date,
-      end_date: Date.add(start_date, 7),
+      end_date: Date.add(start_date, 6),
       rank: Map.get(week, "rank"),
       interval_type: "week"
     }
   end
 
-  defp format_day_preference(day) do
+  defp to_vacation_preference("day", day) do
     {:ok, start_date} = Date.from_iso8601(Map.get(day, "start_date"))
 
     %{

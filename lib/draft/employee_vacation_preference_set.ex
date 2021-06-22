@@ -52,6 +52,9 @@ defmodule Draft.EmployeeVacationPreferenceSet do
 
     preference_set_changeset = changeset(%__MODULE__{}, preference_set_attrs)
 
+    require Logger
+    Logger.error(preference_set_changeset.valid?)
+
     if preference_set_changeset.valid? do
       preference_set_changeset
       |> Map.put(
