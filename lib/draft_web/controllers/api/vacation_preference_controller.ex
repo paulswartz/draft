@@ -3,6 +3,9 @@ defmodule DraftWeb.API.VacationPreferenceController do
   alias Draft.EmployeeVacationPreferenceSet
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @doc """
+  Return the latest vacation preferences of the latest pick session the employee is participating in.
+  """
   def show(conn, _params) do
     pick_overview =
       conn
@@ -44,6 +47,9 @@ defmodule DraftWeb.API.VacationPreferenceController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @doc """
+  Insert a new preference set
+  """
   def create(conn, preference_set) do
     pick_overview =
       conn
@@ -51,11 +57,13 @@ defmodule DraftWeb.API.VacationPreferenceController do
       |> Draft.EmployeePickOverview.get_latest()
 
     vacation_weeks =
-      Map.get(preference_set, "weeks", [])
+      preference_set
+      |> Map.get("weeks", [])
       |> Enum.map(&format_week_preference(&1))
 
     vacation_days =
-      Map.get(preference_set, "days", [])
+      preference_set
+      |> Map.get("days", [])
       |> Enum.map(&format_day_preference(&1))
 
     preference_attrs =
@@ -84,7 +92,7 @@ defmodule DraftWeb.API.VacationPreferenceController do
     %{
       start_date: start_date,
       end_date: Date.add(start_date, 7),
-      preference_rank: Map.get(week, "rank"),
+      rank: Map.get(week, "rank"),
       interval_type: "week"
     }
   end
@@ -95,7 +103,7 @@ defmodule DraftWeb.API.VacationPreferenceController do
     %{
       start_date: start_date,
       end_date: start_date,
-      preference_rank: Map.get(day, "rank"),
+      rank: Map.get(day, "rank"),
       interval_type: "day"
     }
   end

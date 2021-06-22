@@ -11,17 +11,17 @@ defmodule Draft.EmployeeVacationPreference do
           interval_type: String.t(),
           start_date: Date.t(),
           end_date: Date.t(),
-          preference_rank: integer()
+          rank: integer()
         }
 
   @derive {Jason.Encoder,
-           only: [:preference_set_id, :interval_type, :start_date, :end_date, :preference_rank]}
+           only: [:preference_set_id, :interval_type, :start_date, :end_date, :rank]}
 
   schema "employee_vacation_preferences" do
     field :interval_type, :string
     field :start_date, :date
     field :end_date, :date
-    field :preference_rank, :integer
+    field :rank, :integer
 
     belongs_to :employee_vacation_preference_sets, EmployeeVacationPreferenceSet,
       foreign_key: :preference_set_id
@@ -33,12 +33,15 @@ defmodule Draft.EmployeeVacationPreference do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_vacation_preference, attrs \\ %{}) do
     employee_vacation_preference
-    |> cast(attrs, [:preference_set_id, :interval_type, :start_date, :end_date, :preference_rank])
+    |> cast(attrs, [:preference_set_id, :interval_type, :start_date, :end_date, :rank])
     |> validate_required([
       :interval_type,
       :start_date,
       :end_date,
-      :preference_rank
+      :rank
     ])
+    |> unique_constraint([:preference_set_id, :interval_type, :start_date],
+      name: :vacation_preference_interval_date_index
+    )
   end
 end

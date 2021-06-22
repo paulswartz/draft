@@ -9,10 +9,10 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   alias Draft.Repo
 
   @type t :: %__MODULE__{
-          employee_id: String.t(),
-          process_id: String.t(),
-          round_id: String.t(),
-          vacation_preferences: [EmployeeVacationPreference.t()],
+          employee_id: String.t() | nil,
+          process_id: String.t() | nil,
+          round_id: String.t() | nil,
+          vacation_preferences: [EmployeeVacationPreference.t()] | Ecto.Association.NotLoaded.t(),
           previous_preference_set_id: integer() | nil
         }
 
@@ -29,12 +29,39 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   end
 
   @spec create(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  @doc """
+  Insert a new preference set from the valid attributes given, or return a descriptive error.
+  """
   def create(preference_set_attrs) do
-    preference_set_changeset =
-      %__MODULE__{}
-      |> changeset(preference_set_attrs)
+    latest_preferences =
+      get_latest_preferences(
+        preference_set_attrs[:process_id],
+        preference_set_attrs[:round_id],
+        preference_set_attrs[:employee_id]
+      )
 
-    Repo.insert(preference_set_changeset)
+    previous_preference_id =
+      if latest_preferences == nil do
+        nil
+      else
+        latest_preferences.id
+      end
+
+    preference_set_attrs =
+      Map.put(preference_set_attrs, :previous_preference_set_id, previous_preference_id)
+
+    preference_set_changeset = changeset(%__MODULE__{}, preference_set_attrs)
+
+    if preference_set_changeset.valid? do
+      preference_set_changeset
+      |> Map.put(
+        :previous_preference_set_id,
+        previous_preference_id
+      )
+      |> Repo.insert()
+    else
+      {:error, preference_set_changeset}
+    end
   end
 
   @doc false
@@ -44,6 +71,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     |> cast(attrs, [:employee_id, :process_id, :round_id, :previous_preference_set_id])
     |> cast_assoc(:vacation_preferences)
     |> validate_required([:employee_id, :process_id, :round_id])
+    |> foreign_key_constraint(:round_id, name: :employee_vacation_preference_sets_round_id_fkey)
   end
 
   @spec get_latest_preferences(String.t(), String.t(), String.t()) ::

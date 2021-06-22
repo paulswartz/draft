@@ -7,7 +7,7 @@ defmodule Draft.Repo.Migrations.CreateEmployeeVacationPreferences do
       add :interval_type, :string
       add :start_date, :date
       add :end_date, :date
-      add :preference_rank, :integer
+      add :rank, :integer
 
       timestamps(type: :timestamptz)
     end
@@ -20,7 +20,7 @@ defmodule Draft.Repo.Migrations.CreateEmployeeVacationPreferences do
 
     create unique_index(
              "employee_vacation_preferences",
-             [:preference_set_id, :interval_type, :preference_rank],
+             [:preference_set_id, :interval_type, :rank],
              name: :vacation_preference_interval_rank_index
            )
   end
