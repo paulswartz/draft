@@ -34,6 +34,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   """
   def create(preference_set_attrs) do
     initial_struct = struct!(__MODULE__, [])
+
     preference_set_changeset =
       initial_struct
       |> cast(preference_set_attrs, [:employee_id, :process_id, :round_id])
