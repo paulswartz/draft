@@ -33,8 +33,9 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   Insert a new preference set from the valid attributes given, or return a descriptive error.
   """
   def create(preference_set_attrs) do
+    initial_struct = struct!(__MODULE__, [])
     preference_set_changeset =
-      struct!(__MODULE__, [])
+      initial_struct
       |> cast(preference_set_attrs, [:employee_id, :process_id, :round_id])
       |> cast_assoc(:vacation_preferences)
       |> validate_required([:employee_id, :process_id, :round_id])
