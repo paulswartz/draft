@@ -66,26 +66,29 @@ defmodule DraftWeb.API.VacationPreferenceController do
       |> Map.get("days", [])
       |> Enum.map(&to_vacation_preference("day", &1))
 
-    preference_attrs =
+    preference_set_creation_result =
       %{}
       |> Map.put(:round_id, pick_overview.round_id)
       |> Map.put(:process_id, pick_overview.process_id)
       |> Map.put(:employee_id, pick_overview.employee_id)
       |> Map.put(:vacation_preferences, vacation_weeks ++ vacation_days)
+      |> EmployeeVacationPreferenceSet.create()
 
-    new_preference_set = EmployeeVacationPreferenceSet.create(preference_attrs)
+    build_create_json_response(conn, preference_set_creation_result)
+  end
 
-    case new_preference_set do
-      {:ok, preference_set} ->
-        json(conn, %{data: group_vacation_preferences(preference_set)})
+  defp build_create_json_response(conn, result)
 
-      {:error, error_changeset} ->
-        conn
-        |> put_status(500)
-        |> json(%{
-          data: Ecto.Changeset.traverse_errors(error_changeset, &format_error_messages(&1))
-        })
-    end
+  defp build_create_json_response(conn, {:ok, preference_set}) do
+    json(conn, %{data: group_vacation_preferences(preference_set)})
+  end
+
+  defp build_create_json_response(conn, {:error, error_changeset}) do
+    conn
+    |> put_status(500)
+    |> json(%{
+      data: Ecto.Changeset.traverse_errors(error_changeset, &format_error_messages(&1))
+    })
   end
 
   defp format_error_messages({msg, opts}) do
