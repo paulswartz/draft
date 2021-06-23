@@ -1,18 +1,17 @@
 export interface VacationPreference {
-    start_date: Date;
-    end_date: Date;
-    interval_type: "week" | "day";
-    rank: number;
-  }
+  start_date: Date;
+  end_date: Date;
+  interval_type: "week" | "day";
+  rank: number;
+}
 
-  export interface VacationPreferenceRequest {
-    start_date: string;
-    rank: number;
-  }
+export interface VacationPreferenceRequest {
+  start_date: string;
+  rank: number;
+}
 
-  export interface VacationPreferenceSet {
-    days: VacationPreference[];
-    weeks: VacationPreference[];
-    id: number | null;
-  }
-
+export interface VacationPreferenceSet {
+  days: VacationPreference[];
+  weeks: VacationPreference[];
+  id: number | null;
+}
