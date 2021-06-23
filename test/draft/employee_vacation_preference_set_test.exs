@@ -279,7 +279,59 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                })
     end
 
-    test "Correctly references previous preference set when one is present" do
+    test "Creating ignores any given previous id " do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          round_rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      assert {:ok,
+              %EmployeeVacationPreferenceSet{
+                process_id: "process_1",
+                round_id: "vacation_1",
+                employee_id: "00001",
+                previous_preference_set_id: nil,
+                vacation_preferences: [
+                  %EmployeeVacationPreference{
+                    start_date: ~D[2021-02-01],
+                    end_date: ~D[2021-02-07],
+                    rank: 1,
+                    interval_type: "week"
+                  }
+                ]
+              }} =
+               EmployeeVacationPreferenceSet.create(%{
+                 process_id: "process_1",
+                 round_id: "vacation_1",
+                 employee_id: "00001",
+                 previous_preference_set_id: 1234,
+                 vacation_preferences: [
+                   %{
+                     start_date: ~D[2021-02-01],
+                     end_date: ~D[2021-02-07],
+                     rank: 1,
+                     interval_type: "week"
+                   }
+                 ]
+               })
+    end
+  end
+
+  describe "update/1" do
+    test "Has correct previous preference id when one is given" do
       insert_round_with_employees(
         %{
           rank: 1,
@@ -328,10 +380,62 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                   }
                 ]
               }} =
-               EmployeeVacationPreferenceSet.create(%{
+               EmployeeVacationPreferenceSet.update(%{
                  process_id: "process_1",
                  round_id: "vacation_1",
                  employee_id: "00001",
+                 previous_preference_set_id: previous_id,
+                 vacation_preferences: [
+                   %{
+                     start_date: ~D[2021-02-08],
+                     end_date: ~D[2021-02-14],
+                     rank: 1,
+                     interval_type: "week"
+                   }
+                 ]
+               })
+    end
+
+    test "Cannot insert if invalid previous preference id" do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          round_rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          employee_count: 2,
+          group_size: 10
+        }
+      )
+
+      {:ok, %EmployeeVacationPreferenceSet{id: previous_id_different_employee}} =
+        EmployeeVacationPreferenceSet.create(%{
+          process_id: "process_1",
+          round_id: "vacation_1",
+          employee_id: "00002",
+          vacation_preferences: [
+            %{
+              start_date: ~D[2021-02-01],
+              end_date: ~D[2021-02-07],
+              rank: 1,
+              interval_type: "week"
+            }
+          ]
+        })
+
+      assert {:error, _} =
+               EmployeeVacationPreferenceSet.update(%{
+                 process_id: "process_1",
+                 round_id: "vacation_1",
+                 employee_id: "00001",
+                 previous_preference_set_id: previous_id_different_employee,
                  vacation_preferences: [
                    %{
                      start_date: ~D[2021-02-08],
