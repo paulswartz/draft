@@ -6,7 +6,7 @@ import {
 } from "../models/divisionVacationQuotaData";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
 import {useVacationPreferencesReducer } from "../hooks/useVacationPreferencesReducer"
-import {fetchVacationPreferenceSet, updateVacationPreferences} from "../api"
+import {fetchVacationPreferenceSet, upsertVacationPreferences} from "../api"
 import { useEffect } from "react";
 
 
@@ -28,9 +28,7 @@ const VacationPreferenceForm = (): JSX.Element => {
         ;
         const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}));
         const ranked_days = state.vacation_preference_set.days.map((pref, index) => ({start_date: pref, rank: index + 1}));
-        console.log(state)
-        updateVacationPreferences(state.vacation_preference_set.preference_set_id, ranked_weeks, ranked_days).then((response) => {
-        console.log(response); 
+        upsertVacationPreferences(state.vacation_preference_set.preference_set_id, ranked_weeks, ranked_days).then((response) => {
         if (response.ok) 
         { dispatch({type:'UPDATE_VACATION_PREFERENCES', payload: {preference_set_id: response.ok.id, weeks: response.ok.weeks.map(pref => (pref.start_date.toString())), days: response.ok.days.map(pref => (pref.start_date.toString()))}})}
         else {
@@ -44,8 +42,6 @@ const VacationPreferenceForm = (): JSX.Element => {
   useEffect(() => {
     fetchVacationPreferenceSet()
     .then((prefs) => {
-      console.log("PREFS")
-      console.log(prefs)
       if (prefs != null) {dispatch({type: "LOAD_LATEST_PREFERENCES_SUCCESS", payload: {preference_set_id: prefs.id, weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))}})}});
   }, []);
 
@@ -62,9 +58,7 @@ const VacationPreferenceForm = (): JSX.Element => {
         ;
         const ranked_days = updatedDaysPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}));
         const ranked_weeks = state.vacation_preference_set.weeks.map((pref, index) => ({start_date: pref, rank: index + 1}));
-        console.log(state)
-        updateVacationPreferences(state.vacation_preference_set.preference_set_id, ranked_weeks, ranked_days).then((response) => {
-        console.log(response); 
+        upsertVacationPreferences(state.vacation_preference_set.preference_set_id, ranked_weeks, ranked_days).then((response) => {
         if (response.ok) 
         { dispatch({type:'UPDATE_VACATION_PREFERENCES', payload: {preference_set_id: response.ok.id, weeks: response.ok.weeks.map(pref => (pref.start_date.toString())), days: response.ok.days.map(pref => (pref.start_date.toString()))}})}
         else {

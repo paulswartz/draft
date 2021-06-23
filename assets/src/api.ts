@@ -37,19 +37,17 @@ export const apiCall = <T>({
       }
     });
 
-    export const apiSend = <T, E>({
+    export const apiSend = <T>({
       url,
       method,
       json,
-      successParser = (x) => x,
-      errorParser = (x) => x,
+      successParser = (x) => x
     }: {
       url: string
       method: "POST" | "PATCH" | "DELETE" | "PUT"
       json: any
       successParser?: (json: any) => T
-      errorParser?: (json: any) => E
-    }): Promise<Result<T, E>> => 
+    }): Promise<Result<T, string>> => 
       fetch(url, {
         method,
         credentials: "include",
@@ -61,7 +59,7 @@ export const apiCall = <T>({
       .then(checkResponseStatus)
       .then(parseJson)
       .then(({ data: data }: { data: any }) => {return {ok: successParser(data)}})
-      .catch((error) => {return {error: errorParser(error)}});
+      .catch((error) => {return {error: error.message}});
     
 
 export const fetchDivisionAvailableVacationQuota =
@@ -82,8 +80,20 @@ export const fetchDivisionAvailableVacationQuota =
           defaultResult: null
       });
 
-  export const updateVacationPreferences = (previous_preverence_set_id: number, preferred_weeks: VacationPreferenceRequest[], preferred_days: VacationPreferenceRequest[]): Promise<Result<VacationPreferenceSet, VacationPreferenceSet>> => 
-    {
-      return apiSend({url: "/api/vacation/preferences/" + previous_preverence_set_id, method: "PUT", json: JSON.stringify({weeks: preferred_weeks, days: preferred_days})})
+      export const updateVacationPreferences = (previous_preverence_set_id: number, preferred_weeks: VacationPreferenceRequest[], preferred_days: VacationPreferenceRequest[]): Promise<Result<VacationPreferenceSet, string>> => 
+      {
+        return apiSend({url: "/api/vacation/preferences/" + previous_preverence_set_id, method: "PUT", json: JSON.stringify({weeks: preferred_weeks, days: preferred_days})})
+  
+      }
+  
+      export const saveInitialVacationPreferences = (preferred_weeks: VacationPreferenceRequest[], preferred_days: VacationPreferenceRequest[]): Promise<Result<VacationPreferenceSet, string>> => 
+      {
+        return apiSend({url: "/api/vacation/preferences" , method: "POST", json: JSON.stringify({weeks: preferred_weeks, days: preferred_days})})
+  
+      }
+  
 
+  export const upsertVacationPreferences = (previous_preverence_set_id: number | null, preferred_weeks: VacationPreferenceRequest[], preferred_days: VacationPreferenceRequest[]): Promise<Result<VacationPreferenceSet, string>> => 
+  {return previous_preverence_set_id == null ? saveInitialVacationPreferences(preferred_weeks, preferred_days) : updateVacationPreferences(previous_preverence_set_id, preferred_weeks, preferred_days)
     }
+

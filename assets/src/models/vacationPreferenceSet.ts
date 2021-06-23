@@ -6,7 +6,7 @@ export interface VacationPreference {
   }
 
   export interface VacationPreferenceRequest {
-    start_date: Date;
+    start_date: string;
     rank: number;
   }
 
