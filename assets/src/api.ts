@@ -45,7 +45,7 @@ export const apiCall = <T>({
       errorParser = (x) => x,
     }: {
       url: string
-      method: "POST" | "PATCH" | "DELETE"
+      method: "POST" | "PATCH" | "DELETE" | "PUT"
       json: any
       successParser?: (json: any) => T
       errorParser?: (json: any) => E
@@ -57,7 +57,9 @@ export const apiCall = <T>({
         headers: {
           'Content-Type': 'application/json'
         },
-      }).then(parseJson)
+      })
+      .then(checkResponseStatus)
+      .then(parseJson)
       .then(({ data: data }: { data: any }) => {return {ok: successParser(data)}})
       .catch((error) => {return {error: errorParser(error)}});
     
@@ -74,7 +76,7 @@ export const fetchDivisionAvailableVacationQuota =
     export const fetchVacationPreferenceSet =
     (): Promise<VacationPreferenceSet | null> =>
       apiCall({
-        url: "/api/vacation/preferences",
+        url: "/api/vacation/preferences/latest",
         parser: (vacationPreferenceSet: VacationPreferenceSet) =>
         vacationPreferenceSet,
           defaultResult: null

@@ -11,7 +11,7 @@ import { useState, useEffect, useReducer } from "react";
 function init() {
   return fetchVacationPreferenceSet()
   .then((prefs) => {if (prefs != null) return {weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))};
-  else return {weeks: [], days: []}})
+  else return {weeks: [], days: [], preference_set_id: null}})
 }
 
 function reducer(state, action) {
@@ -20,8 +20,8 @@ function reducer(state, action) {
       return  { 
         ...state,
         weeks: action.payload.weeks,
-        days: action.payload.weeks,
-        preference_set_id: action.payload.id
+        days: action.payload.days,
+        preference_set_id: action.payload.preference_set_id
     }
     case 'save_preferences_error':
       return  { 
@@ -29,7 +29,9 @@ function reducer(state, action) {
         error_msg: action.payload
     }
     case "initial_load":
-    return {weeks: action.payload.weeks, days: action.payload.days, preference_set_id: action.payload.id}
+      console.log("LOAD")
+      console.log(action.payload)
+    return {weeks: action.payload.weeks, days: action.payload.days, preference_set_id: action.payload.preference_set_id}
     default:
       throw new Error();
   }
@@ -52,11 +54,12 @@ const VacationPreferenceForm = (): JSX.Element => {
         ;
         const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}));
         const ranked_days = state.days.map((pref, index) => ({start_date: pref, rank: index + 1}));
-      apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({previous_preference_set_id: state.preference_set_id, weeks: ranked_weeks, days: ranked_days})})
+        console.log(state)
+      apiSend({url: "/api/vacation/preferences/" + state.preference_set_id, method: "PUT", json: JSON.stringify({previous_preference_set_id: state.preference_set_id, weeks: ranked_weeks, days: ranked_days})})
       .then((response) => {
         console.log(response); 
         if (response.ok) 
-        { dispatch({type:'set_weeks', payload: {weeks: response.ok.weeks.map(pref => (pref.start_date.toString())), days: response.ok.map(pref => (pref.start_date.toString()))}})}
+        { dispatch({type:'set_weeks', payload: {preference_set_id: response.ok.id, weeks: response.ok.weeks.map(pref => (pref.start_date.toString())), days: response.ok.days.map(pref => (pref.start_date.toString()))}})}
         else {
           dispatch({type: 'save_preferences_error', payload: "Error saving preferences. Please try again"})
         }
@@ -66,7 +69,10 @@ const VacationPreferenceForm = (): JSX.Element => {
 
   useEffect(() => {
     fetchVacationPreferenceSet()
-    .then((prefs) => {if (prefs != null) {dispatch({type: "initial_load", payload: {weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))}})}});
+    .then((prefs) => {
+      console.log("PREFS")
+      console.log(prefs)
+      if (prefs != null) {dispatch({type: "initial_load", payload: {preference_set_id: prefs.id, weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))}})}});
   }, []);
 
 
@@ -78,6 +84,10 @@ const VacationPreferenceForm = (): JSX.Element => {
         );
         */
   };
+
+  const alreadySelectedWeek = (value: String): boolean => {
+    return state != undefined && state.weeks.includes(value)
+  }
 
   const VacationDayDisplay = (day: VacationDayQuotaData): JSX.Element => {
     return (
@@ -103,6 +113,7 @@ const VacationPreferenceForm = (): JSX.Element => {
             type="checkbox"
             value={week.start_date.toString()}
             onChange={(e) => handleWeekInputChange(e)}
+            checked={alreadySelectedWeek(week.start_date.toString())}
           />
         </label>
       </div>

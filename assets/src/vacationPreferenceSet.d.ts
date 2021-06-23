@@ -9,5 +9,6 @@ export interface VacationPreference {
     process_id: string;
     round_id: string;
     employee_id: string;
+    id: number;
     vacation_preferences: VacationPreference[]
   }

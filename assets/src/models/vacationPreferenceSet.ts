@@ -8,5 +8,6 @@ export interface VacationPreference {
   export interface VacationPreferenceSet {
     days: VacationPreference[];
     weeks: VacationPreference[];
+    id: number | null;
   }
 
