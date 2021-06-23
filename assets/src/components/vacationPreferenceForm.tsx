@@ -19,15 +19,17 @@ function reducer(state, action) {
     case 'set_weeks':
       return  { 
         ...state,
-        weeks: action.payload
+        weeks: action.payload.weeks,
+        days: action.payload.weeks,
+        preference_set_id: action.payload.id
     }
-    case 'set_days':
+    case 'save_preferences_error':
       return  { 
         ...state,
-        days: action.payload
+        error_msg: action.payload
     }
     case "initial_load":
-    return {weeks: action.payload.weeks, days: action.payload.days}
+    return {weeks: action.payload.weeks, days: action.payload.days, preference_set_id: action.payload.id}
     default:
       throw new Error();
   }
@@ -37,7 +39,7 @@ function reducer(state, action) {
 
 const VacationPreferenceForm = (): JSX.Element => {
 
-  const [state, dispatch] = useReducer(reducer, {weeks: [], days: []});
+  const [state, dispatch] = useReducer(reducer, undefined);
 
   const handleWeekInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -50,12 +52,21 @@ const VacationPreferenceForm = (): JSX.Element => {
         ;
         const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({start_date: pref, rank: index + 1}));
         const ranked_days = state.days.map((pref, index) => ({start_date: pref, rank: index + 1}));
-      apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({weeks: ranked_weeks, days: ranked_days})})
-      dispatch({type:'set_weeks', payload: updatedWeekPreferences })
+      apiSend({url: "/api/vacation/preferences", method: "POST", json: JSON.stringify({previous_preference_set_id: state.preference_set_id, weeks: ranked_weeks, days: ranked_days})})
+      .then((response) => {
+        console.log(response); 
+        if (response.ok) 
+        { dispatch({type:'set_weeks', payload: {weeks: response.ok.weeks.map(pref => (pref.start_date.toString())), days: response.ok.map(pref => (pref.start_date.toString()))}})}
+        else {
+          dispatch({type: 'save_preferences_error', payload: "Error saving preferences. Please try again"})
+        }
+      })
+      
   };
 
   useEffect(() => {
-    fetchVacationPreferenceSet().then((prefs) => {if (prefs != null) {dispatch({type: "initial_load", payload: {weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))}})}});
+    fetchVacationPreferenceSet()
+    .then((prefs) => {if (prefs != null) {dispatch({type: "initial_load", payload: {weeks: (prefs.weeks.map(pref => (pref.start_date.toString()))), days: prefs.days.map(pref => (pref.start_date.toString()))}})}});
   }, []);
 
 
@@ -98,36 +109,33 @@ const VacationPreferenceForm = (): JSX.Element => {
     );
   };
 
+  const DisplaySelectedPreferences = (): JSX.Element => {
+    return state == undefined ? 
+    <p>Loading selected preferences</p>
+    :       <div><h3>Preferred Vacation</h3>
+    <h4>Weeks</h4>
+  <ul>{state.weeks.map((week) => (
+      <li key={week.toString()}>{week}</li>
+    ))}</ul>
+          <h4>Days</h4>
+  <ul>{state.days.map((day) => (
+      <li key={day.toString()}>{day}</li>
+    ))}</ul></div>
+  }
+
+
+  const DisplayErrorMessage = (): JSX.Element => {
+    return state != undefined && state.error_msg && <p> state.error_msg</p>
+  }
+
+
   const availQuota: DivisionAvailableVacationQuotaData | null =
     useDivisionAvailableVacationQuotas();
 
-/*   return (
-    <div>
-      <h3>Preferred Vacation</h3>
-      <h4>Weeks</h4>
-    <ul>{state.weeks.map((week) => (
-        <li key={week.toString()}>{week}</li>
-      ))}</ul>
-      <h4>Days</h4>
-      <ul>{state.weeks.map((day) => (
-        <li key={day.toString()}>{day}</li>
-      ))}</ul>
-      <h3>Available Vacation Time</h3>
-      <h4>Weeks</h4>
-      {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}
-
-      <h4>Days</h4>
-      {availQuota?.days.map((day) => VacationDayDisplay(day))}
-    </div>
-  ); */
-  console.log(state)
   return (
     <div>
-      <h3>Preferred Vacation</h3>
-      <h4>Weeks</h4>
-    <ul>{state.weeks.map((week) => (
-        <li key={week.toString()}>{week}</li>
-      ))}</ul>
+      {DisplayErrorMessage()}
+{DisplaySelectedPreferences()}
       <h3>Available Vacation Time</h3>
       <h4>Weeks</h4>
       {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}

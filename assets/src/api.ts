@@ -37,7 +37,7 @@ export const apiCall = <T>({
       }
     });
 
-    export const apiSend = async <T, E>({
+    export const apiSend = <T, E>({
       url,
       method,
       json,
@@ -49,28 +49,18 @@ export const apiCall = <T>({
       json: any
       successParser?: (json: any) => T
       errorParser?: (json: any) => E
-    }): Promise<Result<T, E>> => {
-      const response = await fetch(url, {
+    }): Promise<Result<T, E>> => 
+      fetch(url, {
         method,
         credentials: "include",
         body: json,
         headers: {
           'Content-Type': 'application/json'
         },
-      })
+      }).then(parseJson)
+      .then(({ data: data }: { data: any }) => {return {ok: successParser(data)}})
+      .catch((error) => {return {error: errorParser(error)}});
     
-      if (response.status === 204) {
-        return { ok: successParser(null) }
-      }
-      const responseData = await response.json()
-      if (response.status === 200 || response.status === 201) {
-        return { ok: successParser(responseData) }
-      } else if (Math.floor(response.status / 100) === 4) {
-        return { error: errorParser(responseData) }
-      }
-    
-      return Promise.reject("fetch/parse error")
-    }
 
 export const fetchDivisionAvailableVacationQuota =
   (): Promise<DivisionAvailableVacationQuotaData | null> =>
