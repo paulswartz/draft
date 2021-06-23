@@ -5,6 +5,11 @@ export interface VacationPreference {
     rank: number;
   }
 
+  export interface VacationPreferenceRequest {
+    start_date: Date;
+    rank: number;
+  }
+
   export interface VacationPreferenceSet {
     days: VacationPreference[];
     weeks: VacationPreference[];
