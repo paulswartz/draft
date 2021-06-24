@@ -13,7 +13,10 @@ import {
   upsertVacationPreferences,
 } from "../api";
 import { useEffect } from "react";
-import { VacationPreferenceRequest } from "../models/vacationPreferenceSet";
+import {
+  VacationPreferenceRequest,
+  VacationPreferenceSet,
+} from "../models/vacationPreferenceSet";
 
 const VacationPreferenceForm = (): JSX.Element => {
   const [state, dispatch] = useVacationPreferencesReducer();
@@ -43,25 +46,27 @@ const VacationPreferenceForm = (): JSX.Element => {
       state.vacation_preference_set.preference_set_id,
       rankedPreferences.ranked_weeks,
       rankedPreferences.ranked_days
-    ).then((response) => {
-      if (response.status == OK) {
-        dispatch({
-          type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
-          payload: {
-            preference_set_id: response.value.id,
-            weeks: response.value.weeks.map((pref) =>
-              pref.start_date.toString()
-            ),
-            days: response.value.days.map((pref) => pref.start_date.toString()),
-          },
-        });
-      } else {
-        dispatch({
-          type: "UPDATE_VACATION_PREFERENCES_ERROR",
-          payload: "Error saving preferences. Please try again",
-        });
-      }
-    });
+    ).then((response) => processUpdateVacationResponse(response));
+  };
+
+  const processUpdateVacationResponse = (
+    response: Result<VacationPreferenceSet, string>
+  ): void => {
+    if (response.status == OK) {
+      dispatch({
+        type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
+        payload: {
+          preference_set_id: response.value.id,
+          weeks: response.value.weeks.map((pref) => pref.start_date.toString()),
+          days: response.value.days.map((pref) => pref.start_date.toString()),
+        },
+      });
+    } else {
+      dispatch({
+        type: "UPDATE_VACATION_PREFERENCES_ERROR",
+        payload: "Error saving preferences. Please try again",
+      });
+    }
   };
 
   const simpleVacationRanking = (
@@ -124,27 +129,7 @@ const VacationPreferenceForm = (): JSX.Element => {
         state.vacation_preference_set.preference_set_id,
         rankedPreferences.ranked_weeks,
         rankedPreferences.ranked_days
-      ).then((response) => {
-        if (response.status == OK) {
-          dispatch({
-            type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
-            payload: {
-              preference_set_id: response.value.id,
-              weeks: response.value.weeks.map((pref) =>
-                pref.start_date.toString()
-              ),
-              days: response.value.days.map((pref) =>
-                pref.start_date.toString()
-              ),
-            },
-          });
-        } else {
-          dispatch({
-            type: "UPDATE_VACATION_PREFERENCES_ERROR",
-            payload: "Error saving preferences. Please try again",
-          });
-        }
-      });
+      ).then((response) => processUpdateVacationResponse(response));
     }
   };
 
