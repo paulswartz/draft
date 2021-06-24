@@ -13,6 +13,7 @@ import {
   upsertVacationPreferences,
 } from "../api";
 import { useEffect } from "react";
+import { VacationPreferenceRequest } from "../models/vacationPreferenceSet";
 
 const VacationPreferenceForm = (): JSX.Element => {
   const [state, dispatch] = useVacationPreferencesReducer();
@@ -25,21 +26,27 @@ const VacationPreferenceForm = (): JSX.Element => {
       : state.vacation_preference_set.weeks.filter(
           (week) => week !== event.target.value
         );
-    const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({
-      start_date: pref,
-      rank: index + 1,
-    }));
-    const ranked_days = state.vacation_preference_set.days.map(
-      (pref, index) => ({ start_date: pref, rank: index + 1 })
+
+    const rankedPreferences = simpleVacationRanking(
+      updatedWeekPreferences,
+      state.vacation_preference_set.days
     );
+
+    dispatch({
+      type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
+      payload: {
+        weeks: updatedWeekPreferences,
+        days: state.vacation_preference_set.days,
+      },
+    });
     upsertVacationPreferences(
       state.vacation_preference_set.preference_set_id,
-      ranked_weeks,
-      ranked_days
+      rankedPreferences.ranked_weeks,
+      rankedPreferences.ranked_days
     ).then((response) => {
       if (response.status == OK) {
         dispatch({
-          type: "UPDATE_VACATION_PREFERENCES",
+          type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
           payload: {
             preference_set_id: response.value.id,
             weeks: response.value.weeks.map((pref) =>
@@ -50,11 +57,30 @@ const VacationPreferenceForm = (): JSX.Element => {
         });
       } else {
         dispatch({
-          type: "SAVE_PREFERENCES_ERROR",
+          type: "UPDATE_VACATION_PREFERENCES_ERROR",
           payload: "Error saving preferences. Please try again",
         });
       }
     });
+  };
+
+  const simpleVacationRanking = (
+    weeks: string[],
+    days: string[]
+  ): {
+    ranked_weeks: VacationPreferenceRequest[];
+    ranked_days: VacationPreferenceRequest[];
+  } => {
+    const ranked_weeks = weeks.map((pref, index) => ({
+      start_date: pref,
+      rank: index + 1,
+    }));
+    const ranked_days = days.map((pref, index) => ({
+      start_date: pref,
+      rank: index + 1,
+    }));
+
+    return { ranked_weeks: ranked_weeks, ranked_days: ranked_days };
   };
 
   useEffect(() => {
@@ -82,21 +108,26 @@ const VacationPreferenceForm = (): JSX.Element => {
         : state.vacation_preference_set.days.filter(
             (day) => day !== event.target.value
           );
-      const ranked_days = updatedDaysPreferences.map((pref, index) => ({
-        start_date: pref,
-        rank: index + 1,
-      }));
-      const ranked_weeks = state.vacation_preference_set.weeks.map(
-        (pref, index) => ({ start_date: pref, rank: index + 1 })
+      const rankedPreferences = simpleVacationRanking(
+        state.vacation_preference_set.weeks,
+        updatedDaysPreferences
       );
+
+      dispatch({
+        type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
+        payload: {
+          weeks: state.vacation_preference_set.weeks,
+          days: updatedDaysPreferences,
+        },
+      });
       upsertVacationPreferences(
         state.vacation_preference_set.preference_set_id,
-        ranked_weeks,
-        ranked_days
+        rankedPreferences.ranked_weeks,
+        rankedPreferences.ranked_days
       ).then((response) => {
         if (response.status == OK) {
           dispatch({
-            type: "UPDATE_VACATION_PREFERENCES",
+            type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
             payload: {
               preference_set_id: response.value.id,
               weeks: response.value.weeks.map((pref) =>
@@ -109,7 +140,7 @@ const VacationPreferenceForm = (): JSX.Element => {
           });
         } else {
           dispatch({
-            type: "SAVE_PREFERENCES_ERROR",
+            type: "UPDATE_VACATION_PREFERENCES_ERROR",
             payload: "Error saving preferences. Please try again",
           });
         }

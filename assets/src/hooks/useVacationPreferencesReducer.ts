@@ -2,7 +2,17 @@ import { State, Action, Dispatch, initialState } from "../state";
 import { useReducer } from "react";
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case "UPDATE_VACATION_PREFERENCES":
+    case "UPDATE_VACATION_PREFERENCES_REQUESTED":
+      return {
+        ...state,
+        vacation_preference_set: {
+          preference_set_id: state.vacation_preference_set.preference_set_id,
+          weeks: action.payload.weeks,
+          days: action.payload.days,
+        },
+      };
+
+    case "UPDATE_VACATION_PREFERENCES_SUCCESS":
       return {
         ...state,
         vacation_preference_set: {
@@ -11,7 +21,7 @@ const reducer = (state: State, action: Action): State => {
           preference_set_id: action.payload.preference_set_id,
         },
       };
-    case "SAVE_PREFERENCES_ERROR":
+    case "UPDATE_VACATION_PREFERENCES_ERROR":
       return {
         ...state,
         error_msg: action.payload,

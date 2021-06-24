@@ -25,12 +25,21 @@ export type Dispatch = ReactDispatch<Action>;
 export type Reducer = (state: State, action: Action) => State;
 
 export type Action =
-  | UpdatePreferencesAction
-  | ErrorSavingPreferencesAction
+  | UpdatePreferencesRequestedAction
+  | UpdatePreferencesSuccessAction
+  | UpdatePreferencesErrorAction
   | LoadLatestPreferencesSuccessAction;
 
-interface UpdatePreferencesAction {
-  type: "UPDATE_VACATION_PREFERENCES";
+interface UpdatePreferencesRequestedAction {
+  type: "UPDATE_VACATION_PREFERENCES_REQUESTED";
+  payload: {
+    weeks: string[];
+    days: string[];
+  };
+}
+
+interface UpdatePreferencesSuccessAction {
+  type: "UPDATE_VACATION_PREFERENCES_SUCCESS";
   payload: {
     weeks: string[];
     days: string[];
@@ -38,8 +47,8 @@ interface UpdatePreferencesAction {
   };
 }
 
-interface ErrorSavingPreferencesAction {
-  type: "SAVE_PREFERENCES_ERROR";
+interface UpdatePreferencesErrorAction {
+  type: "UPDATE_VACATION_PREFERENCES_ERROR";
   payload: string;
 }
 
