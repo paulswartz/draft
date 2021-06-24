@@ -50,13 +50,16 @@ export const apiSend = <T>({
   method: "POST" | "PATCH" | "DELETE" | "PUT";
   json: any;
   successParser?: (json: any) => T;
-}): Promise<Result<T, string>> =>
-  fetch(url, {
+}): Promise<Result<T, string>> => {
+ 
+  const csrfToken = document.head.querySelector("[name~=csrf-token][content]") as HTMLMetaElement
+  return fetch(url, {
     method,
     credentials: "include",
     body: json,
     headers: {
       "Content-Type": "application/json",
+      "x-csrf-token": csrfToken.content
     },
   })
     .then(checkResponseStatus)
@@ -67,6 +70,8 @@ export const apiSend = <T>({
     .catch((error) => {
       return { error: error.message };
     });
+  }
+  
 
 export const fetchDivisionAvailableVacationQuota =
   (): Promise<DivisionAvailableVacationQuotaData | null> =>
