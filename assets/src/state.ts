@@ -7,9 +7,18 @@ export interface VacationPreferenceSetState {
 }
 
 export interface State {
-  vacation_preference_set?: VacationPreferenceSetState | undefined;
-  error_msg?: string | undefined | null;
+  vacation_preference_set: VacationPreferenceSetState;
+  error_msg: string | null;
 }
+
+export const initialState: State = {
+  vacation_preference_set: {
+    preference_set_id: null,
+    weeks: [],
+    days: [],
+  },
+  error_msg: null,
+};
 
 export type Dispatch = ReactDispatch<Action>;
 

@@ -6,7 +6,12 @@ import {
 } from "../models/divisionVacationQuotaData";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
 import { useVacationPreferencesReducer } from "../hooks/useVacationPreferencesReducer";
-import { fetchVacationPreferenceSet, upsertVacationPreferences } from "../api";
+import {
+  fetchVacationPreferenceSet,
+  OK,
+  Result,
+  upsertVacationPreferences,
+} from "../api";
 import { useEffect } from "react";
 
 const VacationPreferenceForm = (): JSX.Element => {
@@ -15,54 +20,55 @@ const VacationPreferenceForm = (): JSX.Element => {
   const handleWeekInputChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (state?.vacation_preference_set) {
-      const updatedWeekPreferences = event.target.checked
-        ? [...state.vacation_preference_set.weeks, event.target.value]
-        : state.vacation_preference_set.weeks.filter(
-            (week) => week !== event.target.value
-          );
-      const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({
-        start_date: pref,
-        rank: index + 1,
-      }));
-      const ranked_days = state.vacation_preference_set.days.map(
-        (pref, index) => ({ start_date: pref, rank: index + 1 })
-      );
-      upsertVacationPreferences(
-        state.vacation_preference_set.preference_set_id,
-        ranked_weeks,
-        ranked_days
-      ).then((response) => {
-        if (response.ok) {
-          dispatch({
-            type: "UPDATE_VACATION_PREFERENCES",
-            payload: {
-              preference_set_id: response.ok.id,
-              weeks: response.ok.weeks.map((pref) =>
-                pref.start_date.toString()
-              ),
-              days: response.ok.days.map((pref) => pref.start_date.toString()),
-            },
-          });
-        } else {
-          dispatch({
-            type: "SAVE_PREFERENCES_ERROR",
-            payload: "Error saving preferences. Please try again",
-          });
-        }
-      });
-    }
+    const updatedWeekPreferences = event.target.checked
+      ? [...state.vacation_preference_set.weeks, event.target.value]
+      : state.vacation_preference_set.weeks.filter(
+          (week) => week !== event.target.value
+        );
+    const ranked_weeks = updatedWeekPreferences.map((pref, index) => ({
+      start_date: pref,
+      rank: index + 1,
+    }));
+    const ranked_days = state.vacation_preference_set.days.map(
+      (pref, index) => ({ start_date: pref, rank: index + 1 })
+    );
+    upsertVacationPreferences(
+      state.vacation_preference_set.preference_set_id,
+      ranked_weeks,
+      ranked_days
+    ).then((response) => {
+      if (response.status == OK) {
+        dispatch({
+          type: "UPDATE_VACATION_PREFERENCES",
+          payload: {
+            preference_set_id: response.value.id,
+            weeks: response.value.weeks.map((pref) =>
+              pref.start_date.toString()
+            ),
+            days: response.value.days.map((pref) => pref.start_date.toString()),
+          },
+        });
+      } else {
+        dispatch({
+          type: "SAVE_PREFERENCES_ERROR",
+          payload: "Error saving preferences. Please try again",
+        });
+      }
+    });
   };
 
   useEffect(() => {
-    fetchVacationPreferenceSet().then((prefs) => {
-      if (prefs != null) {
+    fetchVacationPreferenceSet().then((result) => {
+      if (result.status == OK) {
+        const preferenceSet = result.value;
         dispatch({
           type: "LOAD_LATEST_PREFERENCES_SUCCESS",
           payload: {
-            preference_set_id: prefs.id,
-            weeks: prefs.weeks.map((pref) => pref.start_date.toString()),
-            days: prefs.days.map((pref) => pref.start_date.toString()),
+            preference_set_id: preferenceSet.id,
+            weeks: preferenceSet.weeks.map((pref) =>
+              pref.start_date.toString()
+            ),
+            days: preferenceSet.days.map((pref) => pref.start_date.toString()),
           },
         });
       }
@@ -88,15 +94,17 @@ const VacationPreferenceForm = (): JSX.Element => {
         ranked_weeks,
         ranked_days
       ).then((response) => {
-        if (response.ok) {
+        if (response.status == OK) {
           dispatch({
             type: "UPDATE_VACATION_PREFERENCES",
             payload: {
-              preference_set_id: response.ok.id,
-              weeks: response.ok.weeks.map((pref) =>
+              preference_set_id: response.value.id,
+              weeks: response.value.weeks.map((pref) =>
                 pref.start_date.toString()
               ),
-              days: response.ok.days.map((pref) => pref.start_date.toString()),
+              days: response.value.days.map((pref) =>
+                pref.start_date.toString()
+              ),
             },
           });
         } else {
@@ -110,19 +118,11 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   const alreadySelectedWeek = (value: string): boolean => {
-    return (
-      state != undefined &&
-      state.vacation_preference_set != undefined &&
-      state.vacation_preference_set.weeks.includes(value)
-    );
+    return state.vacation_preference_set.weeks.includes(value);
   };
 
   const alreadySelectedDay = (value: string): boolean => {
-    return (
-      state != undefined &&
-      state.vacation_preference_set != undefined &&
-      state.vacation_preference_set.days.includes(value)
-    );
+    return state.vacation_preference_set.days.includes(value);
   };
 
   const VacationDayDisplay = (day: VacationDayQuotaData): JSX.Element => {
@@ -158,9 +158,7 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   const DisplaySelectedPreferences = (): JSX.Element => {
-    return state == undefined || state.vacation_preference_set == undefined ? (
-      <p>Loading selected preferences</p>
-    ) : (
+    return (
       <div>
         <h3>Preferred Vacation</h3>
         <h4>Weeks</h4>
@@ -180,27 +178,32 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   const DisplayErrorMessage = (): JSX.Element => {
-    return (
-      <p>
-        {" "}
-        {state != undefined && state.error_msg != undefined && state.error_msg}
-      </p>
-    );
+    return <p>{state.error_msg}</p>;
   };
 
-  const availQuota: DivisionAvailableVacationQuotaData | null =
+  const availQuota: Result<DivisionAvailableVacationQuotaData, string> =
     useDivisionAvailableVacationQuotas();
+
+  const DisplayAvailableQuota = () => {
+    return availQuota.status == OK ? (
+      <div>
+        <h3>Available Vacation Time</h3>
+        <h4>Weeks</h4>
+        {availQuota.value.weeks.map((week) => VacationWeekDisplay(week))}
+
+        <h4>Days</h4>
+        {availQuota.value.days.map((day) => VacationDayDisplay(day))}
+      </div>
+    ) : (
+      <p>availableDivisionQuotaResult.value</p>
+    );
+  };
 
   return (
     <div>
       {DisplayErrorMessage()}
       {DisplaySelectedPreferences()}
-      <h3>Available Vacation Time</h3>
-      <h4>Weeks</h4>
-      {availQuota?.weeks.map((week) => VacationWeekDisplay(week))}
-
-      <h4>Days</h4>
-      {availQuota?.days.map((day) => VacationDayDisplay(day))}
+      {DisplayAvailableQuota()}
     </div>
   );
 };

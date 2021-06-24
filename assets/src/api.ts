@@ -4,10 +4,13 @@ import {
   VacationPreferenceRequest,
 } from "./models/vacationPreferenceSet";
 
-interface Result<T, E> {
-  ok?: T;
-  error?: E;
-}
+export const OK = "ok";
+export const ERROR = "error";
+
+type ResultOk<T> = { status: "ok"; value: T };
+type ResultError<E> = { status: "error"; value: E };
+
+export type Result<T, E> = ResultOk<T> | ResultError<E>;
 
 const checkResponseStatus = (response: Response) => {
   if (response.status === 200) {
@@ -22,22 +25,18 @@ const parseJson = (response: Response) => response.json();
 export const apiCall = <T>({
   url,
   parser,
-  defaultResult,
 }: {
   url: string;
   parser: (data: any) => T;
-  defaultResult?: T;
-}): Promise<T> =>
+}): Promise<Result<T, string>> =>
   fetch(url)
     .then(checkResponseStatus)
     .then(parseJson)
-    .then(({ data: data }: { data: any }) => parser(data))
+    .then(({ data: dataToParse }: { data: any }): ResultOk<T> => {
+      return { status: "ok", value: parser(dataToParse) };
+    })
     .catch((error) => {
-      if (defaultResult === undefined) {
-        throw error;
-      } else {
-        return defaultResult;
-      }
+      return { status: "error", value: error.message };
     });
 
 export const apiSend = <T>({
@@ -51,45 +50,45 @@ export const apiSend = <T>({
   json: any;
   successParser?: (json: any) => T;
 }): Promise<Result<T, string>> => {
- 
-  const csrfToken = document.head.querySelector("[name~=csrf-token][content]") as HTMLMetaElement
+  const csrfToken = document.head.querySelector(
+    "[name~=csrf-token][content]"
+  ) as HTMLMetaElement;
   return fetch(url, {
     method,
     credentials: "include",
     body: json,
     headers: {
       "Content-Type": "application/json",
-      "x-csrf-token": csrfToken.content
+      "x-csrf-token": csrfToken.content,
     },
   })
     .then(checkResponseStatus)
     .then(parseJson)
-    .then(({ data: data }: { data: any }) => {
-      return { ok: successParser(data) };
+    .then(({ data: dataToParse }: { data: any }): ResultOk<T> => {
+      return { status: OK, value: successParser(dataToParse) };
     })
     .catch((error) => {
-      return { error: error.message };
+      return { status: ERROR, value: error.message };
     });
-  }
-  
+};
 
-export const fetchDivisionAvailableVacationQuota =
-  (): Promise<DivisionAvailableVacationQuotaData | null> =>
-    apiCall({
-      url: "/api/vacation_availability",
-      parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData) =>
-        divisionVacationQuotas,
-      defaultResult: null,
-    });
+export const fetchDivisionAvailableVacationQuota = (): Promise<
+  Result<DivisionAvailableVacationQuotaData, string>
+> =>
+  apiCall({
+    url: "/api/vacation_availability",
+    parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData) =>
+      divisionVacationQuotas,
+  });
 
-export const fetchVacationPreferenceSet =
-  (): Promise<VacationPreferenceSet | null> =>
-    apiCall({
-      url: "/api/vacation/preferences/latest",
-      parser: (vacationPreferenceSet: VacationPreferenceSet) =>
-        vacationPreferenceSet,
-      defaultResult: null,
-    });
+export const fetchVacationPreferenceSet = (): Promise<
+  Result<VacationPreferenceSet, string>
+> =>
+  apiCall({
+    url: "/api/vacation/preferences/latest",
+    parser: (vacationPreferenceSet: VacationPreferenceSet) =>
+      vacationPreferenceSet,
+  });
 
 export const updateVacationPreferences = (
   previous_preverence_set_id: number,
