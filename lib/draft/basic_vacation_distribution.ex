@@ -137,11 +137,26 @@ defmodule Draft.BasicVacationDistribution do
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        assigned_weeks = distribute_weeks_balance(round, employee, max_weeks)
+        assigned_weeks =
+          distribute_weeks_balance(
+            round.division_id,
+            employee,
+            max_weeks,
+            round.rating_period_start_date,
+            round.rating_period_end_date
+          )
 
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
-        assigned_days = distribute_days_balance(round, employee, max_days, assigned_weeks)
+        assigned_days =
+          distribute_days_balance(
+            round.division_id,
+            employee,
+            max_days,
+            assigned_weeks,
+            round.rating_period_start_date,
+            round.rating_period_end_date
+          )
 
         assigned_weeks ++ assigned_days
 
@@ -162,17 +177,21 @@ defmodule Draft.BasicVacationDistribution do
   end
 
   defp distribute_days_balance(
-         round,
+         division_id,
          employee,
          max_days,
-         assigned_weeks
+         assigned_weeks,
+         range_start_date,
+         range_end_Date
        )
 
   defp distribute_days_balance(
-         _round,
+         _division_id,
          _employee,
          0,
-         _assigned_weeks
+         _assigned_weeks,
+         _range_start_date,
+         _range_end_date
        ) do
     Logger.info(
       "Skipping vacation day assignment - employee cannot take any days off in this rating period."
@@ -182,10 +201,12 @@ defmodule Draft.BasicVacationDistribution do
   end
 
   defp distribute_days_balance(
-         round,
+         division_id,
          employee,
          max_days,
-         [] = _assigned_weeks
+         [] = _assigned_weeks,
+         range_start_date,
+         range_end_date
        ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
@@ -201,10 +222,10 @@ defmodule Draft.BasicVacationDistribution do
         from d in DivisionVacationDayQuota,
           as: :division_day_quota,
           where:
-            d.division_id == ^round.division_id and d.quota > 0 and
+            d.division_id == ^division_id and d.quota > 0 and
               d.employee_selection_set == ^selection_set and
-              d.date >= ^round.rating_period_start_date and
-              d.date <= ^round.rating_period_end_date and
+              d.date >= ^range_start_date and
+              d.date <= ^range_end_date and
               not exists(conflicting_selected_dates_query),
           order_by: [asc: d.date],
           limit: ^max_days
@@ -217,7 +238,9 @@ defmodule Draft.BasicVacationDistribution do
          _round,
          _employee,
          _max_days,
-         _assigned_weeks
+         _assigned_weeks,
+         _range_start_date,
+         _range_end_date
        ) do
     Logger.info(
       "Skipping vacation day assignment -- only assigning weeks or days for now, and weeks have already been assigned."
@@ -252,17 +275,29 @@ defmodule Draft.BasicVacationDistribution do
     }
   end
 
-  defp distribute_weeks_balance(round, employee, max_weeks)
+  defp distribute_weeks_balance(
+         division_id,
+         employee,
+         max_weeks,
+         range_start_date,
+         range_end_date
+       )
 
-  defp distribute_weeks_balance(_round, _employee, 0) do
+  defp distribute_weeks_balance(_division_id, _employee, 0, _range_start_date, _range_end_date) do
     Logger.info(
-      "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
+      "Skipping vacation week assignment - employee cannot take any weeks off in this range."
     )
 
     []
   end
 
-  defp distribute_weeks_balance(round, employee, max_weeks) do
+  defp distribute_weeks_balance(
+         division_id,
+         employee,
+         max_weeks,
+         range_start_date,
+         range_end_date
+       ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     conflicting_selected_vacation_query =
@@ -277,10 +312,10 @@ defmodule Draft.BasicVacationDistribution do
         from w in DivisionVacationWeekQuota,
           as: :division_week_quota,
           where:
-            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+            w.division_id == ^division_id and w.quota > 0 and w.is_restricted_week == false and
               w.employee_selection_set == ^selection_set and
-              ^round.rating_period_start_date <= w.start_date and
-              ^round.rating_period_end_date >= w.end_date and
+              ^range_start_date <= w.start_date and
+              ^range_end_date >= w.end_date and
               not exists(conflicting_selected_vacation_query),
           order_by: [asc: w.start_date],
           limit: ^max_weeks
