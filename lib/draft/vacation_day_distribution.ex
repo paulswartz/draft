@@ -12,7 +12,7 @@ defmodule Draft.VacationDayDistribution do
   @spec distribute_days_balance(
           Draft.BidRound,
           Draft.EmployeeRanking,
-          number(),
+          integer(),
           [EmployeeVacationAssignment],
           nil | %{anniversary_date: Date.t(), anniversary_days: number()}
         ) :: [EmployeeVacationAssignment]

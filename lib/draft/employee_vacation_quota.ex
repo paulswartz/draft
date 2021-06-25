@@ -14,10 +14,10 @@ defmodule Draft.EmployeeVacationQuota do
           interval_end_date: Date.t(),
           weekly_quota: integer(),
           dated_quota: integer(),
-          restricted_week_quota: integer() | nil,
+          restricted_week_quota: integer(),
           available_after_date: Date.t() | nil,
-          available_after_dated_quota: integer() | nil,
-          available_after_weekly_quota: integer() | nil,
+          available_after_dated_quota: integer(),
+          available_after_weekly_quota: integer(),
           maximum_minutes: integer()
         }
 
@@ -70,8 +70,8 @@ defmodule Draft.EmployeeVacationQuota do
           nil
           | %{
               anniversary_date: Date.t(),
-              anniversary_weeks: number(),
-              anniversary_days: number()
+              anniversary_weeks: integer(),
+              anniversary_days: integer()
             }
   @doc """
   Get the anniversary quota that is awarded during the given employee vacation balance interval,
