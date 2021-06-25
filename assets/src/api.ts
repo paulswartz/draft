@@ -1,7 +1,7 @@
 import { DivisionAvailableVacationQuotaData } from "./models/divisionVacationQuotaData";
 import {
   VacationPreferenceSet,
-  VacationPreferenceRequest,
+  VacationPreference,
 } from "./models/vacationPreferenceSet";
 
 export const OK = "ok";
@@ -92,8 +92,8 @@ export const fetchLatestVacationPreferenceSet = (): Promise<
 
 export const updateVacationPreferences = (
   previous_preverence_set_id: number,
-  preferred_weeks: VacationPreferenceRequest[],
-  preferred_days: VacationPreferenceRequest[]
+  preferred_weeks: VacationPreference[],
+  preferred_days: VacationPreference[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
   return apiSend({
     url: "/api/vacation/preferences/" + previous_preverence_set_id,
@@ -103,8 +103,8 @@ export const updateVacationPreferences = (
 };
 
 export const saveInitialVacationPreferences = (
-  preferred_weeks: VacationPreferenceRequest[],
-  preferred_days: VacationPreferenceRequest[]
+  preferred_weeks: VacationPreference[],
+  preferred_days: VacationPreference[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
   return apiSend({
     url: "/api/vacation/preferences",
@@ -115,8 +115,8 @@ export const saveInitialVacationPreferences = (
 
 export const upsertVacationPreferences = (
   previous_preverence_set_id: number | null,
-  preferred_weeks: VacationPreferenceRequest[],
-  preferred_days: VacationPreferenceRequest[]
+  preferred_weeks: VacationPreference[],
+  preferred_days: VacationPreference[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
   return previous_preverence_set_id == null
     ? saveInitialVacationPreferences(preferred_weeks, preferred_days)

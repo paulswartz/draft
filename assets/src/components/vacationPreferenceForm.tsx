@@ -14,7 +14,7 @@ import {
 } from "../api";
 import { useEffect } from "react";
 import {
-  VacationPreferenceRequest,
+  VacationPreference,
   VacationPreferenceSet,
 } from "../models/vacationPreferenceSet";
 
@@ -125,8 +125,8 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   const updateRanking = (
-    preferences: VacationPreferenceRequest[]
-  ): VacationPreferenceRequest[] => {
+    preferences: VacationPreference[]
+  ): VacationPreference[] => {
     return preferences.map((pref, index) => ({
       ...pref,
       rank: index + 1,
@@ -134,7 +134,7 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   const alreadySelected = (
-    preferences: VacationPreferenceRequest[],
+    preferences: VacationPreference[],
     value: string
   ): boolean => {
     return preferences.some((pref) => pref.start_date === value);
@@ -198,9 +198,7 @@ const VacationPreferenceForm = (): JSX.Element => {
     );
   };
 
-  const DisplayPreference = (
-    preference: VacationPreferenceRequest
-  ): JSX.Element => {
+  const DisplayPreference = (preference: VacationPreference): JSX.Element => {
     return (
       <li key={preference.start_date.toString()}>
         {preference.rank + ". " + preference.start_date}
