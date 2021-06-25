@@ -1,9 +1,10 @@
 import { Dispatch as ReactDispatch } from "react";
+import { VacationPreferenceRequest } from "./models/vacationPreferenceSet";
 
 export interface VacationPreferenceSetState {
   preference_set_id: number | null;
-  weeks: string[];
-  days: string[];
+  weeks: VacationPreferenceRequest[];
+  days: VacationPreferenceRequest[];
 }
 
 export interface State {
@@ -32,16 +33,16 @@ export type Action =
 interface UpdatePreferencesRequestedAction {
   type: "UPDATE_VACATION_PREFERENCES_REQUESTED";
   payload: {
-    weeks: string[];
-    days: string[];
+    weeks: VacationPreferenceRequest[];
+    days: VacationPreferenceRequest[];
   };
 }
 
 interface UpdatePreferencesSuccessAction {
   type: "UPDATE_VACATION_PREFERENCES_SUCCESS";
   payload: {
-    weeks: string[];
-    days: string[];
+    weeks: VacationPreferenceRequest[];
+    days: VacationPreferenceRequest[];
     preference_set_id: number | null;
   };
 }

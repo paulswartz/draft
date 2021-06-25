@@ -1,14 +1,12 @@
 import { intervalType } from "../vacationPreferenceSet";
 
-export interface VacationPreference {
-  start_date: Date;
-  end_date: Date;
+export interface VacationPreference extends VacationPreferenceRequest {
   interval_type: intervalType;
-  rank: number;
 }
 
 export interface VacationPreferenceRequest {
   start_date: string;
+  end_date: string;
   rank: number;
 }
 
