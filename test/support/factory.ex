@@ -69,9 +69,9 @@ defmodule Draft.Factory do
       weekly_quota: 2,
       dated_quota: 5,
       restricted_week_quota: 0,
-      available_after_date: ~D[2021-06-30],
-      available_after_weekly_quota: 1,
-      available_after_dated_quota: 5,
+      available_after_date: nil,
+      available_after_weekly_quota: nil,
+      available_after_dated_quota: nil,
       maximum_minutes: 600
     }
   end

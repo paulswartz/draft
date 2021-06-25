@@ -125,6 +125,11 @@ defmodule Draft.BasicVacationDistribution do
 
         max_minutes = employee_balance.maximum_minutes
 
+        anniversary_upcoming =
+          !is_nil(employee_balance.available_after_date) &&
+            !(Date.compare(employee_balance.available_after_date, round.rating_period_start_date) ==
+                :lt)
+
         # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
         num_hours_per_day =
           if String.starts_with?(
@@ -134,8 +139,35 @@ defmodule Draft.BasicVacationDistribution do
              do: 8,
              else: 6
 
+        # Cap weeks by the maximum number of minutes an operator has left to take off
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+
+        # subtract any unearned time
+        max_weeks =
+          max(
+            0,
+            if anniversary_upcoming do
+              max_weeks - employee_balance.available_after_weekly_quota
+            else
+              max_weeks
+            end
+          )
+
+        has_anniversary_date_during_rating_period =
+          !is_nil(employee_balance.available_after_date) &&
+            Enum.member?(
+              Date.range(round.rating_period_start_date, round.rating_period_end_date),
+              employee_balance.available_after_date
+            )
+
+        assignment_range_end_date =
+          if has_anniversary_date_during_rating_period do
+            # TODO confirm vacation time not earned until the day of - maybe rename this field to be more descriptive.
+            Date.add(employee_balance.available_after_date, -1)
+          else
+            round.rating_period_end_date
+          end
 
         assigned_weeks =
           distribute_weeks_balance(
@@ -143,10 +175,20 @@ defmodule Draft.BasicVacationDistribution do
             employee,
             max_weeks,
             round.rating_period_start_date,
-            round.rating_period_end_date
+            assignment_range_end_date
           )
 
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+
+        max_days =
+          max(
+            0,
+            if anniversary_upcoming do
+              max_days - employee_balance.available_after_dated_quota
+            else
+              max_days
+            end
+          )
 
         assigned_days =
           distribute_days_balance(
@@ -155,7 +197,7 @@ defmodule Draft.BasicVacationDistribution do
             max_days,
             assigned_weeks,
             round.rating_period_start_date,
-            round.rating_period_end_date
+            assignment_range_end_date
           )
 
         assigned_weeks ++ assigned_days

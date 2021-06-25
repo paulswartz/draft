@@ -440,6 +440,172 @@ defmodule Draft.BasicVacationDistributionTest do
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
+
+    test "Operator whose anniversary date has passed can take full amount of vacation time available" do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          rating_period_start_date: ~D[2021-04-01],
+          rating_period_end_date: ~D[2021-05-01]
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 0,
+        available_after_date: ~D[2021-03-15],
+        available_after_weekly_quota: 1,
+        maximum_minutes: 4800
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-08],
+        end_date: ~D[2021-04-14],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-15],
+        end_date: ~D[2021-04-21],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-01],
+                 end_date: ~D[2021-04-07],
+                 employee_id: "00001"
+               },
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-08],
+                 end_date: ~D[2021-04-14],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator whose anniversary date is during the round is only assigned vacation before anniversary date" do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          rating_period_start_date: ~D[2021-04-01],
+          rating_period_end_date: ~D[2021-05-01]
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 3,
+        dated_quota: 0,
+        available_after_date: ~D[2021-04-15],
+        available_after_weekly_quota: 1,
+        available_after_dated_quota: 0,
+        maximum_minutes: 4800
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-15],
+        end_date: ~D[2021-04-21],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-22],
+        end_date: ~D[2021-04-28],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-01],
+                 end_date: ~D[2021-04-07],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator whose anniversary date is after the round is only assigned vacation before anniversary date" do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          rating_period_start_date: ~D[2021-04-01],
+          rating_period_end_date: ~D[2021-05-01]
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 3,
+        dated_quota: 0,
+        available_after_date: ~D[2021-06-15],
+        available_after_weekly_quota: 1,
+        available_after_dated_quota: 0,
+        maximum_minutes: 4800
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-15],
+        end_date: ~D[2021-04-21],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-04-22],
+        end_date: ~D[2021-04-28],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
+
+      assert [
+               %EmployeeVacationAssignment{
+                 start_date: ~D[2021-04-01],
+                 end_date: ~D[2021-04-07],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
   end
 
   defp get_assignments_for_employee(assignments, employee_id) do
