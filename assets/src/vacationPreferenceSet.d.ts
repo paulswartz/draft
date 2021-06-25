@@ -1,7 +1,9 @@
+export type intervalType = "week" | "day";
+
 export interface VacationPreference {
   start_date: Date;
   end_date: Date;
-  interval_type: string;
+  interval_type: intervalType;
   rank: number;
 }
 

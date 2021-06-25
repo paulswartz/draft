@@ -27,8 +27,7 @@ export type Reducer = (state: State, action: Action) => State;
 export type Action =
   | UpdatePreferencesRequestedAction
   | UpdatePreferencesSuccessAction
-  | UpdatePreferencesErrorAction
-  | LoadLatestPreferencesSuccessAction;
+  | UpdatePreferencesErrorAction;
 
 interface UpdatePreferencesRequestedAction {
   type: "UPDATE_VACATION_PREFERENCES_REQUESTED";
@@ -50,13 +49,4 @@ interface UpdatePreferencesSuccessAction {
 interface UpdatePreferencesErrorAction {
   type: "UPDATE_VACATION_PREFERENCES_ERROR";
   payload: string;
-}
-
-interface LoadLatestPreferencesSuccessAction {
-  type: "LOAD_LATEST_PREFERENCES_SUCCESS";
-  payload: {
-    weeks: string[];
-    days: string[];
-    preference_set_id: number | null;
-  };
 }

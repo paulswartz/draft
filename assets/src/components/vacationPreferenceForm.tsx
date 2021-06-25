@@ -7,7 +7,7 @@ import {
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
 import { useVacationPreferencesReducer } from "../hooks/useVacationPreferencesReducer";
 import {
-  fetchVacationPreferenceSet,
+  fetchLatestVacationPreferenceSet,
   OK,
   Result,
   upsertVacationPreferences,
@@ -89,11 +89,11 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   useEffect(() => {
-    fetchVacationPreferenceSet().then((result) => {
+    fetchLatestVacationPreferenceSet().then((result) => {
       if (result.status == OK) {
         const preferenceSet = result.value;
         dispatch({
-          type: "LOAD_LATEST_PREFERENCES_SUCCESS",
+          type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
           payload: {
             preference_set_id: preferenceSet.id,
             weeks: preferenceSet.weeks.map((pref) =>
@@ -133,12 +133,8 @@ const VacationPreferenceForm = (): JSX.Element => {
     }
   };
 
-  const alreadySelectedWeek = (value: string): boolean => {
-    return state.vacation_preference_set.weeks.includes(value);
-  };
-
-  const alreadySelectedDay = (value: string): boolean => {
-    return state.vacation_preference_set.days.includes(value);
+  const alreadySelected = (preferences: string[], value: string): boolean => {
+    return preferences.includes(value);
   };
 
   const VacationDayDisplay = (day: VacationDayQuotaData): JSX.Element => {
@@ -150,7 +146,10 @@ const VacationPreferenceForm = (): JSX.Element => {
             type="checkbox"
             value={day.date}
             onChange={(e) => handleDayInputChange(e)}
-            checked={alreadySelectedDay(day.date.toString())}
+            checked={alreadySelected(
+              state.vacation_preference_set.days,
+              day.date.toString()
+            )}
           />
         </label>
       </div>
@@ -166,7 +165,10 @@ const VacationPreferenceForm = (): JSX.Element => {
             type="checkbox"
             value={week.start_date.toString()}
             onChange={(e) => handleWeekInputChange(e)}
-            checked={alreadySelectedWeek(week.start_date.toString())}
+            checked={alreadySelected(
+              state.vacation_preference_set.weeks,
+              week.start_date.toString()
+            )}
           />
         </label>
       </div>

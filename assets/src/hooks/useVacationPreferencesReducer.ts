@@ -26,15 +26,6 @@ const reducer = (state: State, action: Action): State => {
         ...state,
         error_msg: action.payload,
       };
-    case "LOAD_LATEST_PREFERENCES_SUCCESS":
-      return {
-        ...state,
-        vacation_preference_set: {
-          weeks: action.payload.weeks,
-          days: action.payload.days,
-          preference_set_id: action.payload.preference_set_id,
-        },
-      };
     default:
       throw new Error();
   }

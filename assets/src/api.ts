@@ -7,8 +7,8 @@ import {
 export const OK = "ok";
 export const ERROR = "error";
 
-type ResultOk<T> = { status: "ok"; value: T };
-type ResultError<E> = { status: "error"; value: E };
+type ResultOk<T> = { status: typeof OK; value: T };
+type ResultError<E> = { status: typeof ERROR; value: E };
 
 export type Result<T, E> = ResultOk<T> | ResultError<E>;
 
@@ -33,10 +33,10 @@ export const apiCall = <T>({
     .then(checkResponseStatus)
     .then(parseJson)
     .then(({ data: dataToParse }: { data: any }): ResultOk<T> => {
-      return { status: "ok", value: parser(dataToParse) };
+      return { status: OK, value: parser(dataToParse) };
     })
     .catch((error) => {
-      return { status: "error", value: error.message };
+      return { status: ERROR, value: error.message };
     });
 
 export const apiSend = <T>({
@@ -81,7 +81,7 @@ export const fetchDivisionAvailableVacationQuota = (): Promise<
       divisionVacationQuotas,
   });
 
-export const fetchVacationPreferenceSet = (): Promise<
+export const fetchLatestVacationPreferenceSet = (): Promise<
   Result<VacationPreferenceSet, string>
 > =>
   apiCall({

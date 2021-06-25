@@ -137,7 +137,11 @@ defmodule Draft.BasicVacationDistribution do
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        assigned_weeks = distribute_weeks_balance(round, employee, max_weeks)
+
+        # if no anniversary, don't worry about second distribution
+        # if anniversary, do the math to get new max before
+        assigned_weeks = distribute_weeks_balance(round, employee, max_weeks) #distribute_weeks_balance(round, employee, max_weeks_prior_to_anni, range_start, anniv_date -1)
+        # distribute_weeks_balance(distribute_weeks_balance(round, employee, max_weeks- len(assigned_weeks), anniv_date,, range_end)
 
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
