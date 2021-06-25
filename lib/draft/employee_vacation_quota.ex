@@ -66,6 +66,29 @@ defmodule Draft.EmployeeVacationQuota do
     }
   end
 
+  @spec get_anniversary_quota(t()) ::
+          nil
+          | %{
+              anniversary_date: Date.t(),
+              anniversary_weeks: number(),
+              anniversary_days: number()
+            }
+  @doc """
+  Get the anniversary quota that is awarded during the given employee vacation balance interval,
+  if there is an anniversary during that time.
+  """
+  def get_anniversary_quota(employee_balance) do
+    if is_nil(employee_balance.available_after_date) do
+      nil
+    else
+      %{
+        anniversary_date: employee_balance.available_after_date,
+        anniversary_weeks: employee_balance.available_after_weekly_quota,
+        anniversary_days: employee_balance.available_after_dated_quota
+      }
+    end
+  end
+
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_vacation_quota, attrs \\ %{}) do
