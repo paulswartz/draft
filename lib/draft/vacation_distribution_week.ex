@@ -98,6 +98,66 @@ defmodule Draft.VacationDistribution.Week do
          range_start_date,
          range_end_date
        ) do
+    preference_set =
+      Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
+        employee.process_id,
+        employee.round_id,
+        employee.employee_id
+      )
+
+    all_available_weeks =
+      get_all_weeks_available_to_employee(division_id, employee, range_start_date, range_end_date)
+
+    preferred_vacation_weeks =
+      if is_nil(preference_set) do
+        []
+      else
+        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == "week" end)
+      end
+
+    distribute_available_weeks_from_preferences(
+      employee,
+      all_available_weeks,
+      preferred_vacation_weeks,
+      max_weeks
+    )
+  end
+
+  defp distribute_available_weeks_from_preferences(
+         employee,
+         all_available_weeks,
+         preferred_weeks,
+         max_weeks
+       )
+
+  defp distribute_available_weeks_from_preferences(employee, all_available_weeks, [], max_weeks) do
+    distribute_weeks(employee, Enum.take(all_available_weeks, max_weeks))
+  end
+
+  defp distribute_available_weeks_from_preferences(
+         employee,
+         all_available_weeks,
+         preferred_weeks,
+         max_weeks
+       ) do
+    available_preferred_weeks =
+      all_available_weeks
+      |> Enum.filter(fn w ->
+        Enum.any?(preferred_weeks, fn p ->
+          p.start_date == w.start_date && p.end_date == w.end_date
+        end)
+      end)
+      |> Enum.take(max_weeks)
+
+    distribute_weeks(employee, available_preferred_weeks)
+  end
+
+  defp get_all_weeks_available_to_employee(
+         division_id,
+         employee,
+         range_start_date,
+         range_end_date
+       ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     conflicting_selected_vacation_query =
@@ -107,21 +167,17 @@ defmodule Draft.VacationDistribution.Week do
             s.end_date >= parent_as(:division_week_quota).start_date and
             s.employee_id == ^employee.employee_id
 
-    available_weeks =
-      Repo.all(
-        from w in DivisionVacationWeekQuota,
-          as: :division_week_quota,
-          where:
-            w.division_id == ^division_id and w.quota > 0 and w.is_restricted_week == false and
-              w.employee_selection_set == ^selection_set and
-              ^range_start_date <= w.start_date and
-              ^range_end_date >= w.end_date and
-              not exists(conflicting_selected_vacation_query),
-          order_by: [asc: w.start_date],
-          limit: ^max_weeks
-      )
-
-    distribute_weeks(employee, available_weeks)
+    Repo.all(
+      from w in DivisionVacationWeekQuota,
+        as: :division_week_quota,
+        where:
+          w.division_id == ^division_id and w.quota > 0 and w.is_restricted_week == false and
+            w.employee_selection_set == ^selection_set and
+            ^range_start_date <= w.start_date and
+            ^range_end_date >= w.end_date and
+            not exists(conflicting_selected_vacation_query),
+        order_by: [asc: w.start_date]
+    )
   end
 
   defp distribute_weeks(employee, available_weeks)
