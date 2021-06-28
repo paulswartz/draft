@@ -51,23 +51,15 @@ defmodule Draft.VacationWeekDistribution do
       }) do
     case Date.compare(anniversary_date, round.rating_period_start_date) do
       :gt ->
-        # anniversary has not yet passed. distribute only earned week quota until anniversary date.
-        range_end_date =
-          if Date.compare(anniversary_date, round.rating_period_end_date) == :lt do
-            Date.add(anniversary_date, -1)
-          else
-            round.rating_period_end_date
-          end
-
         distribute_weeks_balance_in_range(
           round.division_id,
           employee,
           max(week_quota_including_anniversary_weeks - anniversary_weeks, 0),
           round.rating_period_start_date,
-          range_end_date
+          round.rating_period_end_date
         )
 
-      # could potentially assign any remaining unused week balance + anniversary week here
+      # could also assign anniversary week here if anniversary falls in rating period
 
       _lt_or_eq ->
         # anniversary has passed - can distribute full week quota
