@@ -1,4 +1,4 @@
-defmodule Draft.VacationDayDistribution do
+defmodule Draft.VacationDistribution.Day do
   @moduledoc """
   Distribute vacation days to an employee.
   """
@@ -9,7 +9,7 @@ defmodule Draft.VacationDayDistribution do
   alias Draft.Repo
   require Logger
 
-  @spec distribute_days_balance(
+  @spec distribute(
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
@@ -21,7 +21,7 @@ defmodule Draft.VacationDayDistribution do
   Distribute vacation days to an employee based on what is available in their division/job class in the rating period they are picking for.
   If the employee has an upcoming anniversary date, vacation days are only assigned up to that date.
   """
-  def distribute_days_balance(
+  def distribute(
         round,
         employee,
         max_days,
@@ -29,8 +29,8 @@ defmodule Draft.VacationDayDistribution do
         anniversary_vacation
       )
 
-  def distribute_days_balance(round, employee, max_days, assigned_weeks, nil) do
-    distribute_days_balance_in_range(
+  def distribute(round, employee, max_days, assigned_weeks, nil) do
+    distribute_in_range(
       round.division_id,
       employee,
       max_days,
@@ -40,7 +40,7 @@ defmodule Draft.VacationDayDistribution do
     )
   end
 
-  def distribute_days_balance(_round, _employee, 0, _assigned_weeks, _anniversary_vacation) do
+  def distribute(_round, _employee, 0, _assigned_weeks, _anniversary_vacation) do
     Logger.info(
       "Skipping vacation day assignment - employee cannot take any days off in this range."
     )
@@ -48,7 +48,7 @@ defmodule Draft.VacationDayDistribution do
     []
   end
 
-  def distribute_days_balance(
+  def distribute(
         round,
         employee,
         day_quota_including_anniversary_days,
@@ -58,33 +58,24 @@ defmodule Draft.VacationDayDistribution do
           anniversary_days: anniversary_days
         }
       ) do
-    case Date.compare(anniversary_date, round.rating_period_start_date) do
-      :gt ->
-        distribute_days_balance_in_range(
-          round.division_id,
-          employee,
-          max(day_quota_including_anniversary_days - anniversary_days, 0),
-          assigned_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
-        )
+    distribute_in_range(
+      round.division_id,
+      employee,
+      Draft.EmployeeVacationQuota.get_anniversary_adjusted_quota(
+        day_quota_including_anniversary_days,
+        anniversary_date,
+        anniversary_days,
+        round.rating_period_start_date
+      ),
+      assigned_weeks,
+      round.rating_period_start_date,
+      round.rating_period_end_date
+    )
 
-      # could potentially assign any remaining unused day balance + anniversary day here
-
-      _lt_or_eq ->
-        # anniversary has passed - can distribute full day quota
-        distribute_days_balance_in_range(
-          round.division_id,
-          employee,
-          day_quota_including_anniversary_days,
-          assigned_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
-        )
-    end
+    # could also assign anniversary days here if anniversary falls in rating period
   end
 
-  defp distribute_days_balance_in_range(
+  defp distribute_in_range(
          division_id,
          employee,
          max_days,
@@ -93,7 +84,7 @@ defmodule Draft.VacationDayDistribution do
          range_end_Date
        )
 
-  defp distribute_days_balance_in_range(
+  defp distribute_in_range(
          _division_id,
          _employee,
          0,
@@ -108,7 +99,7 @@ defmodule Draft.VacationDayDistribution do
     []
   end
 
-  defp distribute_days_balance_in_range(
+  defp distribute_in_range(
          division_id,
          employee,
          max_days,
@@ -139,10 +130,10 @@ defmodule Draft.VacationDayDistribution do
           limit: ^max_days
       )
 
-    distribute_available_days_balance(employee, first_available_days)
+    distribute_days(employee, first_available_days)
   end
 
-  defp distribute_days_balance_in_range(
+  defp distribute_in_range(
          _division_id,
          _employee,
          _max_days,
@@ -157,22 +148,22 @@ defmodule Draft.VacationDayDistribution do
     []
   end
 
-  defp distribute_available_days_balance(employee, available_days)
+  defp distribute_days(employee, available_days)
 
-  defp distribute_available_days_balance(_employee, []) do
+  defp distribute_days(_employee, []) do
     Logger.info("No more vacation days available")
     []
   end
 
-  defp distribute_available_days_balance(employee, available_days) do
+  defp distribute_days(employee, available_days) do
     Enum.each(available_days, fn date_quota ->
       Repo.update(DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1}))
     end)
 
-    Enum.map(available_days, &distribute_single_day(employee, &1))
+    Enum.map(available_days, &distribute_day(employee, &1))
   end
 
-  defp distribute_single_day(employee, selected_day) do
+  defp distribute_day(employee, selected_day) do
     Logger.info("assigned day - #{selected_day.date}")
 
     %EmployeeVacationAssignment{

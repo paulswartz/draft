@@ -11,6 +11,7 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationQuota
   alias Draft.Repo
+  alias Draft.VacationDistribution
   alias Draft.VacationQuotaSetup
 
   require Logger
@@ -138,7 +139,7 @@ defmodule Draft.BasicVacationDistribution do
         anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
         assigned_weeks =
-          Draft.VacationWeekDistribution.distribute_weeks_balance(
+          VacationDistribution.Week.distribute(
             round,
             employee,
             max_weeks,
@@ -148,7 +149,7 @@ defmodule Draft.BasicVacationDistribution do
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
         assigned_days =
-          Draft.VacationDayDistribution.distribute_days_balance(
+          VacationDistribution.Day.distribute(
             round,
             employee,
             max_days,

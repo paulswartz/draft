@@ -77,15 +77,37 @@ defmodule Draft.EmployeeVacationQuota do
   Get the anniversary quota that is awarded during the given employee vacation balance interval,
   if there is an anniversary during that time.
   """
+  def get_anniversary_quota(employee_balance)
+
+  def get_anniversary_quota(employee_balance)
+      when is_nil(employee_balance.available_after_date) do
+    nil
+  end
+
   def get_anniversary_quota(employee_balance) do
-    if is_nil(employee_balance.available_after_date) do
-      nil
-    else
-      %{
-        anniversary_date: employee_balance.available_after_date,
-        anniversary_weeks: employee_balance.available_after_weekly_quota,
-        anniversary_days: employee_balance.available_after_dated_quota
-      }
+    %{
+      anniversary_date: employee_balance.available_after_date,
+      anniversary_weeks: employee_balance.available_after_weekly_quota,
+      anniversary_days: employee_balance.available_after_dated_quota
+    }
+  end
+
+  @spec get_anniversary_adjusted_quota(integer(), Date.t(), integer(), Date.t()) :: integer()
+  @doc """
+  The vacation quotas given by HASTUS (weekly_quota, dated_quota) include any weeks / days that are only available on and after an anniversary date.
+  This function adjusts those quotas based on if the anniversary date has passed or not by the given as_of_date.
+  If the anniversary has passed, the full quota including anniversary awarded time is returned. Otherwise, the quota
+  only available up to the anniversary date is returned (original quota - anniversary quota)
+  """
+  def get_anniversary_adjusted_quota(
+        quota_including_anniversary,
+        anniversary_date,
+        quota_awared_on_anniversary,
+        as_of_date
+      ) do
+    case Date.compare(anniversary_date, as_of_date) do
+      :gt -> max(quota_including_anniversary - quota_awared_on_anniversary, 0)
+      _lt_or_eq -> quota_including_anniversary
     end
   end
 

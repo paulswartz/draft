@@ -67,4 +67,36 @@ defmodule Draft.EmployeeVacationQuotaTest do
                })
     end
   end
+
+  describe "get_anniversary_adjusted_quota/4" do
+    test "Anniversary date has not yet passed" do
+      assert 5 ==
+               EmployeeVacationQuota.get_anniversary_adjusted_quota(
+                 6,
+                 ~D[2021-06-01],
+                 1,
+                 ~D[2021-05-01]
+               )
+    end
+
+    test "Anniversary date has not yet passed and no vacation time remaining" do
+      assert 0 ==
+               EmployeeVacationQuota.get_anniversary_adjusted_quota(
+                 0,
+                 ~D[2021-06-01],
+                 1,
+                 ~D[2021-05-01]
+               )
+    end
+
+    test "Anniversary date has passed" do
+      assert 6 ==
+               EmployeeVacationQuota.get_anniversary_adjusted_quota(
+                 6,
+                 ~D[2021-06-01],
+                 1,
+                 ~D[2021-07-01]
+               )
+    end
+  end
 end

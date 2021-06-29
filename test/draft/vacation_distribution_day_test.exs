@@ -1,8 +1,8 @@
-defmodule Draft.VacationDayDistributionTest do
+defmodule Draft.VacationDistribution.Day.Test do
   use Draft.DataCase
   import Draft.Factory
   alias Draft.EmployeeVacationAssignment
-  alias Draft.VacationDayDistribution
+  alias Draft.VacationDistribution
 
   setup do
     insert_round_with_employees(
@@ -39,11 +39,11 @@ defmodule Draft.VacationDayDistributionTest do
      employee_ranking: Repo.one!(from(e in Draft.EmployeeRanking))}
   end
 
-  describe "distribute_days_balance/4" do
+  describe "distribute/4" do
     test "Operator whose anniversary date has passed can take full amount of vacation time available",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           2,
@@ -72,7 +72,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator who has no anniversary date can take full amount of vacation time available",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           2,
@@ -97,7 +97,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator with anniversary date on start date of rating period can take full amount of vacation ",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           2,
@@ -126,7 +126,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator with anniversary date in the middle of rating period only assigned vacation up to their anniversary date",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           2,
@@ -150,7 +150,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator with anniversary date after rating period only assigned vacation available before anniversary date",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           2,
@@ -174,7 +174,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator with no vacation time remaining and anniversary that has passed is not distributed any time",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           0,
@@ -192,7 +192,7 @@ defmodule Draft.VacationDayDistributionTest do
     test "Operator with no vacation time remaining and anniversary that is upcoming is not distributed any time",
          state do
       vacation_assignments =
-        VacationDayDistribution.distribute_days_balance(
+        VacationDistribution.Day.distribute(
           state.round,
           state.employee_ranking,
           0,
