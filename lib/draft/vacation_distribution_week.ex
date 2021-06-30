@@ -28,7 +28,7 @@ defmodule Draft.VacationDistribution.Week do
       )
 
   def distribute(round, employee, max_weeks, nil) do
-    distribute_in_range(
+    distribute_from_available(
       round.division_id,
       employee,
       max_weeks,
@@ -55,7 +55,7 @@ defmodule Draft.VacationDistribution.Week do
            round.rating_period_end_date
          ) do
       :before_range ->
-        distribute_in_range(
+        distribute_from_available(
           round.division_id,
           employee,
           week_quota_including_anniversary_weeks,
@@ -66,7 +66,7 @@ defmodule Draft.VacationDistribution.Week do
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
-        distribute_in_range(
+        distribute_from_available(
           round.division_id,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -78,7 +78,7 @@ defmodule Draft.VacationDistribution.Week do
         )
 
       :after_range ->
-        distribute_in_range(
+        distribute_from_available(
           round.division_id,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -91,7 +91,7 @@ defmodule Draft.VacationDistribution.Week do
     end
   end
 
-  defp distribute_in_range(
+  defp distribute_from_available(
          division_id,
          employee,
          max_weeks,
