@@ -30,13 +30,11 @@ defmodule Draft.VacationDistribution.Day do
       )
 
   def distribute(round, employee, max_days, assigned_weeks, nil) do
-    distribute_in_range(
-      round.division_id,
+    distribute_from_available(
+      round,
       employee,
       max_days,
-      assigned_weeks,
-      round.rating_period_start_date,
-      round.rating_period_end_date
+      assigned_weeks
     )
   end
 
@@ -64,61 +62,51 @@ defmodule Draft.VacationDistribution.Day do
            round.rating_period_end_date
          ) do
       :before_range ->
-        distribute_in_range(
-          round.division_id,
+        distribute_from_available(
+          round,
           employee,
           day_quota_including_anniversary_days,
-          assigned_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          assigned_weeks
         )
 
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary days.
-        distribute_in_range(
-          round.division_id,
+        distribute_from_available(
+          round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
             day_quota_including_anniversary_days,
             anniversary_days
           ),
-          assigned_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          assigned_weeks
         )
 
       :after_range ->
-        distribute_in_range(
-          round.division_id,
+        distribute_from_available(
+          round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
             day_quota_including_anniversary_days,
             anniversary_days
           ),
-          assigned_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          assigned_weeks
         )
     end
   end
 
-  defp distribute_in_range(
-         division_id,
+  defp distribute_from_available(
+         round,
          employee,
          max_days,
-         assigned_weeks,
-         range_start_date,
-         range_end_Date
+         assigned_weeks
        )
 
-  defp distribute_in_range(
-         _division_id,
+  defp distribute_from_available(
+         _round,
          _employee,
          0,
-         _assigned_weeks,
-         _range_start_date,
-         _range_end_date
+         _assigned_weeks
        ) do
     Logger.info(
       "Skipping vacation day assignment - employee cannot take any days off in this rating period."
@@ -127,13 +115,11 @@ defmodule Draft.VacationDistribution.Day do
     []
   end
 
-  defp distribute_in_range(
-         division_id,
+  defp distribute_from_available(
+         round,
          employee,
          max_days,
-         [] = _assigned_weeks,
-         range_start_date,
-         range_end_date
+         [] = _assigned_weeks
        ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
@@ -149,10 +135,10 @@ defmodule Draft.VacationDistribution.Day do
         from d in DivisionVacationDayQuota,
           as: :division_day_quota,
           where:
-            d.division_id == ^division_id and d.quota > 0 and
+            d.division_id == ^round.division_id and d.quota > 0 and
               d.employee_selection_set == ^selection_set and
-              d.date >= ^range_start_date and
-              d.date <= ^range_end_date and
+              d.date >= ^round.rating_period_start_date and
+              d.date <= ^round.rating_period_end_date and
               not exists(conflicting_selected_dates_query),
           order_by: [asc: d.date],
           limit: ^max_days
@@ -161,13 +147,11 @@ defmodule Draft.VacationDistribution.Day do
     distribute_days(employee, first_available_days)
   end
 
-  defp distribute_in_range(
-         _division_id,
+  defp distribute_from_available(
+         _round,
          _employee,
          _max_days,
-         _assigned_weeks,
-         _range_start_date,
-         _range_end_date
+         _assigned_weeks
        ) do
     Logger.info(
       "Skipping vacation day assignment -- only assigning weeks or days for now, and weeks have already been assigned."
