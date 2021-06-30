@@ -121,30 +121,28 @@ defmodule Draft.VacationDistribution.Day do
          max_days,
          [] = _assigned_weeks
        ) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
-
-    conflicting_selected_dates_query =
-      from s in EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_day_quota).date and
-            s.end_date >= parent_as(:division_day_quota).date and
-            s.employee_id == ^employee.employee_id
-
-    first_available_days =
-      Repo.all(
-        from d in DivisionVacationDayQuota,
-          as: :division_day_quota,
-          where:
-            d.division_id == ^round.division_id and d.quota > 0 and
-              d.employee_selection_set == ^selection_set and
-              d.date >= ^round.rating_period_start_date and
-              d.date <= ^round.rating_period_end_date and
-              not exists(conflicting_selected_dates_query),
-          order_by: [asc: d.date],
-          limit: ^max_days
+    preference_set =
+      Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
+        employee.process_id,
+        employee.round_id,
+        employee.employee_id
       )
 
-    distribute_days(employee, first_available_days)
+    all_available_days = get_all_days_available_to_employee(round, employee)
+
+    preferred_vacation_days =
+      if is_nil(preference_set) do
+        []
+      else
+        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == "day" end)
+      end
+
+    distribute_available_days_from_preferences(
+      employee,
+      all_available_days,
+      preferred_vacation_days,
+      max_days
+    )
   end
 
   defp distribute_from_available(
@@ -158,6 +156,58 @@ defmodule Draft.VacationDistribution.Day do
     )
 
     []
+  end
+
+  defp get_all_days_available_to_employee(round, employee) do
+    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+
+    conflicting_selected_dates_query =
+      from s in EmployeeVacationSelection,
+        where:
+          s.start_date <= parent_as(:division_day_quota).date and
+            s.end_date >= parent_as(:division_day_quota).date and
+            s.employee_id == ^employee.employee_id
+
+    Repo.all(
+      from d in DivisionVacationDayQuota,
+        as: :division_day_quota,
+        where:
+          d.division_id == ^round.division_id and d.quota > 0 and
+            d.employee_selection_set == ^selection_set and
+            d.date >= ^round.rating_period_start_date and
+            d.date <= ^round.rating_period_end_date and
+            not exists(conflicting_selected_dates_query),
+        order_by: [asc: d.date]
+    )
+  end
+
+  defp distribute_available_days_from_preferences(
+         employee,
+         all_available_days,
+         preferred_days,
+         max_days
+       )
+
+  defp distribute_available_days_from_preferences(employee, all_available_days, [], max_days) do
+    distribute_days(employee, Enum.take(all_available_days, max_days))
+  end
+
+  defp distribute_available_days_from_preferences(
+         employee,
+         all_available_days,
+         preferred_days,
+         max_days
+       ) do
+    available_preferred_days =
+      all_available_days
+      |> Enum.filter(fn d ->
+        Enum.any?(preferred_days, fn p ->
+          p.start_date == d.date
+        end)
+      end)
+      |> Enum.take(max_days)
+
+    distribute_days(employee, available_preferred_days)
   end
 
   defp distribute_days(employee, available_days)

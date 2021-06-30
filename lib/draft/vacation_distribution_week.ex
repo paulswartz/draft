@@ -29,11 +29,9 @@ defmodule Draft.VacationDistribution.Week do
 
   def distribute(round, employee, max_weeks, nil) do
     distribute_from_available(
-      round.division_id,
+      round,
       employee,
-      max_weeks,
-      round.rating_period_start_date,
-      round.rating_period_end_date
+      max_weeks
     )
   end
 
@@ -56,47 +54,39 @@ defmodule Draft.VacationDistribution.Week do
          ) do
       :before_range ->
         distribute_from_available(
-          round.division_id,
+          round,
           employee,
-          week_quota_including_anniversary_weeks,
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          week_quota_including_anniversary_weeks
         )
 
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
         distribute_from_available(
-          round.division_id,
+          round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
             week_quota_including_anniversary_weeks,
             anniversary_weeks
-          ),
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          )
         )
 
       :after_range ->
         distribute_from_available(
-          round.division_id,
+          round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
             week_quota_including_anniversary_weeks,
             anniversary_weeks
-          ),
-          round.rating_period_start_date,
-          round.rating_period_end_date
+          )
         )
     end
   end
 
   defp distribute_from_available(
-         division_id,
+         round,
          employee,
-         max_weeks,
-         range_start_date,
-         range_end_date
+         max_weeks
        ) do
     preference_set =
       Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
@@ -105,8 +95,7 @@ defmodule Draft.VacationDistribution.Week do
         employee.employee_id
       )
 
-    all_available_weeks =
-      get_all_weeks_available_to_employee(division_id, employee, range_start_date, range_end_date)
+    all_available_weeks = get_all_weeks_available_to_employee(round, employee)
 
     preferred_vacation_weeks =
       if is_nil(preference_set) do
@@ -153,10 +142,8 @@ defmodule Draft.VacationDistribution.Week do
   end
 
   defp get_all_weeks_available_to_employee(
-         division_id,
-         employee,
-         range_start_date,
-         range_end_date
+         round,
+         employee
        ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
@@ -171,10 +158,10 @@ defmodule Draft.VacationDistribution.Week do
       from w in DivisionVacationWeekQuota,
         as: :division_week_quota,
         where:
-          w.division_id == ^division_id and w.quota > 0 and w.is_restricted_week == false and
+          w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
             w.employee_selection_set == ^selection_set and
-            ^range_start_date <= w.start_date and
-            ^range_end_date >= w.end_date and
+            ^round.rating_period_start_date <= w.start_date and
+            ^round.rating_period_end_date >= w.end_date and
             not exists(conflicting_selected_vacation_query),
         order_by: [asc: w.start_date]
     )
