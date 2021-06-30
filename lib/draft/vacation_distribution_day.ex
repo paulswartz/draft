@@ -58,21 +58,49 @@ defmodule Draft.VacationDistribution.Day do
           anniversary_days: anniversary_days
         }
       ) do
-    distribute_in_range(
-      round.division_id,
-      employee,
-      Draft.EmployeeVacationQuota.get_anniversary_adjusted_quota(
-        day_quota_including_anniversary_days,
-        anniversary_date,
-        anniversary_days,
-        round.rating_period_start_date
-      ),
-      assigned_weeks,
-      round.rating_period_start_date,
-      round.rating_period_end_date
-    )
+    case Draft.Utils.compare_date_to_range(
+           anniversary_date,
+           round.rating_period_start_date,
+           round.rating_period_end_date
+         ) do
+      :before_range ->
+        distribute_in_range(
+          round.division_id,
+          employee,
+          day_quota_including_anniversary_days,
+          assigned_weeks,
+          round.rating_period_start_date,
+          round.rating_period_end_date
+        )
 
-    # could also assign anniversary days here if anniversary falls in rating period
+      :in_range ->
+        # If it should be possible to assign an operator their anniversary vacation that is earned
+        # within a rating period, update case to do so. Currently does not assign any anniversary days.
+        distribute_in_range(
+          round.division_id,
+          employee,
+          Draft.EmployeeVacationQuota.adjust_quota(
+            day_quota_including_anniversary_days,
+            anniversary_days
+          ),
+          assigned_weeks,
+          round.rating_period_start_date,
+          round.rating_period_end_date
+        )
+
+      :after_range ->
+        distribute_in_range(
+          round.division_id,
+          employee,
+          Draft.EmployeeVacationQuota.adjust_quota(
+            day_quota_including_anniversary_days,
+            anniversary_days
+          ),
+          assigned_weeks,
+          round.rating_period_start_date,
+          round.rating_period_end_date
+        )
+    end
   end
 
   defp distribute_in_range(

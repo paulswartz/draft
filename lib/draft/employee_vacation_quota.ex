@@ -92,23 +92,16 @@ defmodule Draft.EmployeeVacationQuota do
     }
   end
 
-  @spec get_anniversary_adjusted_quota(integer(), Date.t(), integer(), Date.t()) :: integer()
+  @spec adjust_quota(integer(), integer()) :: non_neg_integer()
   @doc """
   The vacation quotas given by HASTUS (weekly_quota, dated_quota) include any weeks / days that are only available on and after an anniversary date.
-  This function adjusts those quotas based on if the anniversary date has passed or not by the given as_of_date.
-  If the anniversary has passed, the full quota including anniversary awarded time is returned. Otherwise, the quota
-  only available up to the anniversary date is returned (original quota - anniversary quota)
+  This function returns the initial quota less the quota given to subtract. The lowest possible quota returned is zero; quota cannot be negative.
   """
-  def get_anniversary_adjusted_quota(
-        quota_including_anniversary,
-        anniversary_date,
-        quota_awared_on_anniversary,
-        as_of_date
+  def adjust_quota(
+        initial_quota,
+        quota_to_subtract
       ) do
-    case Date.compare(anniversary_date, as_of_date) do
-      :gt -> max(quota_including_anniversary - quota_awared_on_anniversary, 0)
-      _lt_or_eq -> quota_including_anniversary
-    end
+    max(initial_quota - quota_to_subtract, 0)
   end
 
   @doc false
