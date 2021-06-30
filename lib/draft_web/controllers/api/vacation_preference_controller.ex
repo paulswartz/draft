@@ -136,7 +136,7 @@ defmodule DraftWeb.API.VacationPreferenceController do
 
     %{
       start_date: start_date,
-      end_date: Date.add(start_date, 6),
+      end_date: Map.get(week, "end_date"),
       rank: Map.get(week, "rank"),
       interval_type: "week"
     }
@@ -144,10 +144,11 @@ defmodule DraftWeb.API.VacationPreferenceController do
 
   defp to_vacation_preference("day", day) do
     {:ok, start_date} = Date.from_iso8601(Map.get(day, "start_date"))
+    {:ok, end_date} = Date.from_iso8601(Map.get(day, "end_date"))
 
     %{
       start_date: start_date,
-      end_date: start_date,
+      end_date: end_date,
       rank: Map.get(day, "rank"),
       interval_type: "day"
     }
