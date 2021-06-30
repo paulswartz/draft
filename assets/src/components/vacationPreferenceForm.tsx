@@ -25,35 +25,33 @@ const VacationPreferenceForm = (): JSX.Element => {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const [selectedStartDate, selectedEndDay] = event.target.value.split(":");
-    if (state?.vacation_preference_set) {
-      const updatedWeeksPreferences = event.target.checked
-        ? [
-            ...state.vacation_preference_set.weeks,
-            {
-              start_date: selectedStartDate,
-              end_date: selectedEndDay,
-              rank: state.vacation_preference_set.weeks.length + 1,
-            },
-          ]
-        : updateRanking(
-            state.vacation_preference_set.weeks.filter(
-              (week) => week.start_date.toString() !== selectedStartDate
-            )
-          );
+    const updatedWeeksPreferences = event.target.checked
+      ? [
+          ...state.vacation_preference_set.weeks,
+          {
+            start_date: selectedStartDate,
+            end_date: selectedEndDay,
+            rank: state.vacation_preference_set.weeks.length + 1,
+          },
+        ]
+      : updateRanking(
+          state.vacation_preference_set.weeks.filter(
+            (week) => week.start_date.toString() !== selectedStartDate
+          )
+        );
 
-      dispatch({
-        type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
-        payload: {
-          weeks: updatedWeeksPreferences,
-          days: state.vacation_preference_set.days,
-        },
-      });
-      upsertVacationPreferences(
-        state.vacation_preference_set.preference_set_id,
-        updatedWeeksPreferences,
-        state.vacation_preference_set.days
-      ).then((response) => processUpdateVacationResponse(response));
-    }
+    dispatch({
+      type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
+      payload: {
+        weeks: updatedWeeksPreferences,
+        days: state.vacation_preference_set.days,
+      },
+    });
+    upsertVacationPreferences(
+      state.vacation_preference_set.preference_set_id,
+      updatedWeeksPreferences,
+      state.vacation_preference_set.days
+    ).then((response) => processUpdateVacationResponse(response));
   };
 
   const processUpdateVacationResponse = (
@@ -93,35 +91,33 @@ const VacationPreferenceForm = (): JSX.Element => {
   }, []);
 
   const handleDayInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (state?.vacation_preference_set) {
-      const updatedDaysPreferences = event.target.checked
-        ? [
-            ...state.vacation_preference_set.days,
-            {
-              start_date: event.target.value,
-              end_date: event.target.value,
-              rank: state.vacation_preference_set.days.length + 1,
-            },
-          ]
-        : updateRanking(
-            state.vacation_preference_set.days.filter(
-              (day) => day.start_date.toString() !== event.target.value
-            )
-          );
+    const updatedDaysPreferences = event.target.checked
+      ? [
+          ...state.vacation_preference_set.days,
+          {
+            start_date: event.target.value,
+            end_date: event.target.value,
+            rank: state.vacation_preference_set.days.length + 1,
+          },
+        ]
+      : updateRanking(
+          state.vacation_preference_set.days.filter(
+            (day) => day.start_date.toString() !== event.target.value
+          )
+        );
 
-      dispatch({
-        type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
-        payload: {
-          weeks: state.vacation_preference_set.weeks,
-          days: updatedDaysPreferences,
-        },
-      });
-      upsertVacationPreferences(
-        state.vacation_preference_set.preference_set_id,
-        state.vacation_preference_set.weeks,
-        updatedDaysPreferences
-      ).then((response) => processUpdateVacationResponse(response));
-    }
+    dispatch({
+      type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
+      payload: {
+        weeks: state.vacation_preference_set.weeks,
+        days: updatedDaysPreferences,
+      },
+    });
+    upsertVacationPreferences(
+      state.vacation_preference_set.preference_set_id,
+      state.vacation_preference_set.weeks,
+      updatedDaysPreferences
+    ).then((response) => processUpdateVacationResponse(response));
   };
 
   const updateRanking = (
