@@ -53,10 +53,12 @@ defmodule Draft.VacationDistribution do
   Insert all given distribution records as part of the given run.
   """
   def insert_all_distributions(run_id, distributions) do
-    Enum.each(distributions, fn d ->
-      Repo.insert!(
-        changeset(%__MODULE__{}, Map.put(Draft.Utils.convert_to_map(d), :run_id, run_id))
-      )
+    Repo.transaction(fn ->
+      Enum.each(distributions, fn d ->
+        Repo.insert!(
+          changeset(%__MODULE__{}, Map.put(Draft.Utils.convert_to_map(d), :run_id, run_id))
+        )
+      end)
     end)
   end
 

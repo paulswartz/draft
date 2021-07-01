@@ -1,6 +1,6 @@
-defmodule Draft.VacationDistribution.Week do
+defmodule Draft.GenerateVacationDistribution.Weeks do
   @moduledoc """
-  Distribute vacation weeks to an employee.
+  Generate a list of vacation weeks that can be assigned to the given employee
   """
   import Ecto.Query
   alias Draft.DivisionVacationWeekQuota
@@ -9,7 +9,7 @@ defmodule Draft.VacationDistribution.Week do
   alias Draft.VacationDistribution
   require Logger
 
-  @spec distribute(
+  @spec generate(
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
@@ -17,25 +17,25 @@ defmodule Draft.VacationDistribution.Week do
         ) :: [VacationDistribution]
 
   @doc """
-  Distribute vacation weeks to an employee based on what is available in their division/job class in the rating period they are picking for.
-  If the employee has an upcoming anniversary date, vacation weeks are only assigned up to that date.
+  generate a list of vacation weeks for an employee based on what is available in their division/job class in the rating period they are picking for.
+  If the employee has an upcoming anniversary date, vacation weeks are only generated up to that date.
   """
-  def distribute(
+  def generate(
         round,
         employee,
         max_weeks,
         anniversary_vacation
       )
 
-  def distribute(round, employee, max_weeks, nil) do
-    distribute_from_available(
+  def generate(round, employee, max_weeks, nil) do
+    generate_from_available(
       round,
       employee,
       max_weeks
     )
   end
 
-  def distribute(_round, _employee, 0, _anniversary_vacation) do
+  def generate(_round, _employee, 0, _anniversary_vacation) do
     Logger.info(
       "Skipping vacation week assignment - employee cannot take any weeks off in this range."
     )
@@ -43,7 +43,7 @@ defmodule Draft.VacationDistribution.Week do
     []
   end
 
-  def distribute(round, employee, week_quota_including_anniversary_weeks, %{
+  def generate(round, employee, week_quota_including_anniversary_weeks, %{
         anniversary_date: anniversary_date,
         anniversary_weeks: anniversary_weeks
       }) do
@@ -53,7 +53,7 @@ defmodule Draft.VacationDistribution.Week do
            round.rating_period_end_date
          ) do
       :before_range ->
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           week_quota_including_anniversary_weeks
@@ -62,7 +62,7 @@ defmodule Draft.VacationDistribution.Week do
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -72,7 +72,7 @@ defmodule Draft.VacationDistribution.Week do
         )
 
       :after_range ->
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -83,7 +83,7 @@ defmodule Draft.VacationDistribution.Week do
     end
   end
 
-  defp distribute_from_available(
+  defp generate_from_available(
          round,
          employee,
          max_weeks
@@ -111,21 +111,21 @@ defmodule Draft.VacationDistribution.Week do
           limit: ^max_weeks
       )
 
-    distribute_weeks(employee, available_weeks)
+    generate_weeks(employee, available_weeks)
   end
 
-  defp distribute_weeks(employee, available_weeks)
+  defp generate_weeks(employee, available_weeks)
 
-  defp distribute_weeks(_employee, []) do
+  defp generate_weeks(_employee, []) do
     Logger.info("No more vacation weeks available")
     []
   end
 
-  defp distribute_weeks(employee, available_weeks) do
-    Enum.map(available_weeks, &distribute_week(employee, &1))
+  defp generate_weeks(employee, available_weeks) do
+    Enum.map(available_weeks, &generate_week(employee, &1))
   end
 
-  defp distribute_week(employee, assigned_week) do
+  defp generate_week(employee, assigned_week) do
     new_quota = assigned_week.quota - 1
     changeset = DivisionVacationWeekQuota.changeset(assigned_week, %{quota: new_quota})
     Repo.update(changeset)

@@ -1,4 +1,4 @@
-defmodule Draft.BasicVacationDistribution do
+defmodule Draft.BasicVacationDistributionRunner do
   @moduledoc """
   Simulate distributing vacation for all employees based on their rank in the given rounds / groups.
   If an employee has any weeks left in their vacation balance, they will be assigned available vacation weeks for their division.
@@ -9,30 +9,30 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.BidRound
   alias Draft.EmployeeRanking
   alias Draft.EmployeeVacationQuota
+  alias Draft.GenerateVacationDistribution
   alias Draft.Repo
-  alias Draft.VacationDistribution
   alias Draft.VacationDistribution
   alias Draft.VacationQuotaSetup
 
   require Logger
 
-  @spec basic_vacation_distribution([{module(), String.t()}]) :: [VacationDistribution.t()]
+  @spec run([{module(), String.t()}]) :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences, using vacation data from the given files. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
-  def basic_vacation_distribution(vacation_files) do
+  def run(vacation_files) do
     _rows_updated = VacationQuotaSetup.update_vacation_quota_data(vacation_files)
 
-    basic_vacation_distribution()
+    run()
   end
 
-  @spec basic_vacation_distribution() :: [VacationDistribution.t()]
+  @spec run() :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
-  def basic_vacation_distribution do
+  def run do
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     Enum.flat_map(bid_rounds, &assign_vacation_for_round(&1))
   end
@@ -57,14 +57,16 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: g.group_number]
       )
 
-    Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+    assigned_vacations =
+      Enum.flat_map(
+        bid_groups,
+        fn group ->
+          assign_vacation_for_group(group, round, distribution_run_id)
+        end
+      )
 
-    Enum.flat_map(
-      bid_groups,
-      fn group ->
-        assign_vacation_for_group(group, round, distribution_run_id)
-      end
-    )
+    _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+    assigned_vacations
   end
 
   defp assign_vacation_for_group(
@@ -144,7 +146,7 @@ defmodule Draft.BasicVacationDistribution do
         anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
         assigned_weeks =
-          VacationDistribution.Week.distribute(
+          GenerateVacationDistribution.Weeks.generate(
             round,
             employee,
             max_weeks,
@@ -154,7 +156,7 @@ defmodule Draft.BasicVacationDistribution do
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
         assigned_days =
-          VacationDistribution.Day.distribute(
+          GenerateVacationDistribution.Days.generate(
             round,
             employee,
             max_days,
