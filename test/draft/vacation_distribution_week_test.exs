@@ -1,7 +1,7 @@
 defmodule Draft.VacationDistribution.Week.Test do
   use Draft.DataCase
   import Draft.Factory
-  alias Draft.EmployeeVacationAssignment
+  alias Draft.VacationDistribution
   alias Draft.VacationDistribution
 
   setup do
@@ -58,12 +58,12 @@ defmodule Draft.VacationDistribution.Week.Test do
         )
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -82,12 +82,12 @@ defmodule Draft.VacationDistribution.Week.Test do
         )
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -110,12 +110,12 @@ defmodule Draft.VacationDistribution.Week.Test do
         )
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -138,7 +138,7 @@ defmodule Draft.VacationDistribution.Week.Test do
         )
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
@@ -161,7 +161,7 @@ defmodule Draft.VacationDistribution.Week.Test do
         )
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"

@@ -4,7 +4,7 @@ defmodule Draft.VacationDistribution.Week do
   """
   import Ecto.Query
   alias Draft.DivisionVacationWeekQuota
-  alias Draft.EmployeeVacationAssignment
+  alias Draft.VacationDistribution
   alias Draft.EmployeeVacationSelection
   alias Draft.Repo
   require Logger
@@ -14,7 +14,7 @@ defmodule Draft.VacationDistribution.Week do
           Draft.EmployeeRanking,
           integer(),
           nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
-        ) :: [EmployeeVacationAssignment]
+        ) :: [VacationDistribution]
 
   @doc """
   Distribute vacation weeks to an employee based on what is available in their division/job class in the rating period they are picking for.
@@ -134,9 +134,9 @@ defmodule Draft.VacationDistribution.Week do
       "assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}. #{new_quota} more openings for this week.\n"
     )
 
-    %EmployeeVacationAssignment{
+    %VacationDistribution{
       employee_id: employee.employee_id,
-      is_week?: true,
+      interval_type: "week",
       start_date: assigned_week.start_date,
       end_date: assigned_week.end_date
     }

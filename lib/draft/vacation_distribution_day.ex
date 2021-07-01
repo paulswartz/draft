@@ -4,7 +4,7 @@ defmodule Draft.VacationDistribution.Day do
   """
   import Ecto.Query
   alias Draft.DivisionVacationDayQuota
-  alias Draft.EmployeeVacationAssignment
+  alias Draft.VacationDistribution
   alias Draft.EmployeeVacationSelection
   alias Draft.Repo
   require Logger
@@ -13,9 +13,9 @@ defmodule Draft.VacationDistribution.Day do
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
-          [EmployeeVacationAssignment],
+          [VacationDistribution],
           nil | %{anniversary_date: Date.t(), anniversary_days: number()}
-        ) :: [EmployeeVacationAssignment]
+        ) :: [VacationDistribution]
 
   @doc """
   Distribute vacation days to an employee based on what is available in their division/job class in the rating period they are picking for.
@@ -178,9 +178,9 @@ defmodule Draft.VacationDistribution.Day do
   defp distribute_day(employee, selected_day) do
     Logger.info("assigned day - #{selected_day.date}")
 
-    %EmployeeVacationAssignment{
+    %VacationDistribution{
       employee_id: employee.employee_id,
-      is_week?: false,
+      interval_type: "week",
       start_date: selected_day.date,
       end_date: selected_day.date
     }

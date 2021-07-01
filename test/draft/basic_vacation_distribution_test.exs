@@ -3,7 +3,7 @@ defmodule Draft.BasicVacationDistributionTest do
   use Draft.DataCase
   import Draft.Factory
   alias Draft.BasicVacationDistribution
-  alias Draft.EmployeeVacationAssignment
+  alias Draft.VacationDistribution
 
   describe "basic_vacation_distribution/1" do
     test "Operator is not assigned vacation week with quota of 0" do
@@ -40,7 +40,7 @@ defmodule Draft.BasicVacationDistributionTest do
                x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-27]
              end) == []
 
-      assert [%EmployeeVacationAssignment{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
+      assert [%VacationDistribution{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
                vacation_assignments
     end
 
@@ -69,7 +69,7 @@ defmodule Draft.BasicVacationDistributionTest do
                x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-21]
              end) == []
 
-      assert [%EmployeeVacationAssignment{start_date: ~D[2021-03-22], end_date: ~D[2021-03-22]}] =
+      assert [%VacationDistribution{start_date: ~D[2021-03-22], end_date: ~D[2021-03-22]}] =
                vacation_assignments
     end
 
@@ -127,12 +127,12 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-27],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-28],
                  end_date: ~D[2021-04-03],
                  employee_id: "00001"
@@ -162,12 +162,12 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-21],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-22],
                  end_date: ~D[2021-03-22],
                  employee_id: "00001"
@@ -205,7 +205,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-23],
                  end_date: ~D[2021-03-23],
                  employee_id: "00002"
@@ -257,7 +257,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-04],
                  end_date: ~D[2021-04-10],
                  employee_id: "00002"
@@ -302,7 +302,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-28],
                  end_date: ~D[2021-04-03],
                  employee_id: "00001"
@@ -347,7 +347,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-28],
                  end_date: ~D[2021-04-03],
                  employee_id: "00001"
@@ -390,7 +390,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-03-22],
                  end_date: ~D[2021-03-22],
                  employee_id: "00001"
@@ -433,7 +433,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"
@@ -486,12 +486,12 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -545,7 +545,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
@@ -599,7 +599,7 @@ defmodule Draft.BasicVacationDistributionTest do
       vacation_assignments = BasicVacationDistribution.basic_vacation_distribution()
 
       assert [
-               %EmployeeVacationAssignment{
+               %VacationDistribution{
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"

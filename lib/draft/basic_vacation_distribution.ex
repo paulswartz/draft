@@ -8,7 +8,7 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.EmployeeRanking
-  alias Draft.EmployeeVacationAssignment
+  alias Draft.VacationDistribution
   alias Draft.EmployeeVacationQuota
   alias Draft.Repo
   alias Draft.VacationDistribution
@@ -16,7 +16,7 @@ defmodule Draft.BasicVacationDistribution do
 
   require Logger
 
-  @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment.t()]
+  @spec basic_vacation_distribution([{module(), String.t()}]) :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences, using vacation data from the given files. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
@@ -27,7 +27,7 @@ defmodule Draft.BasicVacationDistribution do
     basic_vacation_distribution()
   end
 
-  @spec basic_vacation_distribution() :: [EmployeeVacationAssignment.t()]
+  @spec basic_vacation_distribution() :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
