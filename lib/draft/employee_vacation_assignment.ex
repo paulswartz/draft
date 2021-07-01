@@ -3,7 +3,9 @@ defmodule Draft.VacationDistribution do
     Represents vacation time that has been distributed by Draft.
   """
   use Ecto.Schema
+  import Ecto.Changeset
   alias Draft.FormattingHelpers
+  alias Draft.Repo
 
   schema "vacation_distributions" do
     field :run_id, :integer
@@ -14,6 +16,8 @@ defmodule Draft.VacationDistribution do
     field :status, :integer, default: 1
     field :rolled_back, :boolean, default: false
     has_one :vacation_distribution_run, Draft.VacationDistributionRun, foreign_key: :id
+
+    timestamps(type: :utc_datetime)
   end
 
   @type t :: %__MODULE__{
@@ -41,6 +45,49 @@ defmodule Draft.VacationDistribution do
         distribution.status,
         pick_period
       ]
+    ])
+  end
+
+  @spec insert_all_distributions(number(), [t()]) :: :ok
+  @doc """
+  Insert all given distribution records as part of the given run.
+  """
+  def insert_all_distributions(run_id, distributions) do
+    Enum.each(distributions, fn d ->
+      Repo.insert!(
+        changeset(%__MODULE__{}, Map.put(Draft.Utils.convert_to_map(d), :run_id, run_id))
+      )
+    end)
+  end
+
+  @spec changeset(
+          {map, map}
+          | %{
+              :__struct__ => atom | %{:__changeset__ => map, optional(any) => any},
+              optional(atom) => any
+            },
+          :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
+        ) :: Ecto.Changeset.t()
+  @doc false
+  def changeset(vacation_distribution, attrs) do
+    vacation_distribution
+    |> cast(attrs, [
+      :run_id,
+      :employee_id,
+      :interval_type,
+      :start_date,
+      :end_date,
+      :status,
+      :rolled_back
+    ])
+    |> validate_required([
+      :run_id,
+      :employee_id,
+      :interval_type,
+      :start_date,
+      :end_date,
+      :status,
+      :rolled_back
     ])
   end
 end

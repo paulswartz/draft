@@ -8,9 +8,9 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.EmployeeRanking
-  alias Draft.VacationDistribution
   alias Draft.EmployeeVacationQuota
   alias Draft.Repo
+  alias Draft.VacationDistribution
   alias Draft.VacationDistribution
   alias Draft.VacationQuotaSetup
 
@@ -48,6 +48,8 @@ defmodule Draft.BasicVacationDistribution do
       })\n"
     )
 
+    distribution_run_id = Draft.VacationDistributionRun.insert(round.process_id, round.round_id)
+
     bid_groups =
       Repo.all(
         from g in BidGroup,
@@ -55,17 +57,20 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: g.group_number]
       )
 
+    Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+
     Enum.flat_map(
       bid_groups,
       fn group ->
-        assign_vacation_for_group(group, round)
+        assign_vacation_for_group(group, round, distribution_run_id)
       end
     )
   end
 
   defp assign_vacation_for_group(
          group,
-         round
+         round,
+         distribution_run_id
        ) do
     Logger.info(
       "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
@@ -87,7 +92,8 @@ defmodule Draft.BasicVacationDistribution do
       fn employee ->
         assign_vacation_for_employee(
           employee,
-          round
+          round,
+          distribution_run_id
         )
       end
     )
@@ -95,11 +101,10 @@ defmodule Draft.BasicVacationDistribution do
 
   defp assign_vacation_for_employee(
          employee,
-         round
+         round,
+         distribution_run_id
        ) do
-    Logger.info("-------")
-
-    Logger.info("Distributing vacation for employee #{employee.rank}")
+    Logger.info("-------\nDistributing vacation for employee #{employee.rank}")
 
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -156,6 +161,11 @@ defmodule Draft.BasicVacationDistribution do
             assigned_weeks,
             anniversary_quota
           )
+
+        Draft.VacationDistribution.insert_all_distributions(
+          distribution_run_id,
+          assigned_weeks ++ assigned_days
+        )
 
         assigned_weeks ++ assigned_days
 

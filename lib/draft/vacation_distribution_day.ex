@@ -4,9 +4,9 @@ defmodule Draft.VacationDistribution.Day do
   """
   import Ecto.Query
   alias Draft.DivisionVacationDayQuota
-  alias Draft.VacationDistribution
   alias Draft.EmployeeVacationSelection
   alias Draft.Repo
+  alias Draft.VacationDistribution
   require Logger
 
   @spec distribute(

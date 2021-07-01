@@ -20,4 +20,12 @@ defmodule Draft.Utils do
         :before_range
     end
   end
+
+  @spec convert_to_map(struct()) :: map()
+  @doc """
+  Convert the given struct to a map, containing the fields of that struct.
+  """
+  def convert_to_map(%module{} = struct) do
+    Map.take(struct, module.__schema__(:fields))
+  end
 end

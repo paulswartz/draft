@@ -1,8 +1,8 @@
 defmodule Draft.OutputVacationDistributionTest do
   @moduledoc false
   use ExUnit.Case
-  alias Draft.VacationDistribution
   alias Draft.OutputVacationDistribution
+  alias Draft.VacationDistribution
 
   describe "output_vacation_distribution_file/1" do
     test "contains assignments in expected format" do
