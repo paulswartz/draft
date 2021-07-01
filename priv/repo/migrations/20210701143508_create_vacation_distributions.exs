@@ -9,7 +9,6 @@ defmodule Draft.Repo.Migrations.CreateVacationDistributions do
       add :start_date, :date
       add :end_date, :date
       add :status, :integer
-      add :rolled_back, :boolean, default: false, null: false
 
       timestamps(type: :timestamptz)
     end

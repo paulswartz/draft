@@ -14,7 +14,6 @@ defmodule Draft.VacationDistribution do
     field :start_date, :date
     field :end_date, :date
     field :status, :integer, default: 1
-    field :rolled_back, :boolean, default: false
     has_one :vacation_distribution_run, Draft.VacationDistributionRun, foreign_key: :id
 
     timestamps(type: :utc_datetime)
@@ -26,8 +25,7 @@ defmodule Draft.VacationDistribution do
           interval_type: String.t(),
           start_date: Date.t(),
           end_date: Date.t(),
-          status: number(),
-          rolled_back: boolean()
+          status: number()
         }
   @spec to_csv_row(Draft.VacationDistribution.t()) :: iodata()
   def to_csv_row(distribution) do
@@ -79,8 +77,7 @@ defmodule Draft.VacationDistribution do
       :interval_type,
       :start_date,
       :end_date,
-      :status,
-      :rolled_back
+      :status
     ])
     |> validate_required([
       :run_id,
@@ -88,8 +85,7 @@ defmodule Draft.VacationDistribution do
       :interval_type,
       :start_date,
       :end_date,
-      :status,
-      :rolled_back
+      :status
     ])
   end
 end
