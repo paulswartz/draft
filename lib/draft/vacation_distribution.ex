@@ -46,7 +46,9 @@ defmodule Draft.VacationDistribution do
     ])
   end
 
-  @spec insert_all_distributions(number(), [t()]) :: :ok
+  @spec insert_all_distributions(number(), [t()]) ::
+          {:ok, any()}
+          | {:error, any()}
   @doc """
   Insert all given distribution records as part of the given run.
   """

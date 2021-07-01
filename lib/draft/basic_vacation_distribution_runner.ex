@@ -118,72 +118,75 @@ defmodule Draft.BasicVacationDistributionRunner do
                  q.interval_end_date >= ^round.rating_period_end_date)
       )
 
-    case employee_balances do
-      [employee_balance] ->
-        Logger.info(
-          "Employee balance for period #{employee_balance.interval_start_date} - #{
-            employee_balance.interval_end_date
-          }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
-            employee_balance.maximum_minutes
-          } max minutes"
-        )
+    assign_vacation(round, employee, distribution_run_id, employee_balances)
+  end
 
-        max_minutes = employee_balance.maximum_minutes
+  defp assign_vacation(round, employee, distribution_run_id, employee_balances)
 
-        # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
-        num_hours_per_day =
-          if String.starts_with?(
-               Draft.JobClassHelpers.get_selection_set(employee.job_class),
-               "FT"
-             ),
-             do: 8,
-             else: 6
+  defp assign_vacation(round, employee, distribution_run_id, [employee_balance]) do
+    Logger.info(
+      "Employee balance for period #{employee_balance.interval_start_date} - #{
+        employee_balance.interval_end_date
+      }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
+        employee_balance.maximum_minutes
+      } max minutes"
+    )
 
-        # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
-        max_weeks =
-          min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+    max_minutes = employee_balance.maximum_minutes
 
-        anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
+    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class)
 
-        assigned_weeks =
-          GenerateVacationDistribution.Weeks.generate(
-            round,
-            employee,
-            max_weeks,
-            anniversary_quota
-          )
+    # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
+    max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+    anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
-        assigned_days =
-          GenerateVacationDistribution.Days.generate(
-            round,
-            employee,
-            max_days,
-            assigned_weeks,
-            anniversary_quota
-          )
+    assigned_weeks =
+      GenerateVacationDistribution.Weeks.generate(
+        round,
+        employee,
+        max_weeks,
+        anniversary_quota
+      )
 
-        Draft.VacationDistribution.insert_all_distributions(
-          distribution_run_id,
-          assigned_weeks ++ assigned_days
-        )
+    max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
-        assigned_weeks ++ assigned_days
+    assigned_days =
+      GenerateVacationDistribution.Days.generate(
+        round,
+        employee,
+        max_days,
+        assigned_weeks,
+        anniversary_quota
+      )
 
-      [] ->
-        Logger.info(
-          "Skipping assignment for this employee - no quota interval encompassing the rating period."
-        )
+    case Draft.VacationDistribution.insert_all_distributions(
+           distribution_run_id,
+           assigned_weeks ++ assigned_days
+         ) do
+      {:ok, _result} ->
+        Logger.info("Successfully saved distributed vacation")
 
-        []
-
-      _employee_balances ->
-        Logger.info(
-          "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
-        )
-
-        []
+      {:error, _errors} ->
+        Logger.error("Error saving vacation distributions")
     end
+
+    assigned_weeks ++ assigned_days
+  end
+
+  defp assign_vacation(_round, _employee, _distribution_run_id, []) do
+    Logger.info(
+      "Skipping assignment for this employee - no quota interval encompassing the rating period."
+    )
+
+    []
+  end
+
+  defp assign_vacation(_round, _employee, _distribution_run_id, _employee_balances) do
+    Logger.info(
+      "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
+    )
+
+    []
   end
 end
