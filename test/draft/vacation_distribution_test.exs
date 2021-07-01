@@ -1,5 +1,7 @@
 defmodule Draft.VacationDistributionTest do
   use ExUnit.Case
+  use Draft.DataCase
+  import Draft.Factory
   alias Draft.VacationDistribution
 
   describe "to_csv_row/1" do
@@ -26,6 +28,34 @@ defmodule Draft.VacationDistributionTest do
                    status: 0
                  })
                )
+    end
+  end
+
+  describe "insert_all_distributions/2" do
+    test "Successfully inserts when valid" do
+      run_id = insert!(:vacation_distribution_run, %{}).id
+
+      distributions = [
+        %VacationDistribution{
+          employee_id: "0001",
+          interval_type: "week",
+          start_date: ~D[2021-01-01],
+          end_date: ~D[2021-01-07],
+          status: 1
+        }
+      ]
+
+      {:ok, _distributions} = VacationDistribution.insert_all_distributions(run_id, distributions)
+
+      assert [
+               %VacationDistribution{
+                 employee_id: "0001",
+                 interval_type: "week",
+                 start_date: ~D[2021-01-01],
+                 end_date: ~D[2021-01-07],
+                 status: 1
+               }
+             ] = Repo.all(Draft.VacationDistribution)
     end
   end
 end

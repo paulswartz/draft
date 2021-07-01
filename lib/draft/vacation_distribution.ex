@@ -55,7 +55,7 @@ defmodule Draft.VacationDistribution do
   def insert_all_distributions(run_id, distributions) do
     Repo.transaction(fn ->
       Enum.each(distributions, fn d ->
-        Repo.insert!(
+        Repo.insert(
           changeset(%__MODULE__{}, Map.put(Draft.Utils.convert_to_map(d), :run_id, run_id))
         )
       end)
