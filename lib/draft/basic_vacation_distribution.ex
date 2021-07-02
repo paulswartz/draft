@@ -7,13 +7,11 @@ defmodule Draft.BasicVacationDistribution do
   import Ecto.Query
   alias Draft.BidGroup
   alias Draft.BidRound
-  alias Draft.DivisionVacationDayQuota
-  alias Draft.DivisionVacationWeekQuota
   alias Draft.EmployeeRanking
   alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationQuota
-  alias Draft.EmployeeVacationSelection
   alias Draft.Repo
+  alias Draft.VacationDistribution
   alias Draft.VacationQuotaSetup
 
   require Logger
@@ -134,14 +132,30 @@ defmodule Draft.BasicVacationDistribution do
              do: 8,
              else: 6
 
+        # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
         max_weeks =
           min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        assigned_weeks = distribute_weeks_balance(round, employee, max_weeks)
+        anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
+
+        assigned_weeks =
+          VacationDistribution.Week.distribute(
+            round,
+            employee,
+            max_weeks,
+            anniversary_quota
+          )
 
         max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
-        assigned_days = distribute_days_balance(round, employee, max_days, assigned_weeks)
+        assigned_days =
+          VacationDistribution.Day.distribute(
+            round,
+            employee,
+            max_days,
+            assigned_weeks,
+            anniversary_quota
+          )
 
         assigned_weeks ++ assigned_days
 
@@ -159,161 +173,5 @@ defmodule Draft.BasicVacationDistribution do
 
         []
     end
-  end
-
-  defp distribute_days_balance(
-         round,
-         employee,
-         max_days,
-         assigned_weeks
-       )
-
-  defp distribute_days_balance(
-         _round,
-         _employee,
-         0,
-         _assigned_weeks
-       ) do
-    Logger.info(
-      "Skipping vacation day assignment - employee cannot take any days off in this rating period."
-    )
-
-    []
-  end
-
-  defp distribute_days_balance(
-         round,
-         employee,
-         max_days,
-         [] = _assigned_weeks
-       ) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
-
-    conflicting_selected_dates_query =
-      from s in EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_day_quota).date and
-            s.end_date >= parent_as(:division_day_quota).date and
-            s.employee_id == ^employee.employee_id
-
-    first_available_days =
-      Repo.all(
-        from d in DivisionVacationDayQuota,
-          as: :division_day_quota,
-          where:
-            d.division_id == ^round.division_id and d.quota > 0 and
-              d.employee_selection_set == ^selection_set and
-              d.date >= ^round.rating_period_start_date and
-              d.date <= ^round.rating_period_end_date and
-              not exists(conflicting_selected_dates_query),
-          order_by: [asc: d.date],
-          limit: ^max_days
-      )
-
-    distribute_available_days_balance(employee, first_available_days)
-  end
-
-  defp distribute_days_balance(
-         _round,
-         _employee,
-         _max_days,
-         _assigned_weeks
-       ) do
-    Logger.info(
-      "Skipping vacation day assignment -- only assigning weeks or days for now, and weeks have already been assigned."
-    )
-
-    []
-  end
-
-  defp distribute_available_days_balance(employee, available_days)
-
-  defp distribute_available_days_balance(_employee, []) do
-    Logger.info("No more vacation days available")
-    []
-  end
-
-  defp distribute_available_days_balance(employee, available_days) do
-    Enum.each(available_days, fn date_quota ->
-      Repo.update(DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1}))
-    end)
-
-    Enum.map(available_days, &distribute_single_day(employee, &1))
-  end
-
-  defp distribute_single_day(employee, selected_day) do
-    Logger.info("assigned day - #{selected_day.date}")
-
-    %EmployeeVacationAssignment{
-      employee_id: employee.employee_id,
-      is_week?: false,
-      start_date: selected_day.date,
-      end_date: selected_day.date
-    }
-  end
-
-  defp distribute_weeks_balance(round, employee, max_weeks)
-
-  defp distribute_weeks_balance(_round, _employee, 0) do
-    Logger.info(
-      "Skipping vacation week assignment - employee cannot take any weeks off in this rating period."
-    )
-
-    []
-  end
-
-  defp distribute_weeks_balance(round, employee, max_weeks) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
-
-    conflicting_selected_vacation_query =
-      from s in EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_week_quota).end_date and
-            s.end_date >= parent_as(:division_week_quota).start_date and
-            s.employee_id == ^employee.employee_id
-
-    available_weeks =
-      Repo.all(
-        from w in DivisionVacationWeekQuota,
-          as: :division_week_quota,
-          where:
-            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
-              w.employee_selection_set == ^selection_set and
-              ^round.rating_period_start_date <= w.start_date and
-              ^round.rating_period_end_date >= w.end_date and
-              not exists(conflicting_selected_vacation_query),
-          order_by: [asc: w.start_date],
-          limit: ^max_weeks
-      )
-
-    distribute_avaliable_weeks(employee, available_weeks)
-  end
-
-  defp distribute_avaliable_weeks(employee, available_weeks)
-
-  defp distribute_avaliable_weeks(_employee, []) do
-    Logger.info("No more vacation weeks available")
-    []
-  end
-
-  defp distribute_avaliable_weeks(employee, available_weeks) do
-    Enum.map(available_weeks, &distribute_single_week(employee, &1))
-  end
-
-  defp distribute_single_week(employee, assigned_week) do
-    new_quota = assigned_week.quota - 1
-    changeset = DivisionVacationWeekQuota.changeset(assigned_week, %{quota: new_quota})
-    Repo.update(changeset)
-
-    Logger.info(
-      "assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}. #{new_quota} more openings for this week.\n"
-    )
-
-    %EmployeeVacationAssignment{
-      employee_id: employee.employee_id,
-      is_week?: true,
-      start_date: assigned_week.start_date,
-      end_date: assigned_week.end_date
-    }
   end
 end

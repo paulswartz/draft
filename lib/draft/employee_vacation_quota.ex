@@ -14,10 +14,10 @@ defmodule Draft.EmployeeVacationQuota do
           interval_end_date: Date.t(),
           weekly_quota: integer(),
           dated_quota: integer(),
-          restricted_week_quota: integer() | nil,
+          restricted_week_quota: integer(),
           available_after_date: Date.t() | nil,
-          available_after_dated_quota: integer() | nil,
-          available_after_weekly_quota: integer() | nil,
+          available_after_dated_quota: integer(),
+          available_after_weekly_quota: integer(),
           maximum_minutes: integer()
         }
 
@@ -64,6 +64,44 @@ defmodule Draft.EmployeeVacationQuota do
       available_after_dated_quota: ParsingHelpers.to_int(available_after_dated_quota),
       maximum_minutes: ParsingHelpers.to_minutes(maximum_minutes)
     }
+  end
+
+  @spec get_anniversary_quota(t()) ::
+          nil
+          | %{
+              anniversary_date: Date.t(),
+              anniversary_weeks: integer(),
+              anniversary_days: integer()
+            }
+  @doc """
+  Get the anniversary quota that is awarded during the given employee vacation balance interval,
+  if there is an anniversary during that time.
+  """
+  def get_anniversary_quota(employee_balance)
+
+  def get_anniversary_quota(employee_balance)
+      when is_nil(employee_balance.available_after_date) do
+    nil
+  end
+
+  def get_anniversary_quota(employee_balance) do
+    %{
+      anniversary_date: employee_balance.available_after_date,
+      anniversary_weeks: employee_balance.available_after_weekly_quota,
+      anniversary_days: employee_balance.available_after_dated_quota
+    }
+  end
+
+  @spec adjust_quota(integer(), integer()) :: non_neg_integer()
+  @doc """
+  The vacation quotas given by HASTUS (weekly_quota, dated_quota) include any weeks / days that are only available on and after an anniversary date.
+  This function returns the initial quota less the quota given to subtract. The lowest possible quota returned is zero; quota cannot be negative.
+  """
+  def adjust_quota(
+        initial_quota,
+        quota_to_subtract
+      ) do
+    max(initial_quota - quota_to_subtract, 0)
   end
 
   @doc false
