@@ -1,6 +1,6 @@
 defmodule Draft.GenerateVacationDistribution.Days do
   @moduledoc """
-  Generate a list of VacationDistributions to be
+  Generate a list of VacationDistributions that can be assigned to the given employee
   """
   import Ecto.Query
   alias Draft.DivisionVacationDayQuota
