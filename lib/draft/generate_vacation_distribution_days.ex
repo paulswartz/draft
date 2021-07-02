@@ -38,7 +38,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
     )
   end
 
-  def distribute(
+  def generate(
         round,
         employee,
         day_quota_including_anniversary_days,

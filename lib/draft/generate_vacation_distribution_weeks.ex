@@ -35,7 +35,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
     )
   end
 
-  def distribute(round, employee, week_quota_including_anniversary_weeks, %{
+  def generate(round, employee, week_quota_including_anniversary_weeks, %{
         anniversary_date: anniversary_date,
         anniversary_weeks: anniversary_weeks
       }) do
