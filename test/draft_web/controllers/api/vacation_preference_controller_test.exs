@@ -127,14 +127,15 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
       |> put_session(:user_id, "00001")
       |> post("/api/vacation/preferences", %{
         "days" => [
-          %{"start_date" => "2021-02-08", "rank" => 1}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-08", "rank" => 1}
         ],
         "weeks" => [
           %{
             "start_date" => "2021-02-01",
+            "end_date" => "2021-02-07",
             "rank" => 1
           },
-          %{"start_date" => "2021-02-08", "rank" => 2}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-14", "rank" => 2}
         ]
       })
 
@@ -178,9 +179,10 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         "weeks" => [
           %{
             "start_date" => "2021-02-01",
+            "end_date" => "2021-02-07",
             "rank" => 1
           },
-          %{"start_date" => "2021-02-01", "rank" => 2}
+          %{"start_date" => "2021-02-01", "end_date" => "2021-02-07", "rank" => 2}
         ]
       })
 
@@ -236,20 +238,21 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
       |> put_session(:user_id, "00001")
       |> put("/api/vacation/preferences/#{previous_id}", %{
         "days" => [
-          %{"start_date" => "2021-02-08", "rank" => 1}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-08", "rank" => 1}
         ],
         "weeks" => [
           %{
             "start_date" => "2021-02-01",
+            "end_date" => "2021-02-07",
             "rank" => 1
           },
-          %{"start_date" => "2021-02-08", "rank" => 2}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-14", "rank" => 2}
         ]
       })
 
     assert %{
              "days" => [
-               %{"start_date" => "2021-02-08", "rank" => 1, "end_date" => "2021-02-08"}
+               %{"start_date" => "2021-02-08", "end_date" => "2021-02-08", "rank" => 1}
              ],
              "weeks" => [
                %{
@@ -299,14 +302,15 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
       |> put_session(:user_id, "00001")
       |> put("/api/vacation/preferences/#{previous_id_different_employee}", %{
         "days" => [
-          %{"start_date" => "2021-02-08", "rank" => 1}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-08", "rank" => 1}
         ],
         "weeks" => [
           %{
             "start_date" => "2021-02-01",
+            "end_date" => "2021-02-08",
             "rank" => 1
           },
-          %{"start_date" => "2021-02-08", "rank" => 2}
+          %{"start_date" => "2021-02-08", "end_date" => "2021-02-14", "rank" => 2}
         ]
       })
 

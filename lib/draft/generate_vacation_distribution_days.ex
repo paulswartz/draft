@@ -38,15 +38,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
     )
   end
 
-  def generate(_round, _employee, 0, _assigned_weeks, _anniversary_vacation) do
-    Logger.info(
-      "Skipping vacation day assignment - employee cannot take any days off in this range."
-    )
-
-    []
-  end
-
-  def generate(
+  def distribute(
         round,
         employee,
         day_quota_including_anniversary_days,
