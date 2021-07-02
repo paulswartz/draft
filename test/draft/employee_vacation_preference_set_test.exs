@@ -43,7 +43,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
             start_date: ~D[2021-02-01],
             end_date: ~D[2021-02-07],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       }
@@ -59,7 +59,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                    start_date: ~D[2021-02-01],
                    end_date: ~D[2021-02-07],
                    rank: 1,
-                   interval_type: "week"
+                   interval_type: :week
                  }
                ]
              } =
@@ -98,7 +98,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
             start_date: ~D[2021-02-01],
             end_date: ~D[2021-02-07],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       }
@@ -112,7 +112,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
             start_date: ~D[2021-02-08],
             end_date: ~D[2021-02-14],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       }
@@ -129,7 +129,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                    start_date: ~D[2021-02-08],
                    end_date: ~D[2021-02-14],
                    rank: 1,
-                   interval_type: "week"
+                   interval_type: :week
                  }
                ]
              } =
@@ -186,7 +186,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
             start_date: ~D[2021-02-01],
             end_date: ~D[2021-02-07],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       }
@@ -200,7 +200,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
             start_date: ~D[2021-02-08],
             end_date: ~D[2021-02-14],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       }
@@ -217,7 +217,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                    start_date: ~D[2021-02-01],
                    end_date: ~D[2021-02-07],
                    rank: 1,
-                   interval_type: "week"
+                   interval_type: :week
                  }
                ]
              } =
@@ -260,7 +260,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                     start_date: ~D[2021-02-01],
                     end_date: ~D[2021-02-07],
                     rank: 1,
-                    interval_type: "week"
+                    interval_type: :week
                   }
                 ]
               }} =
@@ -273,7 +273,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })
@@ -309,7 +309,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                     start_date: ~D[2021-02-01],
                     end_date: ~D[2021-02-07],
                     rank: 1,
-                    interval_type: "week"
+                    interval_type: :week
                   }
                 ]
               }} =
@@ -323,7 +323,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })
@@ -360,7 +360,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
               start_date: ~D[2021-02-01],
               end_date: ~D[2021-02-07],
               rank: 1,
-              interval_type: "week"
+              interval_type: :week
             }
           ]
         })
@@ -376,7 +376,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                     start_date: ~D[2021-02-08],
                     end_date: ~D[2021-02-14],
                     rank: 1,
-                    interval_type: "week"
+                    interval_type: :week
                   }
                 ]
               }} =
@@ -390,7 +390,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-08],
                      end_date: ~D[2021-02-14],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })
@@ -425,7 +425,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
               start_date: ~D[2021-02-01],
               end_date: ~D[2021-02-07],
               rank: 1,
-              interval_type: "week"
+              interval_type: :week
             }
           ]
         })
@@ -441,7 +441,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-08],
                      end_date: ~D[2021-02-14],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })
@@ -476,13 +476,13 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    },
                    %{
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 2,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })
@@ -517,13 +517,13 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 1,
-                     interval_type: "week"
+                     interval_type: :week
                    },
                    %{
                      start_date: ~D[2021-02-01],
                      end_date: ~D[2021-02-07],
                      rank: 2,
-                     interval_type: "week"
+                     interval_type: :week
                    }
                  ]
                })

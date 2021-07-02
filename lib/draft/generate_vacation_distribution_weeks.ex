@@ -128,7 +128,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
 
     %VacationDistribution{
       employee_id: employee.employee_id,
-      interval_type: "week",
+      interval_type: :week,
       start_date: assigned_week.start_date,
       end_date: assigned_week.end_date
     }

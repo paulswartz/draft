@@ -59,11 +59,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -83,11 +85,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -111,11 +115,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-08],
                  end_date: ~D[2021-04-14],
                  employee_id: "00001"
@@ -139,6 +145,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"
@@ -162,6 +169,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :week,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-07],
                  employee_id: "00001"

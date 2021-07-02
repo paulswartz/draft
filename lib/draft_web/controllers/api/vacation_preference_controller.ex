@@ -44,8 +44,8 @@ defmodule DraftWeb.API.VacationPreferenceController do
 
     %{
       id: preference_set.id,
-      weeks: Map.get(grouped_preferences, "week", []),
-      days: Map.get(grouped_preferences, "day", [])
+      weeks: Map.get(grouped_preferences, :week, []),
+      days: Map.get(grouped_preferences, :day, [])
     }
   end
 
@@ -119,30 +119,30 @@ defmodule DraftWeb.API.VacationPreferenceController do
     vacation_weeks =
       preference_set
       |> Map.get("weeks", [])
-      |> Enum.map(&to_vacation_preference("week", &1))
+      |> Enum.map(&to_vacation_preference(:week, &1))
 
     vacation_days =
       preference_set
       |> Map.get("days", [])
-      |> Enum.map(&to_vacation_preference("day", &1))
+      |> Enum.map(&to_vacation_preference(:day, &1))
 
     vacation_weeks ++ vacation_days
   end
 
   defp to_vacation_preference(interval_type, inverval)
 
-  defp to_vacation_preference("week", week) do
+  defp to_vacation_preference(:week, week) do
     {:ok, start_date} = Date.from_iso8601(Map.get(week, "start_date"))
 
     %{
       start_date: start_date,
       end_date: Map.get(week, "end_date"),
       rank: Map.get(week, "rank"),
-      interval_type: "week"
+      interval_type: :week
     }
   end
 
-  defp to_vacation_preference("day", day) do
+  defp to_vacation_preference(:day, day) do
     {:ok, start_date} = Date.from_iso8601(Map.get(day, "start_date"))
     {:ok, end_date} = Date.from_iso8601(Map.get(day, "end_date"))
 
@@ -150,7 +150,7 @@ defmodule DraftWeb.API.VacationPreferenceController do
       start_date: start_date,
       end_date: end_date,
       rank: Map.get(day, "rank"),
-      interval_type: "day"
+      interval_type: :day
     }
   end
 end

@@ -10,10 +10,10 @@ defmodule Draft.VacationDistribution do
   schema "vacation_distributions" do
     field :run_id, :integer
     field :employee_id, :string
-    field :interval_type, :string
+    field :interval_type, Draft.IntervalTypeEnum
     field :start_date, :date
     field :end_date, :date
-    field :status, :integer, default: 1
+    field :status, Draft.VacationStatusEnum, default: :assigned
     field :synced_to_hastus, :boolean, default: false
     has_one :vacation_distribution_run, Draft.VacationDistributionRun, foreign_key: :id
 
@@ -21,17 +21,19 @@ defmodule Draft.VacationDistribution do
   end
 
   @type t :: %__MODULE__{
-          run_id: number(),
+          run_id: integer(),
           employee_id: String.t(),
-          interval_type: String.t(),
+          interval_type: :week | :day,
           start_date: Date.t(),
           end_date: Date.t(),
-          status: number(),
+          status: integer(),
           synced_to_hastus: boolean()
         }
   @spec to_csv_row(Draft.VacationDistribution.t()) :: iodata()
   def to_csv_row(distribution) do
-    vacation_interval_type = if distribution.interval_type == "week", do: "1", else: "0"
+    vacation_interval_type = if distribution.interval_type == :week, do: "1", else: "0"
+    {:ok, status} = Draft.VacationStatusEnum.dump(distribution.status)
+    require Logger
     # For now, assume always quarterly pick
     pick_period = 1
 
@@ -42,7 +44,7 @@ defmodule Draft.VacationDistribution do
         vacation_interval_type,
         FormattingHelpers.to_date_string(distribution.start_date),
         FormattingHelpers.to_date_string(distribution.end_date),
-        distribution.status,
+        status,
         pick_period
       ]
     ])
@@ -57,9 +59,7 @@ defmodule Draft.VacationDistribution do
   def insert_all_distributions(run_id, distributions) do
     Repo.transaction(fn ->
       Enum.each(distributions, fn d ->
-        Repo.insert(
-          changeset(%__MODULE__{}, Map.put(Draft.Utils.convert_to_map(d), :run_id, run_id))
-        )
+        Repo.insert!(changeset(%__MODULE__{}, Map.from_struct(Map.put(d, :run_id, run_id))))
       end)
     end)
   end

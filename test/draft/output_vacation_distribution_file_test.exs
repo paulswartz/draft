@@ -14,13 +14,13 @@ defmodule Draft.OutputVacationDistributionTest do
                        employee_id: "0001",
                        start_date: ~D[2021-01-01],
                        end_date: ~D[2021-01-08],
-                       interval_type: "week"
+                       interval_type: :week
                      },
                      %VacationDistribution{
                        employee_id: "0001",
                        start_date: ~D[2021-01-09],
                        end_date: ~D[2021-01-09],
-                       interval_type: "day"
+                       interval_type: :day
                      }
                    ],
                    "test/support/test_data/test_vacation_assignment_output.csv"

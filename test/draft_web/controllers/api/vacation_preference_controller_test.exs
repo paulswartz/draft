@@ -33,19 +33,19 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
           start_date: ~D[2021-02-01],
           end_date: ~D[2021-02-07],
           rank: 1,
-          interval_type: "week"
+          interval_type: :week
         },
         %EmployeeVacationPreference{
           start_date: ~D[2021-02-08],
           end_date: ~D[2021-02-14],
           rank: 2,
-          interval_type: "week"
+          interval_type: :week
         },
         %EmployeeVacationPreference{
           start_date: ~D[2021-02-08],
           end_date: ~D[2021-02-08],
           rank: 1,
-          interval_type: "day"
+          interval_type: :day
         }
       ]
     })
@@ -228,7 +228,7 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
             start_date: ~D[2021-02-01],
             end_date: ~D[2021-02-07],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       })
@@ -292,7 +292,7 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
             start_date: ~D[2021-02-01],
             end_date: ~D[2021-02-07],
             rank: 1,
-            interval_type: "week"
+            interval_type: :week
           }
         ]
       })

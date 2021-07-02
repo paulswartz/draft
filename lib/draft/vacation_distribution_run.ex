@@ -38,9 +38,8 @@ defmodule Draft.VacationDistributionRun do
   Mark the given distribution run as complete
   """
   def mark_complete(run_id) do
-    __MODULE__
-    |> Repo.get!(run_id)
-    |> changeset(%{end_time: DateTime.utc_now()})
+    run_id
+    |> mark_complete_changeset(%{end_time: DateTime.utc_now()})
     |> Repo.update()
   end
 
@@ -57,5 +56,11 @@ defmodule Draft.VacationDistributionRun do
     vacation_distribution_run
     |> cast(attrs, [:process_id, :round_id, :start_time, :end_time])
     |> validate_required([:process_id, :round_id, :start_time, :end_time])
+  end
+
+  defp mark_complete_changeset(run_id, attrs) do
+    %__MODULE__{id: run_id}
+    |> cast(attrs, [:id, :end_time])
+    |> validate_required([:id, :end_time])
   end
 end

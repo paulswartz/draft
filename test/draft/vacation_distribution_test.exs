@@ -12,7 +12,7 @@ defmodule Draft.VacationDistributionTest do
                    employee_id: "0001",
                    start_date: ~D[2021-01-01],
                    end_date: ~D[2021-01-08],
-                   interval_type: "week"
+                   interval_type: :week
                  })
                )
     end
@@ -24,7 +24,7 @@ defmodule Draft.VacationDistributionTest do
                    employee_id: "0001",
                    start_date: ~D[2021-01-01],
                    end_date: ~D[2021-01-08],
-                   interval_type: "week",
+                   interval_type: :week,
                    status: 0
                  })
                )
@@ -38,10 +38,10 @@ defmodule Draft.VacationDistributionTest do
       distributions = [
         %VacationDistribution{
           employee_id: "0001",
-          interval_type: "week",
+          interval_type: :week,
           start_date: ~D[2021-01-01],
           end_date: ~D[2021-01-07],
-          status: 1
+          status: :assigned
         }
       ]
 
@@ -50,10 +50,36 @@ defmodule Draft.VacationDistributionTest do
       assert [
                %VacationDistribution{
                  employee_id: "0001",
-                 interval_type: "week",
+                 interval_type: :week,
                  start_date: ~D[2021-01-01],
                  end_date: ~D[2021-01-07],
-                 status: 1
+                 status: :assigned
+               }
+             ] = Repo.all(Draft.VacationDistribution)
+    end
+
+    test "Successfully inserts when cancelled" do
+      run_id = insert!(:vacation_distribution_run, %{}).id
+
+      distributions = [
+        %VacationDistribution{
+          employee_id: "0001",
+          interval_type: :week,
+          start_date: ~D[2021-01-01],
+          end_date: ~D[2021-01-07],
+          status: :cancelled
+        }
+      ]
+
+      {:ok, _distributions} = VacationDistribution.insert_all_distributions(run_id, distributions)
+
+      assert [
+               %VacationDistribution{
+                 employee_id: "0001",
+                 interval_type: :week,
+                 start_date: ~D[2021-01-01],
+                 end_date: ~D[2021-01-07],
+                 status: :cancelled
                }
              ] = Repo.all(Draft.VacationDistribution)
     end

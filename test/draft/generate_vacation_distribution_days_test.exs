@@ -57,11 +57,13 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-02],
                  end_date: ~D[2021-04-02],
                  employee_id: "00001"
@@ -82,11 +84,13 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-02],
                  end_date: ~D[2021-04-02],
                  employee_id: "00001"
@@ -111,11 +115,13 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"
                },
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-02],
                  end_date: ~D[2021-04-02],
                  employee_id: "00001"
@@ -140,6 +146,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"
@@ -164,6 +171,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [
                %VacationDistribution{
+                 interval_type: :day,
                  start_date: ~D[2021-04-01],
                  end_date: ~D[2021-04-01],
                  employee_id: "00001"

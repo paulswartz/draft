@@ -15,9 +15,10 @@ defmodule Draft.VacationDistributionRunTest do
   describe "mark_as_complete/1" do
     test "Successfully marks as complete existing " do
       run_id = VacationDistributionRun.insert("process_1", "vacation_1")
+      assert original_run = Draft.Repo.one!(VacationDistributionRun)
+      assert is_nil(original_run.end_time)
       {:ok, updated_run} = VacationDistributionRun.mark_complete(run_id)
-
-      assert updated_run.id == run_id
+      assert !is_nil(updated_run.end_time)
     end
   end
 end
