@@ -38,7 +38,10 @@ defmodule Draft.VacationDistributionRun do
   Mark the given distribution run as complete
   """
   def mark_complete(run_id) do
-    Repo.update(changeset(%__MODULE__{}, %{id: run_id, end_time: DateTime.utc_now()}))
+    __MODULE__
+    |> Repo.get!(run_id)
+    |> changeset(%{end_time: DateTime.utc_now()})
+    |> Repo.update()
   end
 
   @spec changeset(
