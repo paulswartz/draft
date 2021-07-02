@@ -9,6 +9,7 @@ defmodule Draft.Repo.Migrations.CreateVacationDistributions do
       add :start_date, :date
       add :end_date, :date
       add :status, :integer
+      add :synced_to_hastus, :boolean
 
       timestamps(type: :timestamptz)
     end
