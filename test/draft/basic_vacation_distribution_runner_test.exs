@@ -1,4 +1,4 @@
-defmodule Draft.BasicVacationDistributionTest do
+defmodule Draft.BasicVacationDistributionRunnerTest do
   use ExUnit.Case, async: true
   use Draft.DataCase
   import Draft.Factory
@@ -42,6 +42,47 @@ defmodule Draft.BasicVacationDistributionTest do
 
       assert [%VacationDistribution{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
                vacation_assignments
+    end
+
+    test "Distribution runner saves to DB" do
+      insert_round_with_employees(%{
+        round_rank: 1,
+        round_opening_date: ~D[2021-02-01],
+        round_closing_date: ~D[2021-03-01],
+        employee_count: 1,
+        group_size: 10
+      })
+
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 1,
+        dated_quota: 0,
+        maximum_minutes: 2400
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 0
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
+        quota: 1
+      })
+
+      vacation_assignments = BasicVacationDistributionRunner.run()
+
+      assert Enum.filter(vacation_assignments, fn x ->
+               x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-27]
+             end) == []
+
+      assert [%VacationDistribution{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
+               vacation_assignments
+
+      assert [%VacationDistribution{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
+               Draft.Repo.all(VacationDistribution)
     end
 
     test "Operator is not assigned vacation day with quota of 0" do
