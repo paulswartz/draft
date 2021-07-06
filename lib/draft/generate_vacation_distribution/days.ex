@@ -10,12 +10,12 @@ defmodule Draft.GenerateVacationDistribution.Days do
   require Logger
 
   @spec generate(
-          Draft.BidRound,
-          Draft.EmployeeRanking,
+          Draft.BidRound.t(),
+          Draft.EmployeeRanking.t(),
           integer(),
-          [VacationDistribution],
+          [VacationDistribution.t()],
           nil | %{anniversary_date: Date.t(), anniversary_days: number()}
-        ) :: [VacationDistribution]
+        ) :: [VacationDistribution.t()]
 
   @doc """
   Generate vacation days to assign for the employee based on what is available in their division/job class in the rating period they are picking for.
