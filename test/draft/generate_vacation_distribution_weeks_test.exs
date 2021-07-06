@@ -370,4 +370,53 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     assert [] = vacation_assignments
   end
+
+  test "Operator with vacation week preferences is not assigned that week when it has been taken by someone earlier in the same run",
+       state do
+    group_number = 1234
+
+    run_id =
+      Draft.VacationDistributionRun.insert(%Draft.BidGroup{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        group_number: group_number
+      })
+
+    Draft.VacationDistribution.add_distributions_to_run(run_id, [
+      %VacationDistribution{
+        employee_id: "00002",
+        interval_type: :day,
+        start_date: ~D[2021-04-08],
+        end_date: ~D[2021-04-14]
+      }
+    ])
+
+    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+      process_id: "process_1",
+      round_id: "vacation_1",
+      employee_id: "00001",
+      vacation_preferences: [
+        %Draft.EmployeeVacationPreference{
+          start_date: ~D[2021-04-08],
+          end_date: ~D[2021-04-14],
+          rank: 1,
+          interval_type: :day
+        }
+      ]
+    }
+
+    Draft.Repo.insert!(preferred_vacation)
+
+    vacation_assignments =
+      GenerateVacationDistribution.Days.generate(
+        run_id,
+        state.round,
+        state.employee_ranking,
+        1,
+        [],
+        nil
+      )
+
+    assert [] = vacation_assignments
+  end
 end

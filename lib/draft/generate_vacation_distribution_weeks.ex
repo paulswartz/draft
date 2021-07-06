@@ -149,7 +149,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     quota_already_distributed_in_run =
-      Draft.VacationDistribution.count_distributions_per_interval(distribution_run_id, :week)
+      Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
 
     conflicting_selected_vacation_query =
       from s in EmployeeVacationSelection,
