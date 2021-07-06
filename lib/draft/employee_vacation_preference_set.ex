@@ -109,7 +109,13 @@ defmodule Draft.EmployeeVacationPreferenceSet do
             preference_set.employee_id == ^employee_id,
         order_by: [desc: preference_set.id],
         limit: 1,
-        preload: [:vacation_preferences]
+        preload: [
+          vacation_preferences:
+            ^from(
+              p in EmployeeVacationPreference,
+              order_by: [asc: p.rank]
+            )
+        ]
       )
 
     Repo.one(latest_preference_set_query)

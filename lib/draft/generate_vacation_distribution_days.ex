@@ -1,27 +1,29 @@
-defmodule Draft.VacationDistribution.Day do
+defmodule Draft.GenerateVacationDistribution.Days do
   @moduledoc """
-  Distribute vacation days to an employee.
+  Generate a list of VacationDistributions that can be assigned to the given employee
   """
   import Ecto.Query
   alias Draft.DivisionVacationDayQuota
-  alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationSelection
   alias Draft.Repo
+  alias Draft.VacationDistribution
   require Logger
 
-  @spec distribute(
+  @spec generate(
+          integer(),
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
-          [EmployeeVacationAssignment],
+          [VacationDistribution],
           nil | %{anniversary_date: Date.t(), anniversary_days: number()}
-        ) :: [EmployeeVacationAssignment]
+        ) :: [VacationDistribution]
 
   @doc """
-  Distribute vacation days to an employee based on what is available in their division/job class in the rating period they are picking for.
-  If the employee has an upcoming anniversary date, vacation days are only assigned up to that date.
+  Generate vacation days to assign for the employee based on what is available in their division/job class in the rating period they are picking for.
+  If the employee has an upcoming anniversary date, vacation days are only generated up to that date.
   """
-  def distribute(
+  def generate(
+        distribution_run_id,
         round,
         employee,
         max_days,
@@ -29,8 +31,9 @@ defmodule Draft.VacationDistribution.Day do
         anniversary_vacation
       )
 
-  def distribute(round, employee, max_days, assigned_weeks, nil) do
-    distribute_from_available(
+  def generate(distribution_run_id, round, employee, max_days, assigned_weeks, nil) do
+    generate_from_available(
+      distribution_run_id,
       round,
       employee,
       max_days,
@@ -38,15 +41,8 @@ defmodule Draft.VacationDistribution.Day do
     )
   end
 
-  def distribute(_round, _employee, 0, _assigned_weeks, _anniversary_vacation) do
-    Logger.info(
-      "Skipping vacation day assignment - employee cannot take any days off in this range."
-    )
-
-    []
-  end
-
-  def distribute(
+  def generate(
+        distribution_run_id,
         round,
         employee,
         day_quota_including_anniversary_days,
@@ -62,7 +58,8 @@ defmodule Draft.VacationDistribution.Day do
            round.rating_period_end_date
          ) do
       :before_range ->
-        distribute_from_available(
+        generate_from_available(
+          distribution_run_id,
           round,
           employee,
           day_quota_including_anniversary_days,
@@ -72,7 +69,8 @@ defmodule Draft.VacationDistribution.Day do
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary days.
-        distribute_from_available(
+        generate_from_available(
+          distribution_run_id,
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -83,7 +81,8 @@ defmodule Draft.VacationDistribution.Day do
         )
 
       :after_range ->
-        distribute_from_available(
+        generate_from_available(
+          distribution_run_id,
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -95,14 +94,16 @@ defmodule Draft.VacationDistribution.Day do
     end
   end
 
-  defp distribute_from_available(
+  defp generate_from_available(
+         distribution_run_id,
          round,
          employee,
          max_days,
          assigned_weeks
        )
 
-  defp distribute_from_available(
+  defp generate_from_available(
+         distribution_run_id,
          _round,
          _employee,
          0,
@@ -115,7 +116,8 @@ defmodule Draft.VacationDistribution.Day do
     []
   end
 
-  defp distribute_from_available(
+  defp generate_from_available(
+         distribution_run_id,
          round,
          employee,
          max_days,
@@ -128,16 +130,16 @@ defmodule Draft.VacationDistribution.Day do
         employee.employee_id
       )
 
-    all_available_days = get_all_days_available_to_employee(round, employee)
+    all_available_days = get_all_days_available_to_employee(distribution_run_id, round, employee)
 
     preferred_vacation_days =
       if is_nil(preference_set) do
         []
       else
-        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == "day" end)
+        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == :day end)
       end
 
-    distribute_available_days_from_preferences(
+    generate_days_to_distribute_from_preferences(
       employee,
       all_available_days,
       preferred_vacation_days,
@@ -145,7 +147,8 @@ defmodule Draft.VacationDistribution.Day do
     )
   end
 
-  defp distribute_from_available(
+  defp generate_from_available(
+         _distribution_run_id,
          _round,
          _employee,
          _max_days,
@@ -158,8 +161,11 @@ defmodule Draft.VacationDistribution.Day do
     []
   end
 
-  defp get_all_days_available_to_employee(round, employee) do
+  defp get_all_days_available_to_employee(distribution_run_id, round, employee) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+
+    quota_already_distributed_in_run =
+      Draft.VacationDistribution.count_distributions_per_interval(distribution_run_id, :day)
 
     conflicting_selected_dates_query =
       from s in EmployeeVacationSelection,
@@ -168,31 +174,41 @@ defmodule Draft.VacationDistribution.Day do
             s.end_date >= parent_as(:division_day_quota).date and
             s.employee_id == ^employee.employee_id
 
-    Repo.all(
-      from d in DivisionVacationDayQuota,
-        as: :division_day_quota,
-        where:
-          d.division_id == ^round.division_id and d.quota > 0 and
-            d.employee_selection_set == ^selection_set and
-            d.date >= ^round.rating_period_start_date and
-            d.date <= ^round.rating_period_end_date and
-            not exists(conflicting_selected_dates_query),
-        order_by: [asc: d.date]
-    )
+    quotas_before_run =
+      Repo.all(
+        from d in DivisionVacationDayQuota,
+          as: :division_day_quota,
+          where:
+            d.division_id == ^round.division_id and d.quota > 0 and
+              d.employee_selection_set == ^selection_set and
+              d.date >= ^round.rating_period_start_date and
+              d.date <= ^round.rating_period_end_date and
+              not exists(conflicting_selected_dates_query),
+          order_by: [asc: d.date]
+      )
+
+    Enum.map(quotas_before_run, fn original_quota ->
+      %DivisionVacationDayQuota{
+        original_quota
+        | quota:
+            original_quota.quota -
+              Map.get(quota_already_distributed_in_run, original_quota.date, 0)
+      }
+    end)
   end
 
-  defp distribute_available_days_from_preferences(
+  defp generate_days_to_distribute_from_preferences(
          employee,
          all_available_days,
          preferred_days,
          max_days
        )
 
-  defp distribute_available_days_from_preferences(employee, all_available_days, [], max_days) do
-    distribute_days(employee, Enum.take(all_available_days, max_days))
+  defp generate_days_to_distribute_from_preferences(employee, all_available_days, [], max_days) do
+    generate_days(employee, Enum.take(all_available_days, max_days))
   end
 
-  defp distribute_available_days_from_preferences(
+  defp generate_days_to_distribute_from_preferences(
          employee,
          all_available_days,
          preferred_days,
@@ -200,37 +216,33 @@ defmodule Draft.VacationDistribution.Day do
        ) do
     available_preferred_days =
       all_available_days
-      |> Enum.filter(fn d ->
+      |> Enum.filter(fn a ->
         Enum.any?(preferred_days, fn p ->
-          p.start_date == d.date
+          p.start_date == a.date
         end)
       end)
       |> Enum.take(max_days)
 
-    distribute_days(employee, available_preferred_days)
+    generate_days(employee, available_preferred_days)
   end
 
-  defp distribute_days(employee, available_days)
+  defp generate_days(employee, available_days)
 
-  defp distribute_days(_employee, []) do
+  defp generate_days(_employee, []) do
     Logger.info("No more vacation days available")
     []
   end
 
-  defp distribute_days(employee, available_days) do
-    Enum.each(available_days, fn date_quota ->
-      Repo.update(DivisionVacationDayQuota.changeset(date_quota, %{quota: date_quota.quota - 1}))
-    end)
-
-    Enum.map(available_days, &distribute_day(employee, &1))
+  defp generate_days(employee, available_days) do
+    Enum.map(available_days, &generate_day(employee, &1))
   end
 
-  defp distribute_day(employee, selected_day) do
+  defp generate_day(employee, selected_day) do
     Logger.info("assigned day - #{selected_day.date}")
 
-    %EmployeeVacationAssignment{
+    %VacationDistribution{
       employee_id: employee.employee_id,
-      is_week?: false,
+      interval_type: :day,
       start_date: selected_day.date,
       end_date: selected_day.date
     }

@@ -8,7 +8,7 @@ defmodule Draft.EmployeeVacationPreference do
 
   @type t :: %__MODULE__{
           preference_set_id: integer(),
-          interval_type: String.t(),
+          interval_type: Draft.IntervalTypeEnum,
           start_date: Date.t(),
           end_date: Date.t(),
           rank: integer()
@@ -18,7 +18,7 @@ defmodule Draft.EmployeeVacationPreference do
            only: [:preference_set_id, :interval_type, :start_date, :end_date, :rank]}
 
   schema "employee_vacation_preferences" do
-    field :interval_type, :string
+    field :interval_type, Draft.IntervalTypeEnum
     field :start_date, :date
     field :end_date, :date
     field :rank, :integer

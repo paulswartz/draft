@@ -1,49 +1,41 @@
-defmodule Draft.VacationDistribution.Week do
+defmodule Draft.GenerateVacationDistribution.Weeks do
   @moduledoc """
-  Distribute vacation weeks to an employee.
+  Generate a list of vacation weeks that can be assigned to the given employee
   """
   import Ecto.Query
   alias Draft.DivisionVacationWeekQuota
-  alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationSelection
   alias Draft.Repo
+  alias Draft.VacationDistribution
   require Logger
 
-  @spec distribute(
+  @spec generate(
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
           nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
-        ) :: [EmployeeVacationAssignment]
+        ) :: [VacationDistribution]
 
   @doc """
-  Distribute vacation weeks to an employee based on what is available in their division/job class in the rating period they are picking for.
-  If the employee has an upcoming anniversary date, vacation weeks are only assigned up to that date.
+  generate a list of vacation weeks for an employee based on what is available in their division/job class in the rating period they are picking for.
+  If the employee has an upcoming anniversary date, vacation weeks are only generated up to that date.
   """
-  def distribute(
+  def generate(
         round,
         employee,
         max_weeks,
         anniversary_vacation
       )
 
-  def distribute(round, employee, max_weeks, nil) do
-    distribute_from_available(
+  def generate(round, employee, max_weeks, nil) do
+    generate_from_available(
       round,
       employee,
       max_weeks
     )
   end
 
-  def distribute(_round, _employee, 0, _anniversary_vacation) do
-    Logger.info(
-      "Skipping vacation week assignment - employee cannot take any weeks off in this range."
-    )
-
-    []
-  end
-
-  def distribute(round, employee, week_quota_including_anniversary_weeks, %{
+  def generate(round, employee, week_quota_including_anniversary_weeks, %{
         anniversary_date: anniversary_date,
         anniversary_weeks: anniversary_weeks
       }) do
@@ -53,7 +45,7 @@ defmodule Draft.VacationDistribution.Week do
            round.rating_period_end_date
          ) do
       :before_range ->
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           week_quota_including_anniversary_weeks
@@ -62,7 +54,7 @@ defmodule Draft.VacationDistribution.Week do
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -72,7 +64,7 @@ defmodule Draft.VacationDistribution.Week do
         )
 
       :after_range ->
-        distribute_from_available(
+        generate_from_available(
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -83,7 +75,7 @@ defmodule Draft.VacationDistribution.Week do
     end
   end
 
-  defp distribute_from_available(
+  defp generate_from_available(
          round,
          employee,
          max_weeks
@@ -101,10 +93,10 @@ defmodule Draft.VacationDistribution.Week do
       if is_nil(preference_set) do
         []
       else
-        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == "week" end)
+        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == :week end)
       end
 
-    distribute_available_weeks_from_preferences(
+    generate_weeks_to_distribute_from_preferences(
       employee,
       all_available_weeks,
       preferred_vacation_weeks,
@@ -112,33 +104,33 @@ defmodule Draft.VacationDistribution.Week do
     )
   end
 
-  defp distribute_available_weeks_from_preferences(
+  defp generate_weeks_to_distribute_from_preferences(
          employee,
          all_available_weeks,
          preferred_weeks,
          max_weeks
        )
 
-  defp distribute_available_weeks_from_preferences(employee, all_available_weeks, [], max_weeks) do
-    distribute_weeks(employee, Enum.take(all_available_weeks, max_weeks))
+  defp generate_weeks_to_distribute_from_preferences(employee, all_available_weeks, [], max_weeks) do
+    generate_weeks(employee, Enum.take(all_available_weeks, max_weeks))
   end
 
-  defp distribute_available_weeks_from_preferences(
+  defp generate_weeks_to_distribute_from_preferences(
          employee,
          all_available_weeks,
          preferred_weeks,
          max_weeks
        ) do
     available_preferred_weeks =
-      all_available_weeks
-      |> Enum.filter(fn w ->
-        Enum.any?(preferred_weeks, fn p ->
+      preferred_weeks
+      |> Enum.filter(fn p ->
+        Enum.any?(all_available_weeks, fn w ->
           p.start_date == w.start_date && p.end_date == w.end_date
         end)
       end)
       |> Enum.take(max_weeks)
 
-    distribute_weeks(employee, available_preferred_weeks)
+    generate_weeks(employee, available_preferred_weeks)
   end
 
   defp get_all_weeks_available_to_employee(
@@ -167,18 +159,18 @@ defmodule Draft.VacationDistribution.Week do
     )
   end
 
-  defp distribute_weeks(employee, available_weeks)
+  defp generate_weeks(employee, available_weeks)
 
-  defp distribute_weeks(_employee, []) do
+  defp generate_weeks(_employee, []) do
     Logger.info("No more vacation weeks available")
     []
   end
 
-  defp distribute_weeks(employee, available_weeks) do
-    Enum.map(available_weeks, &distribute_week(employee, &1))
+  defp generate_weeks(employee, available_weeks) do
+    Enum.map(available_weeks, &generate_week(employee, &1))
   end
 
-  defp distribute_week(employee, assigned_week) do
+  defp generate_week(employee, assigned_week) do
     new_quota = assigned_week.quota - 1
     changeset = DivisionVacationWeekQuota.changeset(assigned_week, %{quota: new_quota})
     Repo.update(changeset)
@@ -187,9 +179,9 @@ defmodule Draft.VacationDistribution.Week do
       "assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}. #{new_quota} more openings for this week.\n"
     )
 
-    %EmployeeVacationAssignment{
+    %VacationDistribution{
       employee_id: employee.employee_id,
-      is_week?: true,
+      interval_type: :week,
       start_date: assigned_week.start_date,
       end_date: assigned_week.end_date
     }
