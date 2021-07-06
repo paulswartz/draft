@@ -31,7 +31,7 @@ defmodule Draft.VacationDistributionTest do
     end
   end
 
-  describe "insert_all_distributions/2" do
+  describe "add_distributions_to_run/2" do
     test "Successfully inserts when valid" do
       run_id = insert!(:vacation_distribution_run, %{}).id
 
@@ -45,7 +45,7 @@ defmodule Draft.VacationDistributionTest do
         }
       ]
 
-      {:ok, _distributions} = VacationDistribution.insert_all_distributions(run_id, distributions)
+      {:ok, _distributions} = VacationDistribution.add_distributions_to_run(run_id, distributions)
 
       assert [
                %VacationDistribution{
@@ -71,7 +71,7 @@ defmodule Draft.VacationDistributionTest do
         }
       ]
 
-      {:ok, _distributions} = VacationDistribution.insert_all_distributions(run_id, distributions)
+      {:ok, _distributions} = VacationDistribution.add_distributions_to_run(run_id, distributions)
 
       assert [
                %VacationDistribution{

@@ -48,8 +48,6 @@ defmodule Draft.BasicVacationDistributionRunner do
       })\n"
     )
 
-    distribution_run_id = Draft.VacationDistributionRun.insert(round.process_id, round.round_id)
-
     bid_groups =
       Repo.all(
         from g in BidGroup,
@@ -61,24 +59,24 @@ defmodule Draft.BasicVacationDistributionRunner do
       Enum.flat_map(
         bid_groups,
         fn group ->
-          assign_vacation_for_group(group, round, distribution_run_id)
+          assign_vacation_for_group(group, round)
         end
       )
 
-    _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
     assigned_vacations
   end
 
   defp assign_vacation_for_group(
          group,
-         round,
-         distribution_run_id
+         round
        ) do
     Logger.info(
       "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
         group.group_number
       } (cutoff time #{group.cutoff_datetime})\n"
     )
+
+    distribution_run_id = Draft.VacationDistributionRun.insert(group)
 
     group_employees =
       Repo.all(
@@ -89,16 +87,20 @@ defmodule Draft.BasicVacationDistributionRunner do
           order_by: [asc: e.rank]
       )
 
-    Enum.flat_map(
-      group_employees,
-      fn employee ->
-        assign_vacation_for_employee(
-          employee,
-          round,
-          distribution_run_id
-        )
-      end
-    )
+    assigned_vacation =
+      Enum.flat_map(
+        group_employees,
+        fn employee ->
+          assign_vacation_for_employee(
+            employee,
+            round,
+            distribution_run_id
+          )
+        end
+      )
+
+    _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+    assigned_vacation
   end
 
   defp assign_vacation_for_employee(
@@ -160,7 +162,7 @@ defmodule Draft.BasicVacationDistributionRunner do
         anniversary_quota
       )
 
-    case Draft.VacationDistribution.insert_all_distributions(
+    case Draft.VacationDistribution.add_distributions_to_run(
            distribution_run_id,
            assigned_weeks ++ assigned_days
          ) do
