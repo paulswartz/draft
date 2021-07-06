@@ -10,6 +10,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   require Logger
 
   @spec generate(
+          integer(),
           Draft.BidRound,
           Draft.EmployeeRanking,
           integer(),
@@ -21,21 +22,23 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   If the employee has an upcoming anniversary date, vacation weeks are only generated up to that date.
   """
   def generate(
+        distribution_run_id,
         round,
         employee,
         max_weeks,
         anniversary_vacation
       )
 
-  def generate(round, employee, max_weeks, nil) do
+  def generate(distribution_run_id, round, employee, max_weeks, nil) do
     generate_from_available(
+      distribution_run_id,
       round,
       employee,
       max_weeks
     )
   end
 
-  def generate(round, employee, week_quota_including_anniversary_weeks, %{
+  def generate(distribution_run_id, round, employee, week_quota_including_anniversary_weeks, %{
         anniversary_date: anniversary_date,
         anniversary_weeks: anniversary_weeks
       }) do
@@ -46,6 +49,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
          ) do
       :before_range ->
         generate_from_available(
+          distribution_run_id,
           round,
           employee,
           week_quota_including_anniversary_weeks
@@ -55,6 +59,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
         # If it should be possible to assign an operator their anniversary vacation that is earned
         # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
         generate_from_available(
+          distribution_run_id,
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -65,6 +70,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
 
       :after_range ->
         generate_from_available(
+          distribution_run_id,
           round,
           employee,
           Draft.EmployeeVacationQuota.adjust_quota(
@@ -76,6 +82,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   end
 
   defp generate_from_available(
+         distribution_run_id,
          round,
          employee,
          max_weeks
@@ -87,7 +94,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
         employee.employee_id
       )
 
-    all_available_weeks = get_all_weeks_available_to_employee(round, employee)
+    all_available_weeks =
+      get_all_weeks_available_to_employee(distribution_run_id, round, employee)
 
     preferred_vacation_weeks =
       if is_nil(preference_set) do
@@ -121,12 +129,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
          preferred_weeks,
          max_weeks
        ) do
+    available_weeks_set = MapSet.new(all_available_weeks, fn w -> {w.start_date, w.end_date} end)
+
     available_preferred_weeks =
       preferred_weeks
-      |> Enum.filter(fn p ->
-        Enum.any?(all_available_weeks, fn w ->
-          p.start_date == w.start_date && p.end_date == w.end_date
-        end)
+      |> Enum.filter(fn preferred_week ->
+        MapSet.member?(available_weeks_set, {preferred_week.start_date, preferred_week.end_date})
       end)
       |> Enum.take(max_weeks)
 
@@ -134,10 +142,14 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   end
 
   defp get_all_weeks_available_to_employee(
+         distribution_run_id,
          round,
          employee
        ) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+
+    quota_already_distributed_in_run =
+      Draft.VacationDistribution.count_distributions_per_interval(distribution_run_id, :week)
 
     conflicting_selected_vacation_query =
       from s in EmployeeVacationSelection,
@@ -146,17 +158,29 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
             s.end_date >= parent_as(:division_week_quota).start_date and
             s.employee_id == ^employee.employee_id
 
-    Repo.all(
-      from w in DivisionVacationWeekQuota,
-        as: :division_week_quota,
-        where:
-          w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
-            w.employee_selection_set == ^selection_set and
-            ^round.rating_period_start_date <= w.start_date and
-            ^round.rating_period_end_date >= w.end_date and
-            not exists(conflicting_selected_vacation_query),
-        order_by: [asc: w.start_date]
-    )
+    quotas_before_run =
+      Repo.all(
+        from w in DivisionVacationWeekQuota,
+          as: :division_week_quota,
+          where:
+            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+              w.employee_selection_set == ^selection_set and
+              ^round.rating_period_start_date <= w.start_date and
+              ^round.rating_period_end_date >= w.end_date and
+              not exists(conflicting_selected_vacation_query),
+          order_by: [asc: w.start_date]
+      )
+
+    quotas_before_run
+    |> Enum.map(fn original_quota ->
+      %DivisionVacationWeekQuota{
+        original_quota
+        | quota:
+            original_quota.quota -
+              Map.get(quota_already_distributed_in_run, original_quota.start_date, 0)
+      }
+    end)
+    |> Enum.filter(fn q -> q.quota > 0 end)
   end
 
   defp generate_weeks(employee, available_weeks)
@@ -171,13 +195,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   end
 
   defp generate_week(employee, assigned_week) do
-    new_quota = assigned_week.quota - 1
-    changeset = DivisionVacationWeekQuota.changeset(assigned_week, %{quota: new_quota})
-    Repo.update(changeset)
-
-    Logger.info(
-      "assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}. #{new_quota} more openings for this week.\n"
-    )
+    Logger.info("assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}")
 
     %VacationDistribution{
       employee_id: employee.employee_id,

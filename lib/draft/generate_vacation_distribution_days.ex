@@ -187,7 +187,8 @@ defmodule Draft.GenerateVacationDistribution.Days do
           order_by: [asc: d.date]
       )
 
-    Enum.map(quotas_before_run, fn original_quota ->
+    quotas_before_run
+    |> Enum.map(fn original_quota ->
       %DivisionVacationDayQuota{
         original_quota
         | quota:
@@ -195,6 +196,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
               Map.get(quota_already_distributed_in_run, original_quota.date, 0)
       }
     end)
+    |> Enum.filter(fn q -> q.quota > 0 end)
   end
 
   defp generate_days_to_distribute_from_preferences(
@@ -214,14 +216,15 @@ defmodule Draft.GenerateVacationDistribution.Days do
          preferred_days,
          max_days
        ) do
+    available_days_set = MapSet.new(all_available_days, fn d -> d.date end)
+
     available_preferred_days =
-      all_available_days
-      |> Enum.filter(fn a ->
-        Enum.any?(preferred_days, fn p ->
-          p.start_date == a.date
-        end)
+      preferred_days
+      |> Enum.filter(fn preferred_day ->
+        MapSet.member?(available_days_set, preferred_day.start_date)
       end)
       |> Enum.take(max_days)
+      |> Enum.map(fn d -> %{date: d.start_date} end)
 
     generate_days(employee, available_preferred_days)
   end

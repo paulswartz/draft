@@ -49,6 +49,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -79,6 +80,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -105,6 +107,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -135,6 +138,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -159,6 +163,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -183,6 +188,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           0,
@@ -200,6 +206,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
+          1,
           state.round,
           state.employee_ranking,
           0,
@@ -234,6 +241,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
+        1,
         state.round,
         state.employee_ranking,
         1,
@@ -275,6 +283,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
+        1,
         state.round,
         state.employee_ranking,
         1,
@@ -316,6 +325,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
+        1,
         state.round,
         state.employee_ranking,
         1,
@@ -351,6 +361,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
+        1,
         state.round,
         state.employee_ranking,
         1,

@@ -145,6 +145,7 @@ defmodule Draft.BasicVacationDistributionRunner do
 
     assigned_weeks =
       GenerateVacationDistribution.Weeks.generate(
+        distribution_run_id,
         round,
         employee,
         max_weeks,
