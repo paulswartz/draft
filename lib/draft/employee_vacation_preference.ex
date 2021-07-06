@@ -8,7 +8,7 @@ defmodule Draft.EmployeeVacationPreference do
 
   @type t :: %__MODULE__{
           preference_set_id: integer(),
-          interval_type: Draft.IntervalTypeEnum,
+          interval_type: Draft.IntervalTypeEnum.t(),
           start_date: Date.t(),
           end_date: Date.t(),
           rank: integer()
