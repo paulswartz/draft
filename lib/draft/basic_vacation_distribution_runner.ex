@@ -1,4 +1,4 @@
-defmodule Draft.BasicVacationDistribution do
+defmodule Draft.BasicVacationDistributionRunner do
   @moduledoc """
   Simulate distributing vacation for all employees based on their rank in the given rounds / groups.
   If an employee has any weeks left in their vacation balance, they will be assigned available vacation weeks for their division.
@@ -8,31 +8,31 @@ defmodule Draft.BasicVacationDistribution do
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.EmployeeRanking
-  alias Draft.EmployeeVacationAssignment
   alias Draft.EmployeeVacationQuota
+  alias Draft.GenerateVacationDistribution
   alias Draft.Repo
   alias Draft.VacationDistribution
   alias Draft.VacationQuotaSetup
 
   require Logger
 
-  @spec basic_vacation_distribution([{module(), String.t()}]) :: [EmployeeVacationAssignment.t()]
+  @spec run([{module(), String.t()}]) :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences, using vacation data from the given files. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
-  def basic_vacation_distribution(vacation_files) do
+  def run(vacation_files) do
     _rows_updated = VacationQuotaSetup.update_vacation_quota_data(vacation_files)
 
-    basic_vacation_distribution()
+    run()
   end
 
-  @spec basic_vacation_distribution() :: [EmployeeVacationAssignment.t()]
+  @spec run() :: [VacationDistribution.t()]
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
   """
-  def basic_vacation_distribution do
+  def run do
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
     Enum.flat_map(bid_rounds, &assign_vacation_for_round(&1))
   end
@@ -73,6 +73,8 @@ defmodule Draft.BasicVacationDistribution do
       } (cutoff time #{group.cutoff_datetime})\n"
     )
 
+    distribution_run_id = Draft.VacationDistributionRun.insert(group)
+
     group_employees =
       Repo.all(
         from e in EmployeeRanking,
@@ -82,24 +84,28 @@ defmodule Draft.BasicVacationDistribution do
           order_by: [asc: e.rank]
       )
 
-    Enum.flat_map(
-      group_employees,
-      fn employee ->
-        assign_vacation_for_employee(
-          employee,
-          round
-        )
-      end
-    )
+    assigned_vacation =
+      Enum.flat_map(
+        group_employees,
+        fn employee ->
+          assign_vacation_for_employee(
+            employee,
+            round,
+            distribution_run_id
+          )
+        end
+      )
+
+    _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+    assigned_vacation
   end
 
   defp assign_vacation_for_employee(
          employee,
-         round
+         round,
+         distribution_run_id
        ) do
-    Logger.info("-------")
-
-    Logger.info("Distributing vacation for employee #{employee.rank}")
+    Logger.info("-------\nDistributing vacation for employee #{employee.rank}")
 
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -111,67 +117,75 @@ defmodule Draft.BasicVacationDistribution do
                  q.interval_end_date >= ^round.rating_period_end_date)
       )
 
-    case employee_balances do
-      [employee_balance] ->
-        Logger.info(
-          "Employee balance for period #{employee_balance.interval_start_date} - #{
-            employee_balance.interval_end_date
-          }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
-            employee_balance.maximum_minutes
-          } max minutes"
-        )
+    assign_vacation(round, employee, distribution_run_id, employee_balances)
+  end
 
-        max_minutes = employee_balance.maximum_minutes
+  defp assign_vacation(round, employee, distribution_run_id, employee_balances)
 
-        # In the future, this would also take into consideration if an employee is working 5/2 or 4/3
-        num_hours_per_day =
-          if String.starts_with?(
-               Draft.JobClassHelpers.get_selection_set(employee.job_class),
-               "FT"
-             ),
-             do: 8,
-             else: 6
+  defp assign_vacation(round, employee, distribution_run_id, [employee_balance]) do
+    Logger.info(
+      "Employee balance for period #{employee_balance.interval_start_date} - #{
+        employee_balance.interval_end_date
+      }: #{employee_balance.weekly_quota} max weeks, #{employee_balance.dated_quota} max days, #{
+        employee_balance.maximum_minutes
+      } max minutes"
+    )
 
-        # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
-        max_weeks =
-          min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+    max_minutes = employee_balance.maximum_minutes
 
-        anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
+    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class)
 
-        assigned_weeks =
-          VacationDistribution.Week.distribute(
-            round,
-            employee,
-            max_weeks,
-            anniversary_quota
-          )
+    # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
+    max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
 
-        max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+    anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
-        assigned_days =
-          VacationDistribution.Day.distribute(
-            round,
-            employee,
-            max_days,
-            assigned_weeks,
-            anniversary_quota
-          )
+    assigned_weeks =
+      GenerateVacationDistribution.Weeks.generate(
+        round,
+        employee,
+        max_weeks,
+        anniversary_quota
+      )
 
-        assigned_weeks ++ assigned_days
+    max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
 
-      [] ->
-        Logger.info(
-          "Skipping assignment for this employee - no quota interval encompassing the rating period."
-        )
+    assigned_days =
+      GenerateVacationDistribution.Days.generate(
+        round,
+        employee,
+        max_days,
+        assigned_weeks,
+        anniversary_quota
+      )
 
-        []
+    case Draft.VacationDistribution.add_distributions_to_run(
+           distribution_run_id,
+           assigned_weeks ++ assigned_days
+         ) do
+      {:ok, _result} ->
+        Logger.info("Successfully saved distributed vacation")
 
-      _employee_balances ->
-        Logger.info(
-          "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
-        )
-
-        []
+      {:error, _errors} ->
+        Logger.error("Error saving vacation distributions")
     end
+
+    assigned_weeks ++ assigned_days
+  end
+
+  defp assign_vacation(_round, _employee, _distribution_run_id, []) do
+    Logger.info(
+      "Skipping assignment for this employee - no quota interval encompassing the rating period."
+    )
+
+    []
+  end
+
+  defp assign_vacation(_round, _employee, _distribution_run_id, _employee_balances) do
+    Logger.info(
+      "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
+    )
+
+    []
   end
 end

@@ -96,6 +96,14 @@ defmodule Draft.Factory do
     }
   end
 
+  def build(:vacation_distribution_run) do
+    %Draft.VacationDistributionRun{
+      process_id: "BUS22021-122",
+      round_id: "Vacation",
+      start_time: DateTime.truncate(DateTime.utc_now(), :second)
+    }
+  end
+
   # Convenience API
 
   @spec build(

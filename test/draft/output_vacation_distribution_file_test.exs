@@ -1,8 +1,8 @@
 defmodule Draft.OutputVacationDistributionTest do
   @moduledoc false
   use ExUnit.Case
-  alias Draft.EmployeeVacationAssignment
   alias Draft.OutputVacationDistribution
+  alias Draft.VacationDistribution
 
   describe "output_vacation_distribution_file/1" do
     test "contains assignments in expected format" do
@@ -10,17 +10,17 @@ defmodule Draft.OutputVacationDistributionTest do
                IO.iodata_to_binary(
                  OutputVacationDistribution.output_vacation_distribution_file(
                    [
-                     %EmployeeVacationAssignment{
+                     %VacationDistribution{
                        employee_id: "0001",
                        start_date: ~D[2021-01-01],
                        end_date: ~D[2021-01-08],
-                       is_week?: true
+                       interval_type: :week
                      },
-                     %EmployeeVacationAssignment{
+                     %VacationDistribution{
                        employee_id: "0001",
                        start_date: ~D[2021-01-09],
                        end_date: ~D[2021-01-09],
-                       is_week?: false
+                       interval_type: :day
                      }
                    ],
                    "test/support/test_data/test_vacation_assignment_output.csv"
