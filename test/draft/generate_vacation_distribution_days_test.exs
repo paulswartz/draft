@@ -7,6 +7,8 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
   setup do
     insert_round_with_employees(
       %{
+        round_id: "vacation_1",
+        process_id: "process_1",
         rank: 1,
         round_opening_date: ~D[2021-02-01],
         round_closing_date: ~D[2021-03-01],
@@ -44,6 +46,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -75,6 +78,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -102,6 +106,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -133,6 +138,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -158,6 +164,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           2,
@@ -183,6 +190,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           0,
@@ -201,6 +209,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
          state do
       vacation_assignments =
         GenerateVacationDistribution.Days.generate(
+          1,
           state.round,
           state.employee_ranking,
           0,
@@ -210,6 +219,209 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
             anniversary_weeks: 0,
             anniversary_days: 1
           }
+        )
+
+      assert [] = vacation_assignments
+    end
+
+    test "Operator with vacation day preferences is assigned preferred day when it is still available",
+         state do
+      preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-03],
+            end_date: ~D[2021-04-03],
+            rank: 1,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(preferred_vacation)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-04-03],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator with vacation day preferences is assigned only one day if only one preference is still available",
+         state do
+      preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-03],
+            end_date: ~D[2021-04-03],
+            rank: 1,
+            interval_type: :day
+          },
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-21],
+            end_date: ~D[2021-04-21],
+            rank: 2,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(preferred_vacation)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-04-03],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator with more vacation preferences than their quota is only assigned as many days as is allowed by their quota",
+         state do
+      preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-03],
+            end_date: ~D[2021-04-03],
+            rank: 1,
+            interval_type: :day
+          },
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-02],
+            end_date: ~D[2021-04-02],
+            rank: 2,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(preferred_vacation)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-04-03],
+                 end_date: ~D[2021-04-03],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator with vacation day preferences is not assigned their preferred day when it is not available",
+         state do
+      preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-22],
+            end_date: ~D[2021-04-22],
+            rank: 1,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(preferred_vacation)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [] = vacation_assignments
+    end
+
+    test "Operator with vacation day preferences is not assigned that day when it has been taken by someone earlier in the same run",
+         state do
+      group_number = 1234
+
+      run_id =
+        Draft.VacationDistributionRun.insert(%Draft.BidGroup{
+          process_id: "process_1",
+          round_id: "vacation_1",
+          group_number: group_number
+        })
+
+      Draft.VacationDistribution.add_distributions_to_run(run_id, [
+        %VacationDistribution{
+          employee_id: "00002",
+          interval_type: :day,
+          start_date: ~D[2021-04-03],
+          end_date: ~D[2021-04-03]
+        }
+      ])
+
+      preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-04-03],
+            end_date: ~D[2021-04-03],
+            rank: 1,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(preferred_vacation)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          run_id,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
         )
 
       assert [] = vacation_assignments

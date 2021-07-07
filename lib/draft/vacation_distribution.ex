@@ -3,6 +3,7 @@ defmodule Draft.VacationDistribution do
     Represents vacation time that has been distributed by Draft.
   """
   use Ecto.Schema
+  import Ecto.Query
   import Ecto.Changeset
   alias Draft.FormattingHelpers
   alias Draft.Repo
@@ -64,6 +65,30 @@ defmodule Draft.VacationDistribution do
     end)
   end
 
+  @spec count_unsynced_assignments_by_date(integer(), Draft.IntervalTypeEnum.t()) :: %{
+          Date.t() => String.t()
+        }
+  @doc """
+  For the given run id & interval type, count the number of **assigned** distributions that have not
+  yet been synced to HASTUS, and therefore are not reflected in the division quotas. This does not account for any cancelled vacations.
+  The result is grouped by date, using the start_date for the week interval type.
+  Ex: {~D[01-01-2021] => 5, ~D[01-02-2021] => 2 ]} would
+  indicate that there are 5 vacations assigned on 1/1/2021 that aren't synced yet to HASTUS, and 2 on 1/2/2021.
+  """
+  def count_unsynced_assignments_by_date(run_id, interval_type) do
+    unsynced_distributions_query =
+      from(d in Draft.VacationDistribution,
+        where:
+          d.interval_type == ^interval_type and d.run_id == ^run_id and d.status == :assigned and
+            d.synced_to_hastus == false,
+        select: d.start_date
+      )
+
+    unsynced_distributions_query
+    |> Repo.all()
+    |> Enum.frequencies()
+  end
+
   @spec changeset(
           {map, map}
           | %{
@@ -81,7 +106,8 @@ defmodule Draft.VacationDistribution do
       :interval_type,
       :start_date,
       :end_date,
-      :status
+      :status,
+      :synced_to_hastus
     ])
     |> validate_required([
       :run_id,
@@ -89,7 +115,8 @@ defmodule Draft.VacationDistribution do
       :interval_type,
       :start_date,
       :end_date,
-      :status
+      :status,
+      :synced_to_hastus
     ])
   end
 end
