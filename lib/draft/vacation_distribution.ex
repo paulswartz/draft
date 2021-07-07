@@ -24,10 +24,10 @@ defmodule Draft.VacationDistribution do
   @type t :: %__MODULE__{
           run_id: integer(),
           employee_id: String.t(),
-          interval_type: :week | :day,
+          interval_type: Draft.IntervalTypeEnum.t(),
           start_date: Date.t(),
           end_date: Date.t(),
-          status: integer(),
+          status: Draft.VacationStatusEnum.t(),
           synced_to_hastus: boolean()
         }
   @spec to_csv_row(Draft.VacationDistribution.t()) :: iodata()

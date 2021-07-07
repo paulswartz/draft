@@ -55,15 +55,12 @@ defmodule Draft.BasicVacationDistributionRunner do
           order_by: [asc: g.group_number]
       )
 
-    assigned_vacations =
-      Enum.flat_map(
-        bid_groups,
-        fn group ->
-          assign_vacation_for_group(group, round)
-        end
-      )
-
-    assigned_vacations
+    Enum.flat_map(
+      bid_groups,
+      fn group ->
+        assign_vacation_for_group(group, round)
+      end
+    )
   end
 
   defp assign_vacation_for_group(
