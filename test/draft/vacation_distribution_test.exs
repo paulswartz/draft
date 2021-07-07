@@ -128,7 +128,7 @@ defmodule Draft.VacationDistributionTest do
 
       {:ok, _distributions} = VacationDistribution.add_distributions_to_run(run_id, distributions)
 
-      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 2} =
+      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 2} ==
                VacationDistribution.count_unsynced_assignments_by_date(run_id, :day)
     end
 
@@ -169,7 +169,7 @@ defmodule Draft.VacationDistributionTest do
 
       {:ok, _distributions} = VacationDistribution.add_distributions_to_run(run_id, distributions)
 
-      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 1} =
+      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 1} ==
                VacationDistribution.count_unsynced_assignments_by_date(run_id, :day)
     end
 
@@ -210,7 +210,7 @@ defmodule Draft.VacationDistributionTest do
 
       {:ok, _distributions} = VacationDistribution.add_distributions_to_run(run_id, distributions)
 
-      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 1} =
+      assert %{~D[2021-01-03] => 1, ~D[2021-01-02] => 1} ==
                VacationDistribution.count_unsynced_assignments_by_date(run_id, :day)
     end
   end
