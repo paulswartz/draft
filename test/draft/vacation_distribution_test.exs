@@ -89,7 +89,7 @@ defmodule Draft.VacationDistributionTest do
     test "Returns empty map if none found" do
       run_id = insert!(:vacation_distribution_run, %{}).id
 
-      %{} = VacationDistribution.count_unsynced_assignments_by_date(run_id, :week)
+      assert VacationDistribution.count_unsynced_assignments_by_date(run_id, :week) == %{}
     end
 
     test "Returns values for the correct interval" do
