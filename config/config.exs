@@ -16,6 +16,11 @@ config :draft, Draft.Repo,
   pool_size: 10,
   aws_rds_mod: nil
 
+config :draft, Oban,
+  repo: Draft.Repo,
+  plugins: false,
+  queues: [vacation_distribution: 10]
+
 # Configures the endpoint
 config :draft, DraftWeb.Endpoint,
   url: [host: "localhost"],

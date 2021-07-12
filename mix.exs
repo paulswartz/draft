@@ -52,6 +52,7 @@ defmodule Draft.MixProject do
       {:phoenix, "~> 1.5.8"},
       {:phoenix_ecto, "~> 4.1"},
       {:ecto_enum, "~> 1.4"},
+      {:oban, "~> 2.7"},
       {:ecto_sql, "~> 3.4"},
       {:ex_aws_rds, "~> 2.0"},
       {:lcov_ex, "~> 0.1.1", only: :test, runtime: false},
