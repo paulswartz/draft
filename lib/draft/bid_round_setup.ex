@@ -31,8 +31,10 @@ defmodule Draft.BidRoundSetup do
         insert_all_records(records_by_type[record_type])
       end)
 
-      VacationDistributionScheduler.cancel_upcoming_distributions(records_by_type[BidRound])
-      VacationDistributionScheduler.schedule_distributions(records_by_type[BidGroup])
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs(
+        records_by_type[BidRound],
+        records_by_type[BidGroup]
+      )
     end)
   end
 

@@ -1,6 +1,6 @@
 defmodule Draft.BidRoundSetupTest do
   use ExUnit.Case
-  use Draft.DataCase, async: true
+  use Draft.DataCase
   alias Draft.BidGroup
   alias Draft.BidRound
   alias Draft.BidRoundSetup

@@ -8,11 +8,18 @@ defmodule Draft.VacationDistributionScheduler do
   alias Draft.BidRound
   alias Draft.Repo
 
+  @spec reset_upcoming_distribution_jobs([BidRound.t()], [BidGroup.t()]) :: :ok
   @doc """
-  Cancel all upcoming distributions associated with the given rounds
+  Cancel any upcoming scheduled distribution jobs for the given rounds
+  and insert new jobs for every group given.
   """
-  @spec cancel_upcoming_distributions([BidRound]) :: :ok
-  def cancel_upcoming_distributions(rounds) do
+  def reset_upcoming_distribution_jobs(rounds, groups) do
+    cancel_upcoming_distributions(rounds)
+    schedule_distributions(groups)
+  end
+
+  @spec cancel_upcoming_distributions([BidRound.t()]) :: :ok
+  defp cancel_upcoming_distributions(rounds) do
     rounds
     |> Enum.flat_map(fn round ->
       Repo.all(
@@ -27,15 +34,12 @@ defmodule Draft.VacationDistributionScheduler do
     |> Enum.each(fn j -> Oban.cancel_job(j.id) end)
   end
 
-  @doc """
-  Schedule all upcoming distributions associated with the given groups
-  """
-  @spec schedule_distributions([BidGroup]) :: :ok
-  def schedule_distributions(groups) do
-    Enum.each(groups, fn group ->
+  @spec schedule_distributions([BidGroup.t()]) :: :ok
+  defp schedule_distributions(groups) do
+    Enum.each(groups, fn %{cutoff_datetime: cutoff} = group ->
       group
       |> Map.take([:process_id, :round_id, :group_number])
-      |> Draft.VacationDistributionWorker.new(scheduled_at: Map.get(group, :cutoff_datetime))
+      |> Draft.VacationDistributionWorker.new(scheduled_at: cutoff)
       |> Draft.Repo.insert()
     end)
   end

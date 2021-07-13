@@ -1,6 +1,6 @@
 defmodule Draft.VacationDistributionWorker do
   @moduledoc """
-  Process schedule vacation distribution jobs.
+  Process scheduled vacation distribution jobs.
   """
 
   use Oban.Worker, queue: :vacation_distribution

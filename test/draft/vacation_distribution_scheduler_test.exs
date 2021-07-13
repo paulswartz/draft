@@ -4,49 +4,70 @@ defmodule Draft.VacationDistributionSchedulerTest do
   import Draft.Factory
   alias Draft.VacationDistributionScheduler
 
-  describe "schedule_distributions/1" do
-    test "All distributions are scheduled at correct time" do
-      bid_groups =
-        Enum.map(1..5, fn group_num ->
-          build(:group, %{
-            group_number: group_num,
-            cutoff_datetime: DateTime.add(DateTime.utc_now(), group_num * 60 * 60 * 24, :second)
-          })
-        end)
+  describe "reset_upcoming_distribution_jobs/2" do
+    test "Jobs are scheduled at the correct time for each group" do
+      round = build(:round, %{round_id: "vacation", process_id: "BUS2021-125"})
 
-      VacationDistributionScheduler.schedule_distributions(bid_groups)
+      future_cutoff_1 = DateTime.add(DateTime.utc_now(), 60 * 60 * 24, :second)
+      future_cutoff_2 = DateTime.add(DateTime.utc_now(), 60 * 60 * 24 * 2, :second)
 
-      assert Enum.map(
-               bid_groups,
-               &Map.take(&1, [:round_id, :process_id, :group_number, :cutoff_datetime])
-             ) ==
-               Draft.Repo.all(
-                 from j in Oban.Job,
-                   where: j.state == "scheduled" and j.queue == "vacation_distribution",
-                   select: %{
-                     round_id: fragment("?->'round_id'", j.args),
-                     process_id: fragment("?->'process_id'", j.args),
-                     group_number: fragment("?->'group_number'", j.args),
-                     cutoff_datetime: j.scheduled_at
-                   }
-               )
+      group1 =
+        build(:group,
+          group_number: 1,
+          cutoff_datetime: future_cutoff_1,
+          round_id: round.round_id,
+          process_id: round.process_id
+        )
+
+      group2 =
+        build(:group,
+          group_number: 2,
+          cutoff_datetime: future_cutoff_2,
+          round_id: round.round_id,
+          process_id: round.process_id
+        )
+
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([], [group1, group2])
+
+      assert %{state: "scheduled", scheduled_at: ^future_cutoff_1} = job_for_group!(group1)
+      assert %{state: "scheduled", scheduled_at: ^future_cutoff_2} = job_for_group!(group2)
+
+      updated_cutoff_1 = DateTime.add(DateTime.utc_now(), 60 * 60 * 24 * 3, :second)
+
+      group1_updated_cutoff =
+        build(:group,
+          group_number: 1,
+          cutoff_datetime: updated_cutoff_1,
+          round_id: round.round_id,
+          process_id: round.process_id
+        )
+
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([round], [
+        group1_updated_cutoff,
+        group2
+      ])
+
+      assert [
+               %{state: "cancelled", scheduled_at: ^future_cutoff_1},
+               %{state: "scheduled", scheduled_at: ^updated_cutoff_1}
+             ] = all_jobs_for_group(group1)
+
+      assert [
+               %{state: "cancelled", scheduled_at: ^future_cutoff_2},
+               %{state: "scheduled", scheduled_at: ^future_cutoff_2}
+             ] = all_jobs_for_group(group2)
     end
-  end
 
-  describe "cancel_upcoming_distributions/1" do
-    test "Only upcoming jobs are marked as cancelled" do
-      round = %Draft.BidRound{round_id: "vacation", process_id: "BUS2021-125"}
+    test "Only upcoming jobs for the specified rounds are cancelled" do
+      round = build(:round, %{round_id: "vacation", process_id: "BUS2021-125"})
 
-      Draft.Repo.insert!(
-        Draft.VacationDistributionWorker.new(%{
+      past_group =
+        build(:group, %{
           round_id: round.round_id,
           process_id: round.process_id,
-          group_number: 1
+          group_number: 1,
+          cutoff_datetime: ~U[2021-01-01T00:00:00Z]
         })
-      )
-
-      # Force completion of that distribution
-      Oban.drain_queue(queue: "vacation_distribution")
 
       upcoming_group =
         build(:group, %{
@@ -56,68 +77,67 @@ defmodule Draft.VacationDistributionSchedulerTest do
           cutoff_datetime: DateTime.add(DateTime.utc_now(), 60 * 60 * 24, :second)
         })
 
-      VacationDistributionScheduler.schedule_distributions([upcoming_group])
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([round], [
+        past_group,
+        upcoming_group
+      ])
 
-      VacationDistributionScheduler.cancel_upcoming_distributions([round])
-      assert get_job_for_group!(round.round_id, round.process_id, 1).state == "completed"
-      assert get_job_for_group!(round.round_id, round.process_id, 2).state == "cancelled"
+      assert job_for_group!(past_group).state == "scheduled"
+      assert job_for_group!(upcoming_group).state == "scheduled"
+
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([round], [])
+
+      assert job_for_group!(past_group).state == "scheduled"
+      assert job_for_group!(upcoming_group).state == "cancelled"
     end
 
-    test "Only jobs for the given groups are cancelled" do
-      round_to_cancel = %Draft.BidRound{round_id: "vacation", process_id: "BUS2021-125"}
+    test "Jobs not associated with the given rounds are unaffected" do
+      round_to_cancel = build(:round, %{round_id: "vacation", process_id: "BUS2021-125"})
+      round_different_id = build(:round, %{round_id: "work", process_id: "BUS2021-125"})
+      round_different_process = build(:round, %{round_id: "vacation", process_id: "BUS2021-124"})
 
-      round_1_groups =
-        Enum.map(1..5, fn group_num ->
-          build(:group, %{
-            round_id: round_to_cancel.round_id,
-            process_id: round_to_cancel.process_id,
-            group_number: group_num,
-            cutoff_datetime: DateTime.add(DateTime.utc_now(), group_num * 60 * 60 * 24, :second)
-          })
-        end)
+      group_in_round_to_cancel =
+        build(:group, %{
+          round_id: round_to_cancel.round_id,
+          process_id: round_to_cancel.process_id,
+          group_number: 1,
+          cutoff_datetime: DateTime.add(DateTime.utc_now(), 60 * 60 * 24, :second)
+        })
 
-      round_2_groups =
-        Enum.map(1..5, fn group_num ->
-          build(:group, %{
-            round_id: round_to_cancel.round_id,
-            process_id: "BUS2021-124",
-            group_number: group_num,
-            cutoff_datetime: DateTime.add(DateTime.utc_now(), group_num * 60 * 60 * 24, :second)
-          })
-        end)
+      group_different_round =
+        build(:group, %{
+          round_id: round_different_id.round_id,
+          process_id: round_different_id.process_id,
+          group_number: 1,
+          cutoff_datetime: DateTime.add(DateTime.utc_now(), 60 * 60 * 24, :second)
+        })
 
-      round_3_groups =
-        Enum.map(1..5, fn group_num ->
-          build(:group, %{
-            round_id: "work",
-            process_id: round_to_cancel.process_id,
-            group_number: group_num,
-            cutoff_datetime: DateTime.add(DateTime.utc_now(), group_num * 60 * 60 * 24, :second)
-          })
-        end)
+      group_different_process =
+        build(:group, %{
+          round_id: round_different_process.round_id,
+          process_id: round_different_process.process_id,
+          group_number: 1,
+          cutoff_datetime: DateTime.add(DateTime.utc_now(), 60 * 60 * 24, :second)
+        })
 
-      VacationDistributionScheduler.schedule_distributions(
-        round_1_groups ++ round_2_groups ++ round_3_groups
-      )
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([], [
+        group_in_round_to_cancel,
+        group_different_round,
+        group_different_process
+      ])
 
-      VacationDistributionScheduler.cancel_upcoming_distributions([round_to_cancel])
+      assert job_for_group!(group_in_round_to_cancel).state == "scheduled"
+      assert job_for_group!(group_different_round).state == "scheduled"
+      assert job_for_group!(group_different_process).state == "scheduled"
 
-      Enum.each(
-        get_jobs_for_round(round_to_cancel.round_id, round_to_cancel.process_id),
-        fn job -> assert job.state == "cancelled" end
-      )
-
-      Enum.each(get_jobs_for_round(round_to_cancel.round_id, "BUS2021-124"), fn job ->
-        assert job.state == "scheduled"
-      end)
-
-      Enum.each(get_jobs_for_round("work", round_to_cancel.process_id), fn job ->
-        assert job.state == "scheduled"
-      end)
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs([round_to_cancel], [])
+      assert job_for_group!(group_in_round_to_cancel).state == "cancelled"
+      assert job_for_group!(group_different_round).state == "scheduled"
+      assert job_for_group!(group_different_process).state == "scheduled"
     end
   end
 
-  defp get_jobs_for_round(round_id, process_id) do
+  defp jobs_for_round(%{round_id: round_id, process_id: process_id}) do
     Draft.Repo.all(
       from j in Oban.Job,
         where:
@@ -127,7 +147,7 @@ defmodule Draft.VacationDistributionSchedulerTest do
     )
   end
 
-  defp get_job_for_group!(round_id, process_id, group_id) do
+  defp job_for_group!(%{round_id: round_id, process_id: process_id, group_number: group_id}) do
     Draft.Repo.one!(
       from j in Oban.Job,
         where:
@@ -135,6 +155,18 @@ defmodule Draft.VacationDistributionSchedulerTest do
             fragment("?->'round_id'=?", j.args, ^round_id) and
             fragment("?->'process_id'=?", j.args, ^process_id) and
             fragment("?->'group_number'=?", j.args, ^group_id)
+    )
+  end
+
+  defp all_jobs_for_group(%{round_id: round_id, process_id: process_id, group_number: group_id}) do
+    Draft.Repo.all(
+      from j in Oban.Job,
+        where:
+          j.queue == "vacation_distribution" and
+            fragment("?->'round_id'=?", j.args, ^round_id) and
+            fragment("?->'process_id'=?", j.args, ^process_id) and
+            fragment("?->'group_number'=?", j.args, ^group_id),
+        order_by: j.id
     )
   end
 end
