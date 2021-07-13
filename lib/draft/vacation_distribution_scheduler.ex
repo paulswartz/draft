@@ -19,8 +19,8 @@ defmodule Draft.VacationDistributionScheduler do
         from j in Oban.Job,
           where:
             j.queue == "vacation_distribution" and
-              fragment("?->>'round_id' = ?", j.args, ^round.round_id) and
-              fragment("?->>'process_id' = ?", j.args, ^round.process_id) and
+              fragment("?->'round_id' = ?", j.args, ^round.round_id) and
+              fragment("?->'process_id' = ?", j.args, ^round.process_id) and
               j.scheduled_at >= ^DateTime.utc_now()
       )
     end)
@@ -28,17 +28,15 @@ defmodule Draft.VacationDistributionScheduler do
   end
 
   @doc """
-  Schedule all upcoming distributions associated with the given rounds
+  Schedule all upcoming distributions associated with the given groups
   """
   @spec schedule_distributions([BidGroup]) :: :ok
   def schedule_distributions(groups) do
-    Enum.each(groups, fn g ->
-      Draft.Repo.insert(
-        Draft.VacationDistributionWorker.new(
-          Map.take(g, [:process_id, :round_id, :group_number]),
-          scheduled_at: Map.get(g, :cutoff_datetime)
-        )
-      )
+    Enum.each(groups, fn group ->
+      group
+      |> Map.take([:process_id, :round_id, :group_number])
+      |> Draft.VacationDistributionWorker.new(scheduled_at: Map.get(group, :cutoff_datetime))
+      |> Draft.Repo.insert()
     end)
   end
 end
