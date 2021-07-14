@@ -8,19 +8,6 @@ defmodule Draft.BidRound do
   import Ecto.Changeset
   alias Draft.ParsingHelpers
 
-  @enforce_keys [
-    :bid_type,
-    :booking_id,
-    :division_description,
-    :process_id,
-    :rank,
-    :rating_period_end_date,
-    :rating_period_start_date,
-    :round_closing_date,
-    :round_id,
-    :round_opening_date
-  ]
-
   @type t :: %__MODULE__{
           bid_type: String.t(),
           booking_id: String.t(),

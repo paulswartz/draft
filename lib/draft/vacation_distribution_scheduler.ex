@@ -4,9 +4,7 @@ defmodule Draft.VacationDistributionScheduler do
   """
 
   import Ecto.Query
-  alias Draft.BidGroup
-  alias Draft.BidRound
-  alias Draft.Repo
+  alias Draft.{BidGroup, BidRound, Repo}
 
   @spec reset_upcoming_distribution_jobs([BidRound.t()], [BidGroup.t()]) :: :ok
   @doc """
@@ -14,8 +12,10 @@ defmodule Draft.VacationDistributionScheduler do
   and insert new jobs for every group given.
   """
   def reset_upcoming_distribution_jobs(rounds, groups) do
-    cancel_upcoming_distributions(rounds)
-    schedule_distributions(groups)
+    Repo.transaction(fn ->
+      cancel_upcoming_distributions(rounds)
+      schedule_distributions(groups)
+    end)
   end
 
   @spec cancel_upcoming_distributions([BidRound.t()]) :: :ok
