@@ -34,7 +34,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert Enum.filter(vacation_assignments, fn x ->
                x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-27]
@@ -72,7 +72,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert Enum.filter(vacation_assignments, fn x ->
                x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-27]
@@ -104,7 +104,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 0})
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert Enum.filter(vacation_assignments, fn x ->
                x.start_date == ~D[2021-03-21] and x.end_date == ~D[2021-03-21]
@@ -132,7 +132,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert vacation_assignments == []
     end
@@ -165,7 +165,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -200,7 +200,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -243,7 +243,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -295,7 +295,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -340,7 +340,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         employee_id: "00001"
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -385,7 +385,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         employee_id: "00001"
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -428,7 +428,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         employee_id: "00001"
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -471,7 +471,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         employee_id: "00001"
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -524,7 +524,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -583,7 +583,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
@@ -637,7 +637,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         quota: 1
       })
 
-      vacation_assignments = BasicVacationDistributionRunner.run_all_rounds()
+      {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{

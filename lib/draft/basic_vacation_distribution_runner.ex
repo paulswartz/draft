@@ -43,7 +43,7 @@ defmodule Draft.BasicVacationDistributionRunner do
     )
   end
 
-  defp handle_distribution_results({:ok, assignments}, previous_assignments) do
+  defp handle_distribution_results({:ok, assignments}, {:ok, previous_assignments}) do
     {:cont, {:ok, assignments ++ previous_assignments}}
   end
 
@@ -227,7 +227,7 @@ defmodule Draft.BasicVacationDistributionRunner do
       "Skipping assignment for this employee - no quota interval encompassing the rating period."
     )
 
-    []
+    {:ok, []}
   end
 
   defp assign_vacation(_round, _employee, _distribution_run_id, _employee_balances) do
@@ -235,6 +235,6 @@ defmodule Draft.BasicVacationDistributionRunner do
       "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
     )
 
-    []
+    {:ok, []}
   end
 end
