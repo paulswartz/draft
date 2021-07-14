@@ -149,6 +149,7 @@ defmodule Draft.VacationDistributionSchedulerTest do
         group_different_round,
         group_different_process
       ])
+
       VacationDistributionScheduler.reset_upcoming_distribution_jobs([round_to_cancel], [])
 
       assert job_for_group!(group_in_round_to_cancel).state == "cancelled"
