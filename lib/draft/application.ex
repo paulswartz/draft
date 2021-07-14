@@ -15,9 +15,10 @@ defmodule Draft.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Draft.PubSub},
       # Start the Endpoint (http/https)
-      DraftWeb.Endpoint
+      DraftWeb.Endpoint,
       # Start a worker by calling: Draft.Worker.start_link(arg)
       # {Draft.Worker, arg}
+      {Oban, Application.fetch_env!(:draft, Oban)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

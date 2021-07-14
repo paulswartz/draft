@@ -11,6 +11,7 @@ defmodule Draft.BidRoundSetup do
   alias Draft.Parsable
   alias Draft.ParsingHelpers
   alias Draft.Repo
+  alias Draft.VacationDistributionScheduler
 
   @spec update_bid_round_data(String.t()) :: [{integer(), nil | [term()]}]
   @doc """
@@ -26,9 +27,14 @@ defmodule Draft.BidRoundSetup do
     Repo.transaction(fn ->
       delete_rounds(records_by_type[BidRound])
 
-      Enum.map([BidRound, BidGroup, EmployeeRanking], fn record_type ->
+      Enum.each([BidRound, BidGroup, EmployeeRanking], fn record_type ->
         insert_all_records(records_by_type[record_type])
       end)
+
+      VacationDistributionScheduler.reset_upcoming_distribution_jobs(
+        records_by_type[BidRound],
+        records_by_type[BidGroup]
+      )
     end)
   end
 
