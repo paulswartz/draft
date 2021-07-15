@@ -93,16 +93,23 @@ defmodule Draft.BasicVacationDistributionRunner do
         process_id: process_id,
         group_number: group_number
       }) do
-    round = Repo.get_by!(BidRound, round_id: round_id, process_id: process_id)
-
     group =
-      Repo.get_by!(BidGroup,
+      Repo.get_by(BidGroup,
         round_id: round_id,
         process_id: process_id,
         group_number: group_number
       )
 
-    assign_vacation_for_group(round, group)
+    if group do
+      round = Repo.get_by!(BidRound, round_id: round_id, process_id: process_id)
+      assign_vacation_for_group(round, group)
+    else
+      {:error, "No group found with
+        round_id: #{round_id},
+        process_id: #{process_id},
+        group_number: #{group_number}
+      "}
+    end
   end
 
   @spec assign_vacation_for_group(BidRound.t(), BidGroup.t()) ::
