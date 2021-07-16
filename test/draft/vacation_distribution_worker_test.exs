@@ -44,7 +44,11 @@ defmodule Draft.VacationDistributionWorkerTest do
                 }
               ]} =
                VacationDistributionWorker.perform(%Oban.Job{
-                 args: %{round_id: "round_1", process_id: "process_1", group_number: 1}
+                 args: %{
+                   "round_id" => "round_1",
+                   "process_id" => "process_1",
+                   "group_number" => 1
+                 }
                })
     end
 
@@ -52,9 +56,9 @@ defmodule Draft.VacationDistributionWorkerTest do
       assert {:error, _errors} =
                VacationDistributionWorker.perform(%Oban.Job{
                  args: %{
-                   round_id: "missing round",
-                   process_id: "missing process",
-                   group_number: 1
+                   "round_id" => "missing round",
+                   "process_id" => "missing process",
+                   "group_number" => 1
                  }
                })
     end
