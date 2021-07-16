@@ -10,7 +10,7 @@ defmodule Draft.VacationDistributionWorker do
   def perform(%Oban.Job{args: args}) do
     args
     |> Map.take(["process_id", "round_id", "group_number"])
-    |> Map.new(fn {key, val} -> {String.to_atom(key), val} end)
+    |> Map.new(fn {key, val} -> {String.to_existing_atom(key), val} end)
     |> BasicVacationDistributionRunner.distribute_vacation_to_group()
   end
 end

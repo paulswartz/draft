@@ -18,7 +18,7 @@ config :draft, Draft.Repo,
 
 config :draft, Oban,
   repo: Draft.Repo,
-  plugins: false,
+  plugins: [],
   queues: [vacation_distribution: 10]
 
 # Configures the endpoint
