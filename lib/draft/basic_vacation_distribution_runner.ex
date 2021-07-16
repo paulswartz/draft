@@ -16,8 +16,10 @@ defmodule Draft.BasicVacationDistributionRunner do
 
   require Logger
 
+  @type distribution_result() :: {:ok, [VacationDistribution.t()]} | {:error, any()}
+
   @spec run_all_rounds([{module(), String.t()}]) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
+          distribution_result()
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences, using vacation data from the given files. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
@@ -28,7 +30,7 @@ defmodule Draft.BasicVacationDistributionRunner do
     run_all_rounds()
   end
 
-  @spec run_all_rounds() :: {:ok, [VacationDistribution.t()]} | {:error, any()}
+  @spec run_all_rounds() :: distribution_result()
   @doc """
   Distirbutes vacation to employees in each round without consideration for preferences. Outputs verbose logs as vacation is assigned,
   and creates a CSV file in the required HASTUS format.
@@ -36,47 +38,9 @@ defmodule Draft.BasicVacationDistributionRunner do
   def run_all_rounds do
     bid_rounds = Repo.all(from r in BidRound, order_by: [asc: r.rank, asc: r.round_opening_date])
 
-    Enum.reduce_while(
+    process_until_error(
       bid_rounds,
-      {:ok, []},
-      &handle_distribution_results(assign_vacation_for_round(&1), &2)
-    )
-  end
-
-  defp handle_distribution_results({:ok, assignments}, {:ok, previous_assignments}) do
-    {:cont, {:ok, assignments ++ previous_assignments}}
-  end
-
-  defp handle_distribution_results({:error, errors}, _previous_assignments) do
-    {:halt, {:error, errors}}
-  end
-
-  @spec assign_vacation_for_round(BidRound.t()) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
-  defp assign_vacation_for_round(round) do
-    Logger.info(
-      "===================================================================================================\nSTARTING NEW ROUND: #{
-        round.rank
-      } - #{round.division_id} - #{round.division_description}(#{round.round_id}) (picking between #{
-        round.round_opening_date
-      } and #{round.round_closing_date} for the rating period #{round.rating_period_start_date} - #{
-        round.rating_period_end_date
-      })\n"
-    )
-
-    bid_groups =
-      Repo.all(
-        from g in BidGroup,
-          where: g.round_id == ^round.round_id and g.process_id == ^round.process_id,
-          order_by: [asc: g.group_number]
-      )
-
-    Enum.reduce_while(
-      bid_groups,
-      {:ok, []},
-      fn group, acc ->
-        handle_distribution_results(assign_vacation_for_group(round, group), acc)
-      end
+      &assign_vacation_for_round(&1)
     )
   end
 
@@ -105,15 +69,58 @@ defmodule Draft.BasicVacationDistributionRunner do
       assign_vacation_for_group(round, group)
     else
       {:error, "No group found with
-        round_id: #{round_id},
-        process_id: #{process_id},
-        group_number: #{group_number}
-      "}
+  round_id: #{round_id},
+  process_id: #{process_id},
+  group_number: #{group_number}
+"}
     end
   end
 
+  @spec process_until_error([], (any -> distribution_result())) :: distribution_result()
+  defp process_until_error(list, process_fn) do
+    Enum.reduce_while(
+      list,
+      {:ok, []},
+      &handle_distribution_results(
+        process_fn.(&1),
+        &2
+      )
+    )
+  end
+
+  defp handle_distribution_results({:ok, assignments}, {:ok, previous_assignments}) do
+    {:cont, {:ok, assignments ++ previous_assignments}}
+  end
+
+  defp handle_distribution_results({:error, errors}, _previous_assignments) do
+    {:halt, {:error, errors}}
+  end
+
+  @spec assign_vacation_for_round(BidRound.t()) ::
+          distribution_result()
+  defp assign_vacation_for_round(round) do
+    Logger.info(
+      "===================================================================================================\nSTARTING NEW ROUND: #{
+        round.rank
+      } - #{round.division_id} - #{round.division_description}(#{round.round_id}) (picking between #{
+        round.round_opening_date
+      } and #{round.round_closing_date} for the rating period #{round.rating_period_start_date} - #{
+        round.rating_period_end_date
+      })\n"
+    )
+
+    bid_groups =
+      Repo.all(
+        from g in BidGroup,
+          where: g.round_id == ^round.round_id and g.process_id == ^round.process_id,
+          order_by: [asc: g.group_number]
+      )
+
+    process_until_error(bid_groups, &assign_vacation_for_group(round, &1))
+  end
+
   @spec assign_vacation_for_group(BidRound.t(), BidGroup.t()) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
+          distribution_result()
   defp assign_vacation_for_group(round, group) do
     Logger.info(
       "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
@@ -133,19 +140,13 @@ defmodule Draft.BasicVacationDistributionRunner do
       )
 
     assigned_vacation =
-      Enum.reduce_while(
+      process_until_error(
         group_employees,
-        {:ok, []},
-        fn employee, acc ->
-          handle_distribution_results(
-            assign_vacation_for_employee(
-              employee,
-              round,
-              distribution_run_id
-            ),
-            acc
-          )
-        end
+        &assign_vacation_for_employee(
+          &1,
+          round,
+          distribution_run_id
+        )
       )
 
     _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
@@ -153,7 +154,7 @@ defmodule Draft.BasicVacationDistributionRunner do
   end
 
   @spec assign_vacation_for_employee(EmployeeRanking.t(), BidRound.t(), integer()) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
+          distribution_result()
   defp assign_vacation_for_employee(
          employee,
          round,
@@ -175,7 +176,7 @@ defmodule Draft.BasicVacationDistributionRunner do
   end
 
   @spec assign_vacation(BidRound.t(), EmployeeRanking.t(), integer(), [EmployeeVacationQuota.t()]) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
+          distribution_result()
   defp assign_vacation(round, employee, distribution_run_id, employee_balances)
 
   defp assign_vacation(round, employee, distribution_run_id, [employee_balance]) do
