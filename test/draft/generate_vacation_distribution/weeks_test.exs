@@ -22,8 +22,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     )
 
     insert!(:division_vacation_week_quota, %{
-      start_date: ~D[2021-04-01],
-      end_date: ~D[2021-04-07],
+      start_date: ~D[2021-04-15],
+      end_date: ~D[2021-04-21],
       quota: 1
     })
 
@@ -34,8 +34,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     })
 
     insert!(:division_vacation_week_quota, %{
-      start_date: ~D[2021-04-15],
-      end_date: ~D[2021-04-21],
+      start_date: ~D[2021-04-01],
+      end_date: ~D[2021-04-07],
       quota: 1
     })
 
@@ -63,8 +63,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       assert [
                %VacationDistribution{
                  interval_type: :week,
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                },
                %VacationDistribution{
@@ -90,8 +90,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       assert [
                %VacationDistribution{
                  interval_type: :week,
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                },
                %VacationDistribution{
@@ -121,8 +121,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       assert [
                %VacationDistribution{
                  interval_type: :week,
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                },
                %VacationDistribution{
@@ -134,7 +134,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
              ] = vacation_assignments
     end
 
-    test "Operator with anniversary date in the middle of rating period only assigned vacation up to their anniversary date",
+    test "Operator with anniversary date in the middle of rating period only assigned vacation earned prior to anniversary",
          state do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
@@ -152,8 +152,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       assert [
                %VacationDistribution{
                  interval_type: :week,
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                }
              ] = vacation_assignments
@@ -177,8 +177,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       assert [
                %VacationDistribution{
                  interval_type: :week,
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                }
              ] = vacation_assignments
