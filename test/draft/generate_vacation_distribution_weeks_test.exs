@@ -385,7 +385,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     Draft.VacationDistribution.add_distributions_to_run(run_id, [
       %VacationDistribution{
         employee_id: "00002",
-        interval_type: :day,
+        interval_type: :week,
         start_date: ~D[2021-04-08],
         end_date: ~D[2021-04-14]
       }
@@ -400,7 +400,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
           start_date: ~D[2021-04-08],
           end_date: ~D[2021-04-14],
           rank: 1,
-          interval_type: :day
+          interval_type: :week
         }
       ]
     }
@@ -408,15 +408,75 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     Draft.Repo.insert!(preferred_vacation)
 
     vacation_assignments =
-      GenerateVacationDistribution.Days.generate(
+      GenerateVacationDistribution.Weeks.generate(
         run_id,
         state.round,
         state.employee_ranking,
         1,
-        [],
         nil
       )
 
     assert [] = vacation_assignments
+  end
+
+  test "Operator is not assigned vacation week they've already selected", state do
+    insert!(:employee_vacation_selection, %{
+      vacation_interval_type: :week,
+      start_date: ~D[2021-04-01],
+      end_date: ~D[2021-04-07],
+      status: :assigned
+    })
+
+    vacation_assignments =
+      GenerateVacationDistribution.Weeks.generate(
+        1234,
+        state.round,
+        state.employee_ranking,
+        1,
+        nil
+      )
+
+    assert [
+             %VacationDistribution{
+               start_date: ~D[2021-04-08],
+               end_date: ~D[2021-04-14],
+               employee_id: "00001"
+             }
+           ] = vacation_assignments
+  end
+
+  test "Operator can be re-assigned vacation week that has been previously cancelled", state do
+    group_number = 1234
+
+    run_id =
+      Draft.VacationDistributionRun.insert(%Draft.BidGroup{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        group_number: group_number
+      })
+
+    insert!(:employee_vacation_selection, %{
+      vacation_interval_type: :week,
+      start_date: ~D[2021-04-01],
+      end_date: ~D[2021-04-07],
+      status: :cancelled
+    })
+
+    vacation_assignments =
+      GenerateVacationDistribution.Weeks.generate(
+        run_id,
+        state.round,
+        state.employee_ranking,
+        1,
+        nil
+      )
+
+    assert [
+             %VacationDistribution{
+               start_date: ~D[2021-04-01],
+               end_date: ~D[2021-04-07],
+               employee_id: "00001"
+             }
+           ] = vacation_assignments
   end
 end

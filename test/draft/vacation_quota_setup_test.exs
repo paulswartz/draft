@@ -52,6 +52,7 @@ defmodule Draft.VacationQuotaSetupTest do
 
       assert ~D[2021-05-23] = employee_selected_vacation.start_date
       assert ~D[2021-05-29] = employee_selected_vacation.end_date
+      assert :assigned = employee_selected_vacation.status
     end
 
     test "Employee vacation quota as expected" do

@@ -426,5 +426,59 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
       assert [] = vacation_assignments
     end
+
+    test "Operator is not assigned vacation day they've already selected", state do
+      insert!(:employee_vacation_selection, %{
+        vacation_interval_type: :day,
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-01],
+        status: :assigned
+      })
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1234,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-04-02],
+                 end_date: ~D[2021-04-02],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
+
+    test "Operator can be re-assigned vacation day that has been previously cancelled", state do
+      insert!(:employee_vacation_selection, %{
+        vacation_interval_type: :day,
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-01],
+        status: :cancelled
+      })
+
+      vacation_assignments =
+        GenerateVacationDistribution.Days.generate(
+          1234,
+          state.round,
+          state.employee_ranking,
+          1,
+          [],
+          nil
+        )
+
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-04-01],
+                 end_date: ~D[2021-04-01],
+                 employee_id: "00001"
+               }
+             ] = vacation_assignments
+    end
   end
 end

@@ -156,7 +156,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
         where:
           s.start_date <= parent_as(:division_week_quota).end_date and
             s.end_date >= parent_as(:division_week_quota).start_date and
-            s.employee_id == ^employee.employee_id
+            s.employee_id == ^employee.employee_id and
+            s.status == :assigned
 
     quotas_before_run =
       Repo.all(
