@@ -79,12 +79,12 @@ defmodule Draft.DivisionVacationDayQuota do
     )
   end
 
-  @spec available_days_desc(Draft.BidRound.t(), Draft.EmployeeRanking.t()) :: [t()]
+  @spec available_quota_desc(Draft.BidRound.t(), Draft.EmployeeRanking.t()) :: [t()]
   @doc """
   Get all vacation days that are available for the given employee, based on their job class, the available quota for their division,
   and their previously selected vacation time. Available days are returned in descending order by start date.
   """
-  def available_days_desc(round, employee) do
+  def available_quota_desc(round, employee) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
     conflicting_selected_dates_query =
@@ -104,7 +104,7 @@ defmodule Draft.DivisionVacationDayQuota do
             d.date >= ^round.rating_period_start_date and
             d.date <= ^round.rating_period_end_date and
             not exists(conflicting_selected_dates_query),
-        order_by: [asc: d.date]
+        order_by: [desc: d.date]
     )
   end
 end
