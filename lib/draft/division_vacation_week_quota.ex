@@ -40,7 +40,8 @@ defmodule Draft.DivisionVacationWeekQuota do
       _week_number,
       start_date,
       end_date,
-      quota,
+      _initial_quota,
+      remaining_quota,
       is_restricted_week
     ] = row
 
@@ -49,7 +50,7 @@ defmodule Draft.DivisionVacationWeekQuota do
       employee_selection_set: employee_selection_set,
       start_date: ParsingHelpers.to_date(start_date),
       end_date: ParsingHelpers.to_date(end_date),
-      quota: ParsingHelpers.to_int(quota),
+      quota: ParsingHelpers.to_int(remaining_quota),
       is_restricted_week: is_restricted_week == "1"
     }
   end
