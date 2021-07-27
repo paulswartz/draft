@@ -4,148 +4,373 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   """
   alias Draft.DivisionVacationWeekQuota
   alias Draft.VacationDistribution
+  import Ecto.Query
+  alias Draft.Repo
   require Logger
 
   @spec generate(
           integer(),
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
-          integer(),
-          nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
+          Draft.IntervalTypeEnum.t()
         ) :: [VacationDistribution.t()]
 
   @doc """
   generate a list of vacation weeks for an employee based on what is available in their division/job class in the rating period they are picking for.
-  If the employee has an upcoming anniversary date, vacation weeks are only generated up to that date.
+  If the employee has an upcoming anniversary date, only vacation weeks earned prior to the anniversary are distributed.
   """
   def generate(
         distribution_run_id,
         round,
-        employee,
-        max_weeks,
-        anniversary_vacation
+        employee_ranking,
+        interval_type
       )
 
-  def generate(distribution_run_id, round, employee, max_weeks, nil) do
-    generate_from_available(
+  def generate(
+        distribution_run_id,
+        round,
+        employee_ranking,
+        :week = interval_type
+      ) do
+    calculated_quota = calculated_quota(round, employee_ranking, interval_type)
+
+    distributions_in_run_by_date =
+      Draft.VacationDistribution.count_unsynced_assignments_by_date(
+        distribution_run_id,
+        interval_type
+      )
+
+    preferences =
+      Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
+        round.process_id,
+        round.round_id,
+        employee_ranking.employee_id,
+        interval_type
+      )
+
+    # In the future for forcing algorithm, the vacation available would be determined by
+    # whether or not the employee is being forced. If they are forced, it is all vacation available to the employee, ordered by preference, then desc.
+    # If they are not forced, only their available preferences would be used.
+    vacation_available_to_employee =
+      if preferences == [] do
+        all_vacation_available_to_employee(
+          distributions_in_run_by_date,
+          round,
+          employee_ranking,
+          interval_type
+        )
+      else
+        available_preferences(
+          preferences,
+          distributions_in_run_by_date,
+          round,
+          employee_ranking,
+          interval_type
+        )
+      end
+
+    generate_distributions(
       distribution_run_id,
       round,
-      employee,
-      max_weeks
+      employee_ranking.employee_id,
+      calculated_quota,
+      vacation_available_to_employee
     )
   end
 
-  def generate(distribution_run_id, round, employee, week_quota_including_anniversary_weeks, %{
-        anniversary_date: anniversary_date,
-        anniversary_weeks: anniversary_weeks
+  def distribute_vacation_to_group(%{
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number
       }) do
+    group =
+      Repo.get_by(Draft.BidGroup,
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number
+      )
+
+    if group do
+      round = Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+
+      case Repo.all(
+             from e in Draft.EmployeeRanking,
+               where:
+                 e.round_id == ^group.round_id and e.process_id == ^group.process_id and
+                   e.group_number >= ^group.group_number,
+               order_by: [asc: [e.group_number, e.rank]]
+           ) do
+        [first_emp, remaining_emps] ->
+          distribute_for_group(
+            round,
+            %{
+              remaining_quota: calculated_quota(round, first_emp, :week),
+              possible_assignments:
+                all_vacation_available_to_employee(%{}, round, first_emp, :week),
+              employee_id: first_emp.employee_id
+            },
+            remaining_emps,
+            %{}
+          )
+
+        [first_emp] ->
+          distribute_for_group(
+            round,
+            %{
+              remaining_quota: calculated_quota(round, first_emp, :week),
+              possible_assignments:
+                all_vacation_available_to_employee(%{}, round, first_emp, :week),
+              employee_id: first_emp.employee_id
+            },
+            [],
+            %{}
+          )
+      end
+    else
+      {:error, "No group found with
+round_id: #{round_id},
+process_id: #{process_id},
+group_number: #{group_number}
+"}
+    end
+  end
+
+  defp distribute_for_group(
+         round,
+         %{
+           remaining_quota: remaining_quota,
+           possible_assignments: possible_assignments,
+           employee_id: employee_id
+         } = current_employee,
+         remaining_employees,
+         assignments
+       ) do
+    Logger.error("Distributing for current employee #{employee_id}")
+    Logger.error("Assignments still remaining: #{inspect(possible_assignments)}")
+    if is_completed_schedule(remaining_quota, remaining_employees) do
+      Logger.error("Completed")
+      {:ok, assignments}
+
+    else
+      if is_invalid_schedule(current_employee) do
+        {:error, :invalid_schedule}
+      end
+
+      if elem(current_employee.remaining_quota, 0) == 0 do
+        Logger.error("Remaining quota is 0")
+        case remaining_employees do
+          [first_emp, remaining_emps] ->
+            distribute_for_group(
+              round,
+              %{
+                remaining_quota: calculated_quota(round, first_emp, :week),
+                possible_assignments:
+                  all_vacation_available_to_employee(
+                    Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
+                    round,
+                    first_emp,
+                    :week
+                  ),
+                employee_id: first_emp.employee_id
+              },
+              remaining_emps,
+              %{}
+            )
+
+          [first_emp] ->
+            distribute_for_group(
+              round,
+              %{
+                remaining_quota: calculated_quota(round, first_emp, :week),
+                possible_assignments:
+                  all_vacation_available_to_employee(
+                    Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
+                    round,
+                    first_emp,
+                    :week
+                  ),
+                employee_id: first_emp.employee_id
+              },
+              [],
+              %{}
+            )
+        end
+      else
+        # reduce while?
+        Enum.map(Enum.with_index(possible_assignments), fn {o, index} ->
+          {_assignments_in_previous_branch, remaining_assignments} =
+            Enum.split(possible_assignments, index + 1)
+          Logger.error("Distributing #{inspect(o)}")
+
+          distribute_for_group(
+            round,
+            %{
+              employee_id: employee_id,
+              # TODO -- doesn't account for anniversary time at all
+              remaining_quota: {elem(remaining_quota, 0) - 1, elem(remaining_quota, 1)},
+              possible_assignments: remaining_assignments
+            },
+            remaining_employees,
+            Map.update(assignments, o.start_date, MapSet.new([employee_id]), fn e ->
+              MapSet.put(e, employee_id)
+            end)
+          )
+        end)
+      end
+    end
+
+
+  end
+
+  defp is_invalid_schedule(current_emp) do
+    ## TODO: Add other checks?
+    elem(current_emp.remaining_quota, 0) > 0 and length(current_emp.possible_assignments) == 0
+  end
+
+  defp is_completed_schedule(quota, employees) do
+    employees == [] and elem(quota, 0) == 0
+    ## TODO: Add checks to make sure quota is as expected?
+  end
+
+  defp generate_distributions(
+         distribution_run_id,
+         round,
+         employee_id,
+         calcualted_quota,
+         vacation_available_to_employee
+       )
+
+  defp generate_distributions(
+         _distribution_run_id,
+         _round,
+         employee_id,
+         {quota, nil},
+         vacation_available_to_employee
+       ) do
+    vacation_available_to_employee
+    # With the full forcing algorithm, instead of taking the first X possible assignments, one assignment will be made,
+    # Then a recursive call will be made to make the next assignment, and so on for the remaining employees that will be forced.
+    |> Enum.take(quota)
+    |> Enum.map(fn v -> generate_distribution(employee_id, v) end)
+  end
+
+  defp generate_distributions(
+         _distribution_run_id,
+         round,
+         employee_id,
+         {quota,
+          %{
+            anniversary_date: anniversary_date,
+            anniversary_weeks: anniversary_weeks
+          }},
+         vacation_available_to_employee
+       ) do
     case Draft.Utils.compare_date_to_range(
            anniversary_date,
            round.rating_period_start_date,
            round.rating_period_end_date
          ) do
       :before_range ->
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
-          week_quota_including_anniversary_weeks
-        )
+        vacation_available_to_employee
+        |> Enum.take(quota)
+        |> Enum.map(fn v -> generate_distribution(employee_id, v) end)
 
       :in_range ->
         # If it should be possible to assign an operator their anniversary vacation that is earned
-        # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
+        # within a rating period, update case to do so. Currently does not assign any anniversary days.
+        vacation_available_to_employee
+        |> Enum.take(
           Draft.EmployeeVacationQuota.adjust_quota(
-            week_quota_including_anniversary_weeks,
+            quota,
             anniversary_weeks
           )
         )
+        |> Enum.map(fn v -> generate_distribution(employee_id, v) end)
 
       :after_range ->
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
+        vacation_available_to_employee
+        |> Enum.take(
           Draft.EmployeeVacationQuota.adjust_quota(
-            week_quota_including_anniversary_weeks,
+            quota,
             anniversary_weeks
           )
         )
+        |> Enum.map(fn v -> generate_distribution(employee_id, v) end)
     end
   end
 
-  defp generate_from_available(
-         distribution_run_id,
-         round,
-         employee,
-         max_weeks
-       ) do
-    preference_set =
-      Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
-        employee.process_id,
-        employee.round_id,
-        employee.employee_id
+  defp calculated_quota(round, employee, :week) do
+    # For now, only getting balance if the balance interval covers the entire rating period.
+    employee_balances =
+      Repo.all(
+        from q in Draft.EmployeeVacationQuota,
+          where:
+            q.employee_id == ^employee.employee_id and
+              (q.interval_start_date <= ^round.rating_period_start_date and
+                 q.interval_end_date >= ^round.rating_period_end_date)
       )
 
-    all_available_weeks =
-      get_all_weeks_available_to_employee(distribution_run_id, round, employee)
-
-    preferred_vacation_weeks =
-      if is_nil(preference_set) do
-        []
-      else
-        Enum.filter(preference_set.vacation_preferences, fn p -> p.interval_type == :week end)
-      end
-
-    generate_weeks_to_distribute_from_preferences(
-      employee,
-      all_available_weeks,
-      preferred_vacation_weeks,
-      max_weeks
-    )
+    case employee_balances do
+      # TODO better handling here -- {:error, errors?}
+      [] -> nil
+      [balance] -> calculated_quota_from_balance(balance, employee.job_class, :week)
+      _multiple_balances -> nil
+    end
   end
 
-  defp generate_weeks_to_distribute_from_preferences(
-         employee,
-         all_available_weeks,
-         preferred_weeks,
-         max_weeks
-       )
+  defp calculated_quota_from_balance(employee_balance, job_class, :week = interval_type) do
+    max_minutes = employee_balance.maximum_minutes
 
-  defp generate_weeks_to_distribute_from_preferences(employee, all_available_weeks, [], max_weeks) do
-    generate_weeks(employee, Enum.take(all_available_weeks, max_weeks))
+    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(job_class)
+
+    # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
+    max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+
+    anniversary_quota = Draft.EmployeeVacationQuota.get_anniversary_quota(employee_balance)
+
+    {max_weeks, anniversary_quota}
   end
 
-  defp generate_weeks_to_distribute_from_preferences(
-         employee,
-         all_available_weeks,
-         preferred_weeks,
-         max_weeks
-       ) do
-    available_weeks_set = MapSet.new(all_available_weeks, fn w -> {w.start_date, w.end_date} end)
-
-    available_preferred_weeks =
-      preferred_weeks
-      |> Enum.filter(fn preferred_week ->
-        MapSet.member?(available_weeks_set, {preferred_week.start_date, preferred_week.end_date})
-      end)
-      |> Enum.take(max_weeks)
-
-    generate_weeks(employee, available_preferred_weeks)
-  end
-
-  defp get_all_weeks_available_to_employee(
-         distribution_run_id,
+  defp available_preferences(
+         preferences,
+         distributions_in_run_by_date,
          round,
-         employee
+         employee_ranking,
+         :week = interval_type
        ) do
-    quota_already_distributed_in_run =
-      Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
+    all_available_vacation =
+      MapSet.new(
+        all_vacation_available_to_employee(
+          distributions_in_run_by_date,
+          round,
+          employee_ranking,
+          interval_type
+        ),
+        fn w -> {w.start_date, w.end_date} end
+      )
 
+    Enum.flat_map(preferences, fn p ->
+      if MapSet.member?(all_available_vacation, {p.start_date, p.end_date}) do
+        [
+          %{
+            start_date: p.start_date,
+            end_date: p.end_date,
+            rank: p.rank,
+            interval_type: interval_type
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp all_vacation_available_to_employee(
+         distributions_in_run_by_date,
+         round,
+         employee,
+         :week = interval_type
+       ) do
     round
     |> DivisionVacationWeekQuota.available_quota(employee)
     |> Enum.map(fn original_quota ->
@@ -153,31 +378,23 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
         original_quota
         | quota:
             original_quota.quota -
-              Map.get(quota_already_distributed_in_run, original_quota.start_date, 0)
+              Map.get(distributions_in_run_by_date, original_quota.start_date, 0)
       }
     end)
     |> Enum.filter(fn q -> q.quota > 0 end)
+    |> Enum.map(fn q ->
+      %{start_date: q.start_date, end_date: q.end_date, interval_type: interval_type, rank: nil}
+    end)
   end
 
-  defp generate_weeks(employee, available_weeks)
-
-  defp generate_weeks(_employee, []) do
-    Logger.info("No more vacation weeks available")
-    []
-  end
-
-  defp generate_weeks(employee, available_weeks) do
-    Enum.map(available_weeks, &generate_week(employee, &1))
-  end
-
-  defp generate_week(employee, assigned_week) do
-    Logger.info("assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}")
+  defp generate_distribution(employee_id, dist) do
+    Logger.info("assigned #{dist.interval_type} - #{dist.start_date} - #{dist.end_date}")
 
     %VacationDistribution{
-      employee_id: employee.employee_id,
-      interval_type: :week,
-      start_date: assigned_week.start_date,
-      end_date: assigned_week.end_date
+      employee_id: employee_id,
+      interval_type: dist.interval_type,
+      start_date: dist.start_date,
+      end_date: dist.end_date
     }
   end
 end

@@ -117,7 +117,37 @@ defmodule Draft.EmployeeVacationPreferenceSet do
             )
         ]
       )
+  end
 
-    Repo.one(latest_preference_set_query)
+  @spec get_latest_preferences(String.t(), String.t(), String.t()) ::
+          __MODULE__.t() | nil
+  @doc """
+  Get the most recently entered preferences entered by the given operator for the given pick.
+  """
+  def get_latest_preferences(process_id, round_id, employee_id, interval_type) do
+    latest_preference_set_query =
+      from(preference_set in Draft.EmployeeVacationPreferenceSet,
+        where:
+          preference_set.process_id == ^process_id and preference_set.round_id == ^round_id and
+            preference_set.employee_id == ^employee_id,
+        order_by: [desc: preference_set.id],
+        limit: 1,
+        preload: [
+          vacation_preferences:
+            ^from(
+              p in EmployeeVacationPreference,
+              where: p.interval_type == ^interval_type,
+              order_by: [asc: p.rank]
+            )
+        ]
+      )
+
+    pref_set = Repo.one(latest_preference_set_query)
+
+    if is_nil(pref_set) do
+      []
+    else
+      pref_set.vacation_preferences
+    end
   end
 end
