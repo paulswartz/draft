@@ -147,7 +147,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
       Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
 
     round
-    |> DivisionVacationWeekQuota.available_quota_desc(employee)
+    |> DivisionVacationWeekQuota.available_quota(employee)
     |> Enum.map(fn original_quota ->
       %DivisionVacationWeekQuota{
         original_quota

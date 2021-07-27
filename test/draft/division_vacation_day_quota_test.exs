@@ -194,7 +194,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
       })
 
       assert [%{date: ~D[2021-02-02]}, %{date: ~D[2021-02-01]}] =
-               Draft.DivisionVacationDayQuota.available_quota_desc(round, employee_ranking)
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
     end
 
     test "Doesn't include day that conflicts with previously selected vacation" do
@@ -244,7 +244,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
       })
 
       assert [%{date: ~D[2021-02-02]}, %{date: ~D[2021-02-01]}] =
-               Draft.DivisionVacationDayQuota.available_quota_desc(round, employee_ranking)
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
     end
   end
 end

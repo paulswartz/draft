@@ -211,7 +211,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       assert [
                %{start_date: ~D[2021-02-08], end_date: ~D[2021-02-14]},
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
-             ] = Draft.DivisionVacationWeekQuota.available_quota_desc(round, employee_ranking)
+             ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
     end
 
     test "Doesn't include week that conflicts with previously selected vacation" do
@@ -266,7 +266,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       assert [
                %{start_date: ~D[2021-02-08], end_date: ~D[2021-02-14]},
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
-             ] = Draft.DivisionVacationWeekQuota.available_quota_desc(round, employee_ranking)
+             ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
     end
   end
 end
