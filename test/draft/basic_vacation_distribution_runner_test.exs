@@ -23,15 +23,15 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
-        quota: 0
-      })
-
-      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 0
       })
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
@@ -154,14 +154,14 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
         quota: 2
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-28],
-        end_date: ~D[2021-04-03],
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
         quota: 1
       })
 
@@ -169,13 +169,13 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-21],
-                 end_date: ~D[2021-03-27],
+                 start_date: ~D[2021-03-28],
+                 end_date: ~D[2021-04-03],
                  employee_id: "00001"
                },
                %VacationDistribution{
-                 start_date: ~D[2021-03-28],
-                 end_date: ~D[2021-04-03],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-27],
                  employee_id: "00001"
                }
              ] = vacation_assignments
@@ -197,20 +197,20 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         maximum_minutes: 1000
       })
 
-      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 2})
-      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 2})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-21],
-                 end_date: ~D[2021-03-21],
+                 start_date: ~D[2021-03-22],
+                 end_date: ~D[2021-03-22],
                  employee_id: "00001"
                },
                %VacationDistribution{
-                 start_date: ~D[2021-03-22],
-                 end_date: ~D[2021-03-22],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-21],
                  employee_id: "00001"
                }
              ] = vacation_assignments
@@ -239,16 +239,16 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
         maximum_minutes: 480
       })
 
-      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
-      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
       insert!(:division_vacation_day_quota, %{date: ~D[2021-03-23], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-22], quota: 1})
+      insert!(:division_vacation_day_quota, %{date: ~D[2021-03-21], quota: 1})
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-23],
-                 end_date: ~D[2021-03-23],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-21],
                  employee_id: "00002"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00002")
@@ -278,8 +278,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
+        start_date: ~D[2021-04-04],
+        end_date: ~D[2021-04-10],
         quota: 1
       })
 
@@ -290,8 +290,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-04],
-        end_date: ~D[2021-04-10],
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
         quota: 1
       })
 
@@ -299,8 +299,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-04-04],
-                 end_date: ~D[2021-04-10],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-27],
                  employee_id: "00002"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00002")
@@ -323,20 +323,20 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
-        quota: 1
-      })
-
-      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
-      insert!(:employee_vacation_selection, %{
+      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-21],
         end_date: ~D[2021-03-27],
+        quota: 1
+      })
+
+      insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
         employee_id: "00001"
       })
 
@@ -344,8 +344,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-28],
-                 end_date: ~D[2021-04-03],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-27],
                  employee_id: "00001"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
@@ -368,20 +368,20 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
-        quota: 1
-      })
-
-      insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-03-28],
         end_date: ~D[2021-04-03],
         quota: 1
       })
 
+      insert!(:division_vacation_week_quota, %{
+        start_date: ~D[2021-03-21],
+        end_date: ~D[2021-03-27],
+        quota: 1
+      })
+
       insert!(:employee_vacation_selection, %{
-        start_date: ~D[2021-03-23],
-        end_date: ~D[2021-03-23],
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-01],
         employee_id: "00001"
       })
 
@@ -389,8 +389,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-28],
-                 end_date: ~D[2021-04-03],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-27],
                  employee_id: "00001"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
@@ -413,18 +413,18 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_day_quota, %{
-        date: ~D[2021-03-21],
-        quota: 1
-      })
-
-      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-03-22],
         quota: 1
       })
 
+      insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-03-21],
+        quota: 1
+      })
+
       insert!(:employee_vacation_selection, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-21],
+        start_date: ~D[2021-03-22],
+        end_date: ~D[2021-03-22],
         employee_id: "00001"
       })
 
@@ -432,8 +432,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-03-22],
-                 end_date: ~D[2021-03-22],
+                 start_date: ~D[2021-03-21],
+                 end_date: ~D[2021-03-21],
                  employee_id: "00001"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
@@ -456,18 +456,18 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_day_quota, %{
-        date: ~D[2021-03-22],
-        quota: 1
-      })
-
-      insert!(:division_vacation_day_quota, %{
         date: ~D[2021-04-01],
         quota: 1
       })
 
+      insert!(:division_vacation_day_quota, %{
+        date: ~D[2021-03-22],
+        quota: 1
+      })
+
       insert!(:employee_vacation_selection, %{
-        start_date: ~D[2021-03-21],
-        end_date: ~D[2021-03-27],
+        start_date: ~D[2021-03-28],
+        end_date: ~D[2021-04-03],
         employee_id: "00001"
       })
 
@@ -475,8 +475,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-01],
+                 start_date: ~D[2021-03-22],
+                 end_date: ~D[2021-03-22],
                  employee_id: "00001"
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
@@ -507,8 +507,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-01],
-        end_date: ~D[2021-04-07],
+        start_date: ~D[2021-04-15],
+        end_date: ~D[2021-04-21],
         quota: 1
       })
 
@@ -519,8 +519,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-15],
-        end_date: ~D[2021-04-21],
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
         quota: 1
       })
 
@@ -528,8 +528,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-15],
+                 end_date: ~D[2021-04-21],
                  employee_id: "00001"
                },
                %VacationDistribution{
@@ -540,7 +540,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
              ] = vacation_assignments
     end
 
-    test "Operator whose anniversary date is during the round is only assigned vacation before anniversary date" do
+    test "Operator whose anniversary date is during the round is only assigned vacation time earned before anniversary week" do
       insert_round_with_employees(
         %{
           rank: 1,
@@ -557,7 +557,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
-        weekly_quota: 3,
+        weekly_quota: 2,
         dated_quota: 0,
         available_after_date: ~D[2021-04-15],
         available_after_weekly_quota: 1,
@@ -566,8 +566,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-01],
-        end_date: ~D[2021-04-07],
+        start_date: ~D[2021-04-22],
+        end_date: ~D[2021-04-28],
         quota: 1
       })
 
@@ -578,8 +578,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-22],
-        end_date: ~D[2021-04-28],
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
         quota: 1
       })
 
@@ -587,8 +587,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-22],
+                 end_date: ~D[2021-04-28],
                  employee_id: "00001"
                }
              ] = vacation_assignments
@@ -620,8 +620,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-01],
-        end_date: ~D[2021-04-07],
+        start_date: ~D[2021-04-22],
+        end_date: ~D[2021-04-28],
         quota: 1
       })
 
@@ -632,8 +632,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
       })
 
       insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-22],
-        end_date: ~D[2021-04-28],
+        start_date: ~D[2021-04-01],
+        end_date: ~D[2021-04-07],
         quota: 1
       })
 
@@ -641,8 +641,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       assert [
                %VacationDistribution{
-                 start_date: ~D[2021-04-01],
-                 end_date: ~D[2021-04-07],
+                 start_date: ~D[2021-04-22],
+                 end_date: ~D[2021-04-28],
                  employee_id: "00001"
                }
              ] = vacation_assignments

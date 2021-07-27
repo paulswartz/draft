@@ -184,7 +184,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
               d.date >= ^round.rating_period_start_date and
               d.date <= ^round.rating_period_end_date and
               not exists(conflicting_selected_dates_query),
-          order_by: [asc: d.date]
+          order_by: [desc: d.date]
       )
 
     quotas_before_run
