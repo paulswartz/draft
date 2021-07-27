@@ -34,14 +34,15 @@ defmodule Draft.DivisionVacationDayQuota do
       division_id,
       employee_selection_set,
       date,
-      quota
+      _initial_quota,
+      remaining_quota
     ] = row
 
     %__MODULE__{
       division_id: division_id,
       employee_selection_set: employee_selection_set,
       date: ParsingHelpers.to_date(date),
-      quota: ParsingHelpers.to_int(quota)
+      quota: ParsingHelpers.to_int(remaining_quota)
     }
   end
 
