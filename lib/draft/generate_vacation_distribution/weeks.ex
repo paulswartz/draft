@@ -174,10 +174,10 @@ group_number: #{group_number}
                 employee_id: first_emp.employee_id
               },
               remaining_emps,
-              %{}
+              assignments
             )
 
-          [first_emp] ->
+          first_emp ->
             distribute_for_group(
               round,
               %{
@@ -192,7 +192,7 @@ group_number: #{group_number}
                 employee_id: first_emp.employee_id
               },
               [],
-              %{}
+              assignments
             )
         end
       else
