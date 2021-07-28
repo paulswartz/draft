@@ -47,25 +47,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   describe "distribute/4" do
     test "Operator whose anniversary date has passed can take full amount of vacation time available",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-03-01],
-          available_after_weekly_quota: 2,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          2,
+          %{
+            anniversary_date: ~D[2021-03-01],
+            anniversary_weeks: 2,
+            anniversary_days: 0
+          }
         )
 
       assert [
@@ -86,25 +78,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator who has no anniversary date can take full amount of vacation time available",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: 0,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          2,
+          nil
         )
 
       assert [
@@ -125,25 +105,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator with anniversary date on start date of rating period can take full amount of vacation ",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-04-01],
-          available_after_weekly_quota: 1,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          2,
+          %{
+            anniversary_date: ~D[2021-04-01],
+            anniversary_weeks: 1,
+            anniversary_days: 0
+          }
         )
 
       assert [
@@ -164,25 +136,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator with anniversary date in the middle of rating period only assigned vacation earned prior to anniversary",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-04-15],
-          available_after_weekly_quota: 1,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          2,
+          %{
+            anniversary_date: ~D[2021-04-15],
+            anniversary_weeks: 1,
+            anniversary_days: 0
+          }
         )
 
       assert [
@@ -197,25 +161,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator with anniversary date after rating period only assigned vacation available before anniversary date",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-06-01],
-          available_after_weekly_quota: 1,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          2,
+          %{
+            anniversary_date: ~D[2021-06-01],
+            anniversary_weeks: 1,
+            anniversary_days: 0
+          }
         )
 
       assert [
@@ -230,25 +186,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator with no vacation weeks remaining and anniversary that has passed is not distributed any time",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 0,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-03-01],
-          available_after_weekly_quota: 1,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          0,
+          %{
+            anniversary_date: ~D[2021-03-01],
+            anniversary_weeks: 1,
+            anniversary_days: 0
+          }
         )
 
       assert [] = vacation_assignments
@@ -256,25 +204,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     test "Operator with no vacation weeks remaining and anniversary that is upcoming is not distributed any time",
          state do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 0,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: ~D[2021-06-01],
-          available_after_weekly_quota: 1,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
           state.round,
           state.employee_ranking,
-          :week
+          0,
+          %{
+            anniversary_date: ~D[2021-06-01],
+            anniversary_weeks: 1,
+            anniversary_days: 0
+          }
         )
 
       assert [] = vacation_assignments
@@ -299,25 +239,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     Draft.Repo.insert!(preferred_vacation)
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [
@@ -353,25 +281,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     Draft.Repo.insert!(preferred_vacation)
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [
@@ -407,25 +323,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     Draft.Repo.insert!(preferred_vacation)
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [
@@ -455,25 +359,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     Draft.Repo.insert!(preferred_vacation)
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [] = vacation_assignments
@@ -515,25 +407,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     Draft.Repo.insert!(preferred_vacation)
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         run_id,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [] = vacation_assignments
@@ -547,25 +427,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       status: :assigned
     })
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
-        1,
+        1234,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [
@@ -594,25 +462,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       status: :cancelled
     })
 
-    insert!(
-      :employee_vacation_quota,
-      %{
-        weekly_quota: 1,
-        dated_quota: 0,
-        restricted_week_quota: 0,
-        available_after_date: nil,
-        available_after_weekly_quota: 0,
-        available_after_dated_quota: 0,
-        maximum_minutes: 4800
-      }
-    )
-
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
-        1,
+        run_id,
         state.round,
         state.employee_ranking,
-        :week
+        1,
+        nil
       )
 
     assert [

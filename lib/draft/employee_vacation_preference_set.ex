@@ -117,10 +117,12 @@ defmodule Draft.EmployeeVacationPreferenceSet do
             )
         ]
       )
+
+    Repo.one(latest_preference_set_query)
   end
 
-  @spec get_latest_preferences(String.t(), String.t(), String.t()) ::
-          __MODULE__.t() | nil
+  @spec get_latest_preferences(String.t(), String.t(), String.t(), Draft.IntervalTypeEnum.t()) ::
+          [EmployeeVacationPreference.t()]
   @doc """
   Get the most recently entered preferences entered by the given operator for the given pick.
   """
