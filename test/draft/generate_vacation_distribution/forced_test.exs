@@ -74,8 +74,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
                   interval_type: :week,
                   employee_id: "00001"
                 }
-              ]} =
-               vacation_distributions
+              ]} = vacation_distributions
     end
 
     test "Two operators being forced can take the same day when quota is 2" do
@@ -173,8 +172,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
                   interval_type: :week,
                   employee_id: "00002"
                 }
-              ]} =
-               vacation_distributions
+              ]} = vacation_distributions
     end
 
     test "Assigns first operator the second best week in order to ensure valid forcing" do
@@ -260,8 +258,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
                   interval_type: :week,
                   employee_id: "00002"
                 }
-              ]} =
-               vacation_distributions
+              ]} = vacation_distributions
     end
 
     test "Returns an error if no possible forcing solution found" do

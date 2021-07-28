@@ -182,7 +182,9 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
           Draft.IntervalTypeEnum.t()
-        ) :: {:ok, %{:remaining => integer()}} | {:error, :multiple_vacation_balances | :no_vacation_balance}
+        ) ::
+          {:ok, %{:remaining => integer()}}
+          | {:error, :multiple_vacation_balances | :no_vacation_balance}
   defp calculated_quota(round, employee, :week) do
     # For now, only getting balance if the balance interval covers the entire rating period.
     employee_balances =
@@ -254,9 +256,10 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     end)
   end
 
-  @spec distributions_from_acc_vacation_intervals(acc_vacation_interval()) :: [VacationDistribution.t()]
+  @spec distributions_from_acc_vacation_intervals(acc_vacation_interval()) :: [
+          VacationDistribution.t()
+        ]
   defp distributions_from_acc_vacation_intervals(acc_vacation_to_distribute) do
-
     Enum.flat_map(acc_vacation_to_distribute, fn {vac, employees} ->
       Enum.map(employees, &distribution_from_interval(&1, vac))
     end)
