@@ -102,4 +102,34 @@ defmodule Draft.DivisionVacationWeekQuota do
         order_by: [asc: w.start_date]
     )
   end
+
+  @spec available_quota(Draft.BidRound.t(), Draft.EmployeeRanking.t()) :: [t()]
+  @doc """
+  Get all vacation weeks that are available for the given employee, based on their job class, the available quota for their division,
+  and their previously selected vacation time. Available weeks are returned in descending order by start date (latest available date will be listed first)
+  """
+  def available_quota(round, employee) do
+    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+
+    Repo.all(
+      from w in Draft.DivisionVacationWeekQuota,
+        as: :division_week_quota,
+        where:
+          w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+            w.employee_selection_set == ^selection_set and
+            ^round.rating_period_start_date <= w.start_date and
+            ^round.rating_period_end_date >= w.end_date and
+            not exists(conflicting_selected_vacation_query(employee.employee_id)),
+        order_by: [desc: w.start_date]
+    )
+  end
+
+  defp conflicting_selected_vacation_query(employee_id) do
+    from s in Draft.EmployeeVacationSelection,
+      where:
+        s.start_date <= parent_as(:division_week_quota).end_date and
+          s.end_date >= parent_as(:division_week_quota).start_date and
+          s.employee_id == ^employee_id and
+          s.status == :assigned
+  end
 end

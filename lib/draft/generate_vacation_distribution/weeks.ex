@@ -2,10 +2,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   @moduledoc """
   Generate a list of vacation weeks that can be assigned to the given employee
   """
-  import Ecto.Query
   alias Draft.DivisionVacationWeekQuota
-  alias Draft.EmployeeVacationSelection
-  alias Draft.Repo
   alias Draft.VacationDistribution
   require Logger
 
@@ -146,32 +143,11 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
          round,
          employee
        ) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
-
     quota_already_distributed_in_run =
       Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
 
-    conflicting_selected_vacation_query =
-      from s in EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_week_quota).end_date and
-            s.end_date >= parent_as(:division_week_quota).start_date and
-            s.employee_id == ^employee.employee_id
-
-    quotas_before_run =
-      Repo.all(
-        from w in DivisionVacationWeekQuota,
-          as: :division_week_quota,
-          where:
-            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
-              w.employee_selection_set == ^selection_set and
-              ^round.rating_period_start_date <= w.start_date and
-              ^round.rating_period_end_date >= w.end_date and
-              not exists(conflicting_selected_vacation_query),
-          order_by: [desc: w.start_date]
-      )
-
-    quotas_before_run
+    round
+    |> DivisionVacationWeekQuota.available_quota(employee)
     |> Enum.map(fn original_quota ->
       %DivisionVacationWeekQuota{
         original_quota

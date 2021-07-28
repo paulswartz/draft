@@ -2,10 +2,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
   @moduledoc """
   Generate a list of VacationDistributions that can be assigned to the given employee
   """
-  import Ecto.Query
   alias Draft.DivisionVacationDayQuota
-  alias Draft.EmployeeVacationSelection
-  alias Draft.Repo
   alias Draft.VacationDistribution
   require Logger
 
@@ -162,32 +159,11 @@ defmodule Draft.GenerateVacationDistribution.Days do
   end
 
   defp get_all_days_available_to_employee(distribution_run_id, round, employee) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
-
     quota_already_distributed_in_run =
       Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :day)
 
-    conflicting_selected_dates_query =
-      from s in EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_day_quota).date and
-            s.end_date >= parent_as(:division_day_quota).date and
-            s.employee_id == ^employee.employee_id
-
-    quotas_before_run =
-      Repo.all(
-        from d in DivisionVacationDayQuota,
-          as: :division_day_quota,
-          where:
-            d.division_id == ^round.division_id and d.quota > 0 and
-              d.employee_selection_set == ^selection_set and
-              d.date >= ^round.rating_period_start_date and
-              d.date <= ^round.rating_period_end_date and
-              not exists(conflicting_selected_dates_query),
-          order_by: [desc: d.date]
-      )
-
-    quotas_before_run
+    round
+    |> DivisionVacationDayQuota.available_quota(employee)
     |> Enum.map(fn original_quota ->
       %DivisionVacationDayQuota{
         original_quota

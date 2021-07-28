@@ -54,10 +54,13 @@ defmodule Draft.Factory do
   def build(:employee_vacation_selection) do
     %Draft.EmployeeVacationSelection{
       employee_id: "00001",
-      vacation_interval_type: "Weekly",
+      vacation_interval_type: :week,
       start_date: ~D[2021-02-11],
       end_date: ~D[2021-02-17],
-      pick_period: "Annual"
+      pick_period: "Annual",
+      status: :assigned,
+      division_id: "122",
+      job_class: "000100"
     }
   end
 

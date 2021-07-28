@@ -152,4 +152,100 @@ defmodule Draft.DivisionVacationDayQuotaTest do
       assert [%DivisionVacationDayQuota{date: ~D[2021-02-01]}] = available_days
     end
   end
+
+  describe "all_quota_desc/3" do
+    test "Only includes days with quota > 0" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+      employee_ranking = Repo.one!(from(e in Draft.EmployeeRanking))
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-01],
+        quota: 1
+      })
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-02],
+        quota: 1
+      })
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-03],
+        quota: 0
+      })
+
+      assert [%{date: ~D[2021-02-02]}, %{date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
+    end
+
+    test "Doesn't include day that conflicts with previously selected vacation" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+      employee_ranking = Repo.one!(from(e in Draft.EmployeeRanking))
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-01],
+        quota: 1
+      })
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-02],
+        quota: 1
+      })
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-03],
+        quota: 1
+      })
+
+      insert!(:employee_vacation_selection, %{
+        start_date: ~D[2021-02-03],
+        end_date: ~D[2021-02-03],
+        employee_id: "00001"
+      })
+
+      assert [%{date: ~D[2021-02-02]}, %{date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
+    end
+  end
 end
