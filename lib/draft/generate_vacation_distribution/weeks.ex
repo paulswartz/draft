@@ -154,7 +154,7 @@ group_number: #{group_number}
     else
       if is_invalid_schedule(current_employee) do
         {:error, :invalid_schedule}
-      end
+      else
 
       if elem(current_employee.remaining_quota, 0) == 0 do
         Logger.error("Remaining quota is 0")
@@ -197,12 +197,12 @@ group_number: #{group_number}
         end
       else
         # reduce while?
-        Enum.map(Enum.with_index(possible_assignments), fn {o, index} ->
+        Enum.reduce_while(Enum.with_index(possible_assignments), {:error, :no_schedule_found}, fn {o, index}, acc ->
           {_assignments_in_previous_branch, remaining_assignments} =
             Enum.split(possible_assignments, index + 1)
           Logger.error("Distributing #{inspect(o)}")
 
-          distribute_for_group(
+          result = distribute_for_group(
             round,
             %{
               employee_id: employee_id,
@@ -215,8 +215,14 @@ group_number: #{group_number}
               MapSet.put(e, employee_id)
             end)
           )
+
+          case result do
+            {:ok, assignments } -> {:halt, {:ok, assignments}}
+            {:error, _any} -> {:cont, acc}
+          end
         end)
       end
+    end
     end
 
 
