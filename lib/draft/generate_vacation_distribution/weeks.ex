@@ -147,85 +147,89 @@ group_number: #{group_number}
        ) do
     Logger.error("Distributing for current employee #{employee_id}")
     Logger.error("Assignments still remaining: #{inspect(possible_assignments)}")
+
     if is_completed_schedule(remaining_quota, remaining_employees) do
       Logger.error("Completed")
       {:ok, assignments}
-
     else
       if is_invalid_schedule(current_employee) do
         {:error, :invalid_schedule}
       else
+        if elem(current_employee.remaining_quota, 0) == 0 do
+          Logger.error("Remaining quota is 0")
 
-      if elem(current_employee.remaining_quota, 0) == 0 do
-        Logger.error("Remaining quota is 0")
-        case remaining_employees do
-          [first_emp, remaining_emps] ->
-            distribute_for_group(
-              round,
-              %{
-                remaining_quota: calculated_quota(round, first_emp, :week),
-                possible_assignments:
-                  all_vacation_available_to_employee(
-                    Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
-                    round,
-                    first_emp,
-                    :week
-                  ),
-                employee_id: first_emp.employee_id
-              },
-              remaining_emps,
-              assignments
-            )
+          case remaining_employees do
+            [first_emp, remaining_emps] ->
+              distribute_for_group(
+                round,
+                %{
+                  remaining_quota: calculated_quota(round, first_emp, :week),
+                  possible_assignments:
+                    all_vacation_available_to_employee(
+                      Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
+                      round,
+                      first_emp,
+                      :week
+                    ),
+                  employee_id: first_emp.employee_id
+                },
+                remaining_emps,
+                assignments
+              )
 
-          first_emp ->
-            distribute_for_group(
-              round,
-              %{
-                remaining_quota: calculated_quota(round, first_emp, :week),
-                possible_assignments:
-                  all_vacation_available_to_employee(
-                    Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
-                    round,
-                    first_emp,
-                    :week
-                  ),
-                employee_id: first_emp.employee_id
-              },
-              [],
-              assignments
-            )
-        end
-      else
-        # reduce while?
-        Enum.reduce_while(Enum.with_index(possible_assignments), {:error, :no_schedule_found}, fn {o, index}, acc ->
-          {_assignments_in_previous_branch, remaining_assignments} =
-            Enum.split(possible_assignments, index + 1)
-          Logger.error("Distributing #{inspect(o)}")
-
-          result = distribute_for_group(
-            round,
-            %{
-              employee_id: employee_id,
-              # TODO -- doesn't account for anniversary time at all
-              remaining_quota: {elem(remaining_quota, 0) - 1, elem(remaining_quota, 1)},
-              possible_assignments: remaining_assignments
-            },
-            remaining_employees,
-            Map.update(assignments, o.start_date, MapSet.new([employee_id]), fn e ->
-              MapSet.put(e, employee_id)
-            end)
-          )
-
-          case result do
-            {:ok, assignments } -> {:halt, {:ok, assignments}}
-            {:error, _any} -> {:cont, acc}
+            first_emp ->
+              distribute_for_group(
+                round,
+                %{
+                  remaining_quota: calculated_quota(round, first_emp, :week),
+                  possible_assignments:
+                    all_vacation_available_to_employee(
+                      Enum.into(assignments, %{}, fn {date, emps} -> {date, MapSet.size(emps)} end),
+                      round,
+                      first_emp,
+                      :week
+                    ),
+                  employee_id: first_emp.employee_id
+                },
+                [],
+                assignments
+              )
           end
-        end)
+        else
+          # reduce while?
+          Enum.reduce_while(
+            Enum.with_index(possible_assignments),
+            {:error, :no_schedule_found},
+            fn {o, index}, acc ->
+              {_assignments_in_previous_branch, remaining_assignments} =
+                Enum.split(possible_assignments, index + 1)
+
+              Logger.error("Distributing #{inspect(o)}")
+
+              result =
+                distribute_for_group(
+                  round,
+                  %{
+                    employee_id: employee_id,
+                    # TODO -- doesn't account for anniversary time at all
+                    remaining_quota: {elem(remaining_quota, 0) - 1, elem(remaining_quota, 1)},
+                    possible_assignments: remaining_assignments
+                  },
+                  remaining_employees,
+                  Map.update(assignments, o.start_date, MapSet.new([employee_id]), fn e ->
+                    MapSet.put(e, employee_id)
+                  end)
+                )
+
+              case result do
+                {:ok, assignments} -> {:halt, {:ok, assignments}}
+                {:error, _any} -> {:cont, acc}
+              end
+            end
+          )
+        end
       end
     end
-    end
-
-
   end
 
   defp is_invalid_schedule(current_emp) do
