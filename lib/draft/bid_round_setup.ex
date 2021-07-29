@@ -28,7 +28,18 @@ defmodule Draft.BidRoundSetup do
       delete_rounds(records_by_type[BidRound])
 
       Enum.each([BidRound, BidGroup, EmployeeRanking], fn record_type ->
-        Repo.insert_all(record_type, records_by_type[record_type])
+        chunked_records =
+          records_by_type[record_type]
+          |> Enum.map(&Draft.Utils.record_for_bulk_insert(&1))
+          |> Enum.chunk_every(2000)
+
+        Enum.each(
+          chunked_records,
+          &Repo.insert_all(
+            record_type,
+            &1
+          )
+        )
       end)
 
       VacationDistributionScheduler.reset_upcoming_distribution_jobs(

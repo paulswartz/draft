@@ -34,7 +34,7 @@ defmodule Draft.EmployeeVacationQuota do
     field :available_after_weekly_quota, :integer
     field :maximum_minutes, :integer
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @impl Draft.Parsable
