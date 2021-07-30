@@ -29,7 +29,7 @@ defmodule Draft.DivisionVacationWeekQuota do
     field :quota, :integer
     field :is_restricted_week, :boolean
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @impl Draft.Parsable

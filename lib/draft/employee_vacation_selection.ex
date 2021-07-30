@@ -29,7 +29,7 @@ defmodule Draft.EmployeeVacationSelection do
     field :division_id, :string
     field :job_class, :string
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @impl Draft.Parsable

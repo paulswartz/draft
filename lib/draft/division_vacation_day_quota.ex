@@ -25,7 +25,7 @@ defmodule Draft.DivisionVacationDayQuota do
     field :quota, :integer
     field :date, :date, primary_key: true
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @impl Draft.Parsable
