@@ -177,10 +177,10 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     case generate_distributions(
            round,
            %{
-             employee_id: current_employee.employee_id,
-             # Decrement the employee's quota
-             quota: %{remaining: current_employee.quota.remaining - 1},
-             possible_assignments: remaining_assignments
+             current_employee
+             | # Decrement the employee's quota
+               quota: Map.update!(current_employee.quota, :remaining, &(&1 - 1)),
+               possible_assignments: remaining_assignments
            },
            remaining_employees,
            add_distribution_to_acc(acc_vacation_to_distribute, next_assignment)
