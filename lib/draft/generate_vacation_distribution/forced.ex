@@ -142,63 +142,73 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # recurse on all remaining employees
   defp generate_distributions(
          round,
-         %{quota: %{remaining: 0}} = current_employee,
+         %{quota: %{remaining: 0}} = _current_employee,
          remaining_employees,
          acc_vacation_to_distribute
-       )
-       when current_employee.quota.remaining == 0 and remaining_employees != [] do
+       ) do
     generate_distributions_for_all(round, remaining_employees, acc_vacation_to_distribute)
+  end
+
+  # Base case: If there are no more available vacation times to distribute to the curent employee,
+  # (And their remaining quota isn't 0 based on above pattern matching)
+  # return an error -- there is not a valid way to assign them vacation time
+  defp generate_distributions(
+         _round,
+         %{possible_assignments: []} = _current_employee,
+         _remaining_employees,
+         _acc_vacation_to_distribute
+       ) do
+    {:error, :no_schedule_found}
   end
 
   # Normal case: For each possible vacation distribution for the current employee,
   # try to assign it to them & reduce their quota by one.
   # call recursively to continue fully assigning vacation to the first employee and all
   # remaining employees. If an error is reached in assignment, try assigning the next available
-  # vacation instead. If there are no more available vacation times to distribute,
-  # return an error -- there is not a valid way to assign the given employees their vacation time.
+  # vacation instead.
   defp generate_distributions(
          round,
          current_employee,
          remaining_employees,
          acc_vacation_to_distribute
        ) do
-    Enum.reduce_while(
-      Enum.with_index(current_employee.possible_assignments),
-      # return an error if we reach the end of the possible assignments and have not found a
-      # valid way to distribute
-      {:error, :no_schedule_found},
-      fn {next_assignment, index}, acc ->
-        # Assign the next available assignment to the current employee. Get the list of
-        # all the following possible assignments to use in the next call for this employee should
-        # they still have quota to fill.
-        {_previously_explored_assignments, remaining_assignments} =
-          Enum.split(current_employee.possible_assignments, index + 1)
+    [next_assignment | remaining_assignments] = current_employee.possible_assignments
 
-        result =
-          generate_distributions(
-            round,
-            %{
-              employee_id: current_employee.employee_id,
-              # Decrement the employee's quota
-              quota: %{remaining: current_employee.quota.remaining - 1},
-              possible_assignments: remaining_assignments
-            },
-            remaining_employees,
-            # Store this new assignment in the accumulated assignments
-            Map.update(
-              acc_vacation_to_distribute,
-              next_assignment.start_date,
-              MapSet.new([next_assignment]),
-              fn all_assignments_for_date ->
-                MapSet.put(all_assignments_for_date, next_assignment)
-              end
-            )
-          )
+    case generate_distributions(
+           round,
+           %{
+             employee_id: current_employee.employee_id,
+             # Decrement the employee's quota
+             quota: %{remaining: current_employee.quota.remaining - 1},
+             possible_assignments: remaining_assignments
+           },
+           remaining_employees,
+           add_distribution_to_acc(acc_vacation_to_distribute, next_assignment)
+         ) do
+      {:ok, distributions} ->
+        {:ok, distributions}
 
-        case result do
-          {:ok, vacation_distributions} -> {:halt, {:ok, vacation_distributions}}
-          {:error, _any} -> {:cont, acc}
-        end
+      {:error, _} ->
+        # If there is no valid schedule produced by assigning this employee their first possible
+        # assignment, recurse with the next possible assignments
+        generate_distributions(
+          round,
+          Map.put(current_employee, :possible_assignments, remaining_assignments),
+          remaining_employees,
+          acc_vacation_to_distribute
+        )
+    end
+  end
+
+  @spec add_distribution_to_acc(acc_vacation_distributions(), VacationDistribution.t()) ::
+          acc_vacation_distributions()
+  defp add_distribution_to_acc(acc_vacation_to_distribute, new_distribution) do
+    Map.update(
+      acc_vacation_to_distribute,
+      new_distribution.start_date,
+      MapSet.new([new_distribution]),
+      fn all_assignments_for_date ->
+        MapSet.put(all_assignments_for_date, new_distribution)
       end
     )
   end
@@ -208,7 +218,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           Draft.EmployeeRanking.t(),
           Draft.IntervalTypeEnum.t()
         ) ::
-          {:ok, %{:remaining => integer()}}
+          {:ok, %{remaining: integer()}}
           | {:error, :multiple_vacation_balances | :no_vacation_balance}
   # Get the given employee's vacation quota for the specified interval type. This currently only
   # returns information about their whole-unit quota (no partial) In the future it could contain
