@@ -304,7 +304,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           group_number: 1
         })
 
-      assert {:error, :no_schedule_found} == vacation_assignments
+      assert {:error, :no_possible_assignments_remaining} == vacation_assignments
     end
   end
 end

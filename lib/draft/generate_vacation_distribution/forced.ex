@@ -158,7 +158,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          _remaining_employees,
          _acc_vacation_to_distribute
        ) do
-    {:error, :no_schedule_found}
+    {:error, :no_possible_assignments_remaining}
   end
 
   # Normal case: For each possible vacation distribution for the current employee,
