@@ -4,6 +4,23 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
   alias Draft.GenerateVacationDistribution
   alias Draft.VacationDistribution
 
+  describe "permutations_take/2" do
+    test "basic case" do
+      list = [1, 2, 3]
+      n = 2
+
+      expected = [
+        [1, 2],
+        [1, 3],
+        [2, 3]
+      ]
+
+      actual = Enum.to_list(GenerateVacationDistribution.Forced.permutations_take(list, n))
+
+      assert actual == expected
+    end
+  end
+
   describe "distribute_to_group/4" do
     test "One operator being forced gets the latest available weeks" do
       insert_round_with_employees(
