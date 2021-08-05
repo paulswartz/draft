@@ -148,9 +148,12 @@ defmodule Draft.GenerateVacationDistribution.Forced do
        ) do
     counts = count_by_start_date(acc_vacation_to_distribute)
     possible_assignments = all_vacation_available_to_employee(first_employee, :week, counts)
-    # Check if we've already calculated a version of these possible assignments
-    # If we have, then we don't need to do it again.
-    key = {first_employee.employee_id, possible_assignments, counts}
+    # Check if we've already calculated a version of these possible
+    # assignments, along with the counts of assignments made to days outside
+    # our assignments. If we have, then we don't need to do it again.
+    dates = Enum.map(possible_assignments, & &1.start_date)
+    other_counts = Map.drop(counts, dates)
+    key = {first_employee.employee_id, dates, other_counts}
 
     if :ets.member(memo, key) do
       []
@@ -307,15 +310,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
         :evaluate_all_possible_solutions ->
           # iterate over the entire stream, but only keep the first option (if any)
-          Enum.reduce(dists, [], fn solution, acc ->
-            if acc == [] do
-              # haven't see a solution yet, keep the current one
-              [solution]
-            else
-              # already have a solution, don't need to keep track of any others
-              acc
-            end
-          end)
+          reduce_keeping_first(dists)
       end
 
     case list do
@@ -325,5 +320,18 @@ defmodule Draft.GenerateVacationDistribution.Forced do
       _no_solution ->
         {:error, :no_possible_assignments_remaining}
     end
+  end
+
+  @spec reduce_keeping_first(Enumerable.t()) :: [any()] | []
+  defp reduce_keeping_first(enum) do
+    Enum.reduce(enum, [], fn solution, acc ->
+      if acc == [] do
+        # haven't see a solution yet, keep the current one
+        [solution]
+      else
+        # already have a solution, don't need to keep track of any others
+        acc
+      end
+    end)
   end
 end
