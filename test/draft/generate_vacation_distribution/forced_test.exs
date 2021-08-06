@@ -389,7 +389,8 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
             ~D[2021-09-15] => 2,
             ~D[2021-09-22] => 2,
             ~D[2021-09-29] => 2,
-            ~D[2021-10-01] => 2
+            ~D[2021-10-07] => 2,
+            ~D[2021-10-14] => 2
           },
           %{
             "00001" => 1,
@@ -413,10 +414,12 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
             "00019" => 1,
             "00020" => 1,
             "00021" => 1,
-            "00022" => 1
+            "00022" => 1,
+            "00023" => 1,
+            "00024" => 1
           },
           %{
-            "00022" => [
+            "00024" => [
               ~D[2021-08-01],
               ~D[2021-08-08],
               ~D[2021-08-15],
@@ -426,24 +429,16 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
               ~D[2021-09-08],
               ~D[2021-09-15],
               ~D[2021-09-22],
-              ~D[2021-09-29]
+              ~D[2021-09-29],
+              ~D[2021-10-07]
             ]
           }
         )
 
       {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
 
-      actual = Enum.sort_by(vacation_assignments, &{&1.employee_id, Date.to_erl(&1.start_date)})
-      last = Enum.at(actual, -1)
-
-      assert %{employee_id: "00022", start_date: ~D[2021-10-01]} = last
-      # assert [
-      #          %{employee_id: "00001", start_date: ~D[2021-08-08]},
-      #          %{employee_id: "00002", start_date: ~D[2021-08-01]},
-      #          %{employee_id: "00002", start_date: ~D[2021-08-08]},
-      #          %{employee_id: "00002", start_date: ~D[2021-08-15]},
-      #          %{employee_id: "00003", start_date: ~D[2021-08-15]}
-      #        ] = actual
+      last_assignment = Enum.at(vacation_assignments, -1)
+      assert %{employee_id: "00026", start_date: ~D[2021-10-21]} = last_assignment
     end
 
     test "Returns an error if no possible forcing solution found" do
@@ -509,8 +504,8 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         round_id: round_id,
         process_id: process_id,
         rank: group_number,
-        round_opening_date: Date.add(start_date, -31),
-        round_closing_date: Date.add(start_date, -15),
+        round_opening_date: Date.add(start_date, -180),
+        round_closing_date: Date.add(start_date, -165),
         rating_period_start_date: start_date,
         rating_period_end_date: Date.add(end_date, 6)
       },

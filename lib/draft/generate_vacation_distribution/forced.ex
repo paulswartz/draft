@@ -149,25 +149,26 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     counts = count_by_start_date(acc_vacation_to_distribute)
     possible_assignments = all_vacation_available_to_employee(first_employee, :week, counts)
     # Check if we've already calculated a version of these possible
-    # assignments, along with the counts of assignments made to days outside
-    # our assignments. If we have, then we don't need to do it again.
-    dates = Enum.map(possible_assignments, & &1.start_date)
-    other_counts = Map.drop(counts, dates)
-    key = {first_employee.employee_id, dates, other_counts}
+    # assignments, along with the counts of assignments made to days. If we
+    # have, then we don't need to do it again.
+    key = {first_employee.employee_id, counts}
+    hashed_key = :erlang.phash2(key)
+    cond do
+      :ets.member(memo, hashed_key) ->
+        []
+      possible_assignments == [] ->
+        :ets.insert(memo, {hashed_key})
+        []
+      true ->
+        :ets.insert(memo, {hashed_key})
+        possible_assignment_permutations =
+          permutations_take(possible_assignments, first_employee.remaining_quota)
 
-    if :ets.member(memo, key) do
-      []
-    else
-      :ets.insert(memo, {key})
+        Stream.flat_map(possible_assignment_permutations, fn assignments ->
+          acc = Enum.reduce(assignments, acc_vacation_to_distribute, &add_distribution_to_acc/2)
 
-      possible_assignment_permutations =
-        permutations_take(possible_assignments, first_employee.remaining_quota)
-
-      Stream.flat_map(possible_assignment_permutations, fn assignments ->
-        acc = Enum.reduce(assignments, acc_vacation_to_distribute, &add_distribution_to_acc/2)
-
-        generate_distributions(round, remaining_employees, acc, memo)
-      end)
+          generate_distributions(round, remaining_employees, acc, memo)
+        end)
     end
   end
 
