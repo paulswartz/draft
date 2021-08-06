@@ -312,7 +312,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # employee C 8/22, so this schedule could be valid.
 
       group =
-        setup_week_quotas(
+        insert_round_with_employees_and_vacation(
           %{
             ~D[2021-08-01] => 1,
             ~D[2021-08-08] => 1,
@@ -332,20 +332,18 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
 
-      actual = Enum.sort_by(vacation_assignments, &{&1.employee_id, Date.to_erl(&1.start_date)})
-
       assert [
-               %{employee_id: "00001", start_date: ~D[2021-08-15]},
                %{employee_id: "00002", start_date: ~D[2021-08-01]},
                %{employee_id: "00002", start_date: ~D[2021-08-08]},
+               %{employee_id: "00001", start_date: ~D[2021-08-15]},
                %{employee_id: "00002", start_date: ~D[2021-08-15]},
                %{employee_id: "00003", start_date: ~D[2021-08-22]}
-             ] = actual
+             ] = vacation_assignments
     end
 
     test "internal dates are also taken into account" do
       group =
-        setup_week_quotas(
+        insert_round_with_employees_and_vacation(
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -363,21 +361,19 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
 
-      actual = Enum.sort_by(vacation_assignments, &{&1.employee_id, Date.to_erl(&1.start_date)})
-
       assert [
-               %{employee_id: "00001", start_date: ~D[2021-08-08]},
                %{employee_id: "00002", start_date: ~D[2021-08-01]},
+               %{employee_id: "00001", start_date: ~D[2021-08-08]},
                %{employee_id: "00002", start_date: ~D[2021-08-08]},
                %{employee_id: "00002", start_date: ~D[2021-08-15]},
                %{employee_id: "00003", start_date: ~D[2021-08-15]}
-             ] = actual
+             ] = vacation_assignments
     end
 
     test "with many employees, completes in a reasonable amount of time" do
       # worse case scenario: last employee must be forced into last (most-preferred) date
       group =
-        setup_week_quotas(
+        insert_round_with_employees_and_vacation(
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -438,7 +434,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
 
       last_assignment = Enum.at(vacation_assignments, -1)
-      assert %{employee_id: "00026", start_date: ~D[2021-10-21]} = last_assignment
+      assert %{employee_id: "00024", start_date: ~D[2021-10-14]} = last_assignment
     end
 
     test "Returns an error if no possible forcing solution found" do
@@ -486,76 +482,5 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       assert {:error, :no_possible_assignments_remaining} == vacation_assignments
     end
-  end
-
-  defp setup_week_quotas(start_date_to_quota, employee_to_date_quotas, existing_vacation) do
-    dates = Enum.sort_by(Map.keys(start_date_to_quota), &Date.to_erl/1)
-    employee_count = map_size(employee_to_date_quotas)
-
-    start_date = Enum.at(dates, 0)
-    end_date = Enum.at(dates, -1)
-    unique_int = :erlang.unique_integer()
-    round_id = "round_#{unique_int}"
-    process_id = "process_#{unique_int}"
-    group_number = 1
-
-    insert_round_with_employees(
-      %{
-        round_id: round_id,
-        process_id: process_id,
-        rank: group_number,
-        round_opening_date: Date.add(start_date, -180),
-        round_closing_date: Date.add(start_date, -165),
-        rating_period_start_date: start_date,
-        rating_period_end_date: Date.add(end_date, 6)
-      },
-      %{
-        employee_count: employee_count,
-        group_size: employee_count
-      }
-    )
-
-    for {week_start, quota} <- start_date_to_quota do
-      insert!(:division_vacation_week_quota, %{
-        start_date: week_start,
-        end_date: Date.add(week_start, 6),
-        quota: quota
-      })
-    end
-
-    for {employee_id, quota} <- employee_to_date_quotas do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          employee_id: employee_id,
-          weekly_quota: quota,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 2400 * quota
-        }
-      )
-    end
-
-    for {employee_id, vacation_selections} <- existing_vacation,
-        week_start <- vacation_selections do
-      insert!(
-        :employee_vacation_selection,
-        %{
-          employee_id: employee_id,
-          status: :assigned,
-          start_date: week_start,
-          end_date: Date.add(week_start, 6)
-        }
-      )
-    end
-
-    %{
-      round_id: round_id,
-      process_id: process_id,
-      group_number: group_number
-    }
   end
 end

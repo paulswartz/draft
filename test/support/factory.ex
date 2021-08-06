@@ -206,4 +206,99 @@ defmodule Draft.Factory do
       end)
     end)
   end
+
+  @doc """
+  Given a map of dates => quota, a map of employee_id => quota, and a map of
+  employee_id => list of existing vacation dates, creates a round/group and
+  the relevant quotas.  Returns a map suitable for passing to
+  Draft.GenerateVacationDistribution.Forced.generate_for_group/1.
+  """
+  @spec insert_round_with_employees_and_vacation(
+          %{Date.t() => pos_integer()},
+          %{String.t() => pos_integer()},
+          %{String.t() => [Date.t()]}
+        ) :: %{round_id: String.t(), process_id: String.t(), group_number: pos_integer()}
+  def insert_round_with_employees_and_vacation(
+        start_date_to_quota,
+        employee_to_date_quota,
+        existing_vacation
+      ) do
+    dates = Enum.sort_by(Map.keys(start_date_to_quota), &Date.to_erl/1)
+    employee_count = map_size(employee_to_date_quota)
+
+    start_date = Enum.at(dates, 0)
+    end_date = Enum.at(dates, -1)
+    unique_int = :erlang.unique_integer([:positive])
+    round_id = "round_#{unique_int}"
+    process_id = "process_#{unique_int}"
+
+    insert_round_with_employees(
+      %{
+        round_id: round_id,
+        process_id: process_id,
+        rank: 1,
+        round_opening_date: Date.add(start_date, -180),
+        round_closing_date: Date.add(start_date, -165),
+        rating_period_start_date: start_date,
+        rating_period_end_date: Date.add(end_date, 6)
+      },
+      %{
+        employee_count: employee_count,
+        group_size: employee_count
+      }
+    )
+
+    insert_week_quotas(start_date_to_quota)
+    insert_employee_quotas(employee_to_date_quota)
+    insert_vacation_selections(existing_vacation)
+
+    %{
+      round_id: round_id,
+      process_id: process_id,
+      group_number: 1
+    }
+  end
+
+  defp insert_week_quotas(start_date_to_quota) do
+    for {week_start, quota} <- start_date_to_quota do
+      insert!(:division_vacation_week_quota, %{
+        start_date: week_start,
+        end_date: Date.add(week_start, 6),
+        quota: quota
+      })
+    end
+  end
+
+  defp insert_employee_quotas(employee_to_date_quotas) do
+    for {employee_id, quota} <- employee_to_date_quotas do
+      insert!(
+        :employee_vacation_quota,
+        %{
+          employee_id: employee_id,
+          weekly_quota: quota,
+          dated_quota: 0,
+          restricted_week_quota: 0,
+          available_after_date: nil,
+          available_after_weekly_quota: nil,
+          available_after_dated_quota: 0,
+          maximum_minutes: 2400 * quota
+        }
+      )
+    end
+  end
+
+  defp insert_vacation_selections(existing_vacation) do
+    for {employee_id, vacation_selections} <- existing_vacation,
+        week_start <- vacation_selections do
+      insert!(
+        :employee_vacation_selection,
+        %{
+          employee_id: employee_id,
+          status: :assigned,
+          start_date: week_start,
+          end_date: Date.add(week_start, 6)
+        }
+      )
+    end
+  end
 end
