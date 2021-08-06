@@ -9,7 +9,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   alias Draft.VacationDistribution
   require Logger
 
-  @type acc_vacation_distributions() :: %{Date.t() => MapSet.t(VacationDistribution.t())}
+  @type acc_vacation_distributions() :: {%{Date.t() => pos_integer}, [VacationDistribution.t()]}
 
   @type evaluation_strategy ::
           :evaluate_until_first_solution_found | :evaluate_all_possible_solutions
@@ -65,7 +65,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
         |> get_all_operators_in_or_after_group()
         |> Enum.map(&calculated_quota(round, &1, :week))
 
-      acc = %{}
+      acc = {%{}, []}
       memo = :ets.new(:memo, [:set, :private])
       dists = generate_distributions(round, employee_quotas, acc, memo)
 
@@ -153,14 +153,18 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     # have, then we don't need to do it again.
     key = {first_employee.employee_id, counts}
     hashed_key = :erlang.phash2(key)
+
     cond do
       :ets.member(memo, hashed_key) ->
         []
+
       possible_assignments == [] ->
         :ets.insert(memo, {hashed_key})
         []
+
       true ->
         :ets.insert(memo, {hashed_key})
+
         possible_assignment_permutations =
           permutations_take(possible_assignments, first_employee.remaining_quota)
 
@@ -174,19 +178,10 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
   @spec add_distribution_to_acc(VacationDistribution.t(), acc_vacation_distributions()) ::
           acc_vacation_distributions()
-  defp add_distribution_to_acc(new_distribution, acc_vacation_to_distribute) do
+  defp add_distribution_to_acc(new_distribution, {counts, distributions}) do
     start_date = new_distribution.start_date
-
-    case acc_vacation_to_distribute do
-      %{^start_date => all_assignments_for_date} ->
-        %{
-          acc_vacation_to_distribute
-          | start_date => MapSet.put(all_assignments_for_date, new_distribution)
-        }
-
-      map ->
-        Map.put(map, start_date, MapSet.new([new_distribution]))
-    end
+    counts = Map.update(counts, start_date, 1, fn x -> x + 1 end)
+    {counts, [new_distribution | distributions]}
   end
 
   @spec calculated_quota(
@@ -214,7 +209,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
     max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), balance.weekly_quota)
-    available_quota = Draft.DivisionVacationWeekQuota.available_quota(round, employee)
+    available_quota = DivisionVacationWeekQuota.available_quota(round, employee)
 
     %{
       employee_id: employee.employee_id,
@@ -241,40 +236,34 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          :week = interval_type,
          distributions_not_reflected_in_quota
        ) do
-    employee.available_quota
-    |> Enum.map(fn original_quota ->
-      %DivisionVacationWeekQuota{
-        original_quota
-        | quota:
-            original_quota.quota -
-              Map.get(distributions_not_reflected_in_quota, original_quota.start_date, 0)
-      }
-    end)
-    |> Enum.filter(fn q -> q.quota > 0 end)
-    |> Enum.map(fn q ->
-      %VacationDistribution{
-        employee_id: employee.employee_id,
-        interval_type: interval_type,
-        start_date: q.start_date,
-        end_date: q.end_date
-      }
+    Enum.flat_map(employee.available_quota, fn q ->
+      quota = q.quota - Map.get(distributions_not_reflected_in_quota, q.start_date, 0)
+
+      if quota > 0 do
+        [
+          %VacationDistribution{
+            employee_id: employee.employee_id,
+            interval_type: interval_type,
+            start_date: q.start_date,
+            end_date: q.end_date
+          }
+        ]
+      else
+        []
+      end
     end)
   end
 
   @spec count_by_start_date(acc_vacation_distributions()) :: %{Date.t() => integer()}
-  defp count_by_start_date(acc_vacation_to_distriubte) do
-    Map.new(acc_vacation_to_distriubte, fn {start_date, distributions} ->
-      {start_date, MapSet.size(distributions)}
-    end)
+  defp count_by_start_date({counts, _distributions}) do
+    counts
   end
 
   @spec distributions_from_acc_vacation(acc_vacation_distributions()) :: [
           VacationDistribution.t()
         ]
-  defp distributions_from_acc_vacation(acc_vacation_to_distribute) do
-    Enum.flat_map(acc_vacation_to_distribute, fn {_start_date, distributions} ->
-      distributions
-    end)
+  defp distributions_from_acc_vacation({_counts, distributions}) do
+    distributions
   end
 
   @spec permutations_take(list(), non_neg_integer()) :: Enumerable.t()
@@ -316,7 +305,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     case list do
       [solution] ->
-        {:ok, solution}
+        {:ok, Enum.sort_by(solution, &{Date.to_erl(&1.start_date), &1.employee_id})}
 
       _no_solution ->
         {:error, :no_possible_assignments_remaining}
