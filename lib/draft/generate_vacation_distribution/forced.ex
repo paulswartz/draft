@@ -204,9 +204,11 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           Draft.EmployeeRanking.t(),
           Draft.IntervalType.t()
         ) :: calculated_employee_quota()
-  # Get the given employee's vacation quota for the specified interval type. This currently only
-  # returns information about their whole-unit quota (no partial) In the future it could contain
-  # information about their minimum quota and maximum desired quota
+  # Get the given employee's vacation quota for the specified interval type.
+  # The list of available vacation quota to this employee is sorted according to their latest
+  # vacation preferences, or descending by start_date when no preference found (latest date first)
+  # This currently only returns information about their whole-unit quota (no partial).
+  # In the future it could return information about their minimum quota and maximum desired quota
   # (a preference that is user-set).
   defp calculated_quota(round, employee, :week = interval_type) do
     balance =
@@ -224,7 +226,9 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
     max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), balance.weekly_quota)
-    available_quota = DivisionVacationWeekQuota.available_quota(round, employee)
+
+    available_quota =
+      DivisionVacationWeekQuota.available_quota_with_preference_rank(round, employee)
 
     %{
       employee_id: employee.employee_id,
@@ -239,7 +243,9 @@ defmodule Draft.GenerateVacationDistribution.Forced do
               employee_id: employee.employee_id,
               interval_type: interval_type,
               start_date: q.start_date,
-              end_date: q.end_date
+              end_date: q.end_date,
+              forced: true,
+              preference_rank: q.preference_rank
             }
           }
         end)

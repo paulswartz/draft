@@ -137,4 +137,71 @@ defmodule Draft.DivisionVacationWeekQuota do
           s.employee_id == ^employee_id and
           s.status == :assigned
   end
+
+  @spec available_quota_with_preference_rank(Draft.BidRound.t(), %{
+          required(:employee_id) => String.t(),
+          required(:job_class) => String.t(),
+          optional(atom()) => any()
+        }) :: [
+          %{
+            start_date: Date.t(),
+            end_date: Date.t(),
+            quota: non_neg_integer(),
+            preference_rank: pos_integer() | nil
+          }
+        ]
+  @doc """
+  Get all vacation weeks that are available for the given employee, based on their job class, the available quota for their division, and their previously selected vacation time.
+  Available weeks are returned sorted first based on their latest preferences, so their most
+  preferred week would be first. Any available weeks that the employee has not marked as a
+  preference will be returned sorted by descending start date (latest date first)
+  """
+  def available_quota_with_preference_rank(round, employee) do
+    employee_preferences =
+      Draft.EmployeeVacationPreferenceSet.latest_preferences(
+        round.process_id,
+        round.round_id,
+        employee.employee_id,
+        :week
+      )
+
+    round
+    |> available_quota(employee)
+    |> Enum.map(
+      &%{
+        start_date: &1.start_date,
+        end_date: &1.end_date,
+        quota: &1.quota,
+        preference_rank: Map.get(employee_preferences, &1.start_date)
+      }
+    )
+    |> Enum.sort(&compare_pref_asc_start_desc(&1, &2))
+  end
+
+  # Return true if week1 should preceed  week2, otherwise false.
+  defp compare_pref_asc_start_desc(week1, week2)
+
+  defp compare_pref_asc_start_desc(%{preference_rank: preference_rank1}, %{
+         preference_rank: preference_rank2
+       })
+       when preference_rank1 < preference_rank2 do
+    true
+  end
+
+  defp compare_pref_asc_start_desc(
+         %{preference_rank: preference_rank1, start_date: start_date_1},
+         %{preference_rank: preference_rank2, start_date: start_date_2}
+       )
+       when preference_rank1 == preference_rank2 do
+    # if start_date_1 > start_date_2, start_date_1 should precede start_date_2 to achieve
+    # descending sort
+    Date.compare(start_date_1, start_date_2) == :gt
+  end
+
+  defp compare_pref_asc_start_desc(%{preference_rank: preference_rank1}, %{
+         preference_rank: preference_rank2
+       })
+       when preference_rank1 > preference_rank2 do
+    false
+  end
 end

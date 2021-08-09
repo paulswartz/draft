@@ -539,5 +539,49 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       assert vacation_assignments == :error
     end
+
+    test "Assigns employee their top preference when possible" do
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 1,
+            ~D[2021-08-08] => 1
+          },
+          %{
+            "00001" => 1,
+            "00002" => 1
+          },
+          %{}
+        )
+
+      first_preference_set = %Draft.EmployeeVacationPreferenceSet{
+        process_id: group.process_id,
+        round_id: group.round_id,
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-08-01],
+            end_date: ~D[2021-08-07],
+            rank: 1,
+            interval_type: :week
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(first_preference_set)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Forced.generate_for_group(%{
+          round_id: group.round_id,
+          process_id: group.process_id,
+          group_number: group.group_number
+        })
+
+      assert {:ok,
+              [
+                %{employee_id: "00001", start_date: ~D[2021-08-01], preference_rank: 1},
+                %{employee_id: "00002", start_date: ~D[2021-08-08], preference_rank: nil}
+              ]} = vacation_assignments
+    end
   end
 end

@@ -14,7 +14,7 @@ defmodule DraftWeb.API.VacationPreferenceController do
       |> Draft.EmployeePickOverview.get_latest()
 
     latest_preferences =
-      EmployeeVacationPreferenceSet.get_latest_preferences(
+      EmployeeVacationPreferenceSet.latest_preference_set(
         pick_overview.process_id,
         pick_overview.round_id,
         pick_overview.employee_id
