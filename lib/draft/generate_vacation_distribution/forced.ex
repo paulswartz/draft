@@ -11,9 +11,6 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
   @type acc_vacation_distributions() :: {%{Date.t() => pos_integer}, [VacationDistribution.t()]}
 
-  @type evaluation_strategy ::
-          :evaluate_until_first_solution_found | :evaluate_all_possible_solutions
-
   @type calculated_employee_quota() :: %{
           remaining_quota: integer(),
           available_quota: [%{start_date: Date.t(), quota: non_neg_integer()}],
@@ -21,28 +18,22 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           job_class: String.t()
         }
 
-  @spec generate_for_group(
-          %{
-            round_id: String.t(),
-            process_id: String.t(),
-            group_number: integer()
-          },
-          evaluation_strategy()
-        ) :: {:ok, [VacationDistribution.t()]} | {:error, any()}
+  @spec generate_for_group(%{
+          round_id: String.t(),
+          process_id: String.t(),
+          group_number: integer()
+        }) :: {:ok, [VacationDistribution.t()]} | :error
   @doc """
   Generate vacation assignments that force all employees in the given group (and all remaining
   groups after them) to use all of their remaining full vacation weeks. Assignments are made in
   seniority order, so the most senior operator is awarded vacation as long as it is possible
   force all remaining operators to use all their vacation time.
   """
-  def generate_for_group(
-        %{
-          round_id: round_id,
-          process_id: process_id,
-          group_number: group_number
-        },
-        evaluation_strategy \\ :evaluate_until_first_solution_found
-      ) do
+  def generate_for_group(%{
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number
+      }) do
     Logger.info("Starting Distribution generation: #{inspect(DateTime.utc_now())}")
 
     group =
@@ -66,19 +57,26 @@ defmodule Draft.GenerateVacationDistribution.Forced do
         |> Enum.map(&calculated_quota(round, &1, :week))
 
       acc = {%{}, []}
-      memo = :ets.new(:memo, [:set, :private])
-      dists = generate_distributions(round, employee_quotas, acc, memo)
+      memo = :ets.new(:memo, [:bag, :private])
+      result = generate_distributions(employee_quotas, acc, memo)
 
-      result = take_result(dists, evaluation_strategy)
       Logger.info("Finishing Distribution generation: #{inspect(DateTime.utc_now())}")
       # ensure we clean up the ETS table
       :ets.delete(memo)
-      result
+
+      if result do
+        {:ok, result}
+      else
+        :error
+      end
     else
-      {:error,
-       "No group found with round_id: #{round_id}, process_id: #{process_id}, group_number: #{
-         group_number
-       }"}
+      Logger.error(
+        "No group found with round_id: #{round_id}, process_id: #{process_id}, group_number: #{
+          group_number
+        }"
+      )
+
+      :error
     end
   end
 
@@ -96,38 +94,37 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     )
   end
 
-  # Generate vacation distributions for all specified employees.  Returns an
-  # Enumerable (really, a Stream) of unique distributions. If we only want
-  # one distribution (general case), then we can use Enum.take/2 to get the
-  # first one. If we want to see all the options, we can use the entire stream.
+  # Generate vacation distributions for all specified employees. For each
+  # employee, generate possible permutations of their vacation, assign each
+  # permutation and then recurse with the remaining employees. In addition,
+  # we keep track of each employee/vacation count we've seen in an ETS table:
+  # once we've seen a value we don't need to try it again.
   @spec generate_distributions(
-          Draft.BidRound.t(),
           [calculated_employee_quota()],
           acc_vacation_distributions(),
           :ets.tid()
-        ) :: Enumerable.t()
+        ) :: [VacationDistribution.t()] | nil
   defp generate_distributions(
-         round,
          employees,
          acc_vacation_to_distribute,
          memo
        )
 
   # Base case: No employees to distribute to - return the accumulated list of distributions.
-  defp generate_distributions(_round, [], acc_vacation_to_distribute, _memo) do
-    [distributions_from_acc_vacation(acc_vacation_to_distribute)]
+  defp generate_distributions([], acc_vacation_to_distribute, _memo) do
+    acc_vacation_to_distribute
+    |> distributions_from_acc_vacation()
+    |> Enum.sort_by(&{Date.to_erl(&1.start_date), &1.employee_id})
   end
 
   # Base case: nothing to distribute to first employee (empty quota), recurse
   # on all remaining employees
   defp generate_distributions(
-         round,
          [%{remaining_quota: 0} | remaining_employees],
          acc_vacation_to_distribute,
          memo
        ) do
     generate_distributions(
-      round,
       remaining_employees,
       acc_vacation_to_distribute,
       memo
@@ -141,7 +138,6 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # (and it's present in another assignment ordering) or it doesn't work (and
   # it's not worth trying again).
   defp generate_distributions(
-         round,
          [first_employee | remaining_employees],
          acc_vacation_to_distribute,
          memo
@@ -151,27 +147,29 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     # Check if we've already calculated a version of these possible
     # assignments, along with the counts of assignments made to days. If we
     # have, then we don't need to do it again.
-    key = {first_employee.employee_id, counts}
-    hashed_key = :erlang.phash2(key)
+    hashed_key = :erlang.phash2({first_employee.employee_id, counts})
 
     cond do
       :ets.member(memo, hashed_key) ->
-        []
+        nil
 
       possible_assignments == [] ->
         :ets.insert(memo, {hashed_key})
-        []
+        nil
 
       true ->
         :ets.insert(memo, {hashed_key})
 
         possible_assignment_permutations =
-          permutations_take(possible_assignments, first_employee.remaining_quota)
+          permutations_take(
+            possible_assignments,
+            first_employee.remaining_quota,
+            acc_vacation_to_distribute,
+            &add_distribution_to_acc/2
+          )
 
-        Stream.flat_map(possible_assignment_permutations, fn assignments ->
-          acc = Enum.reduce(assignments, acc_vacation_to_distribute, &add_distribution_to_acc/2)
-
-          generate_distributions(round, remaining_employees, acc, memo)
+        Enum.find_value(possible_assignment_permutations, nil, fn acc ->
+          generate_distributions(remaining_employees, acc, memo)
         end)
     end
   end
@@ -180,7 +178,13 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           acc_vacation_distributions()
   defp add_distribution_to_acc(new_distribution, {counts, distributions}) do
     start_date = new_distribution.start_date
-    counts = Map.update(counts, start_date, 1, fn x -> x + 1 end)
+
+    counts =
+      case counts do
+        %{^start_date => x} -> %{counts | start_date => x + 1}
+        _counts -> Map.put(counts, start_date, 1)
+      end
+
     {counts, [new_distribution | distributions]}
   end
 
@@ -236,22 +240,30 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          :week = interval_type,
          distributions_not_reflected_in_quota
        ) do
-    Enum.flat_map(employee.available_quota, fn q ->
-      quota = q.quota - Map.get(distributions_not_reflected_in_quota, q.start_date, 0)
+    :lists.filtermap(
+      fn q ->
+        start_date = q.start_date
 
-      if quota > 0 do
-        [
-          %VacationDistribution{
-            employee_id: employee.employee_id,
-            interval_type: interval_type,
-            start_date: q.start_date,
-            end_date: q.end_date
-          }
-        ]
-      else
-        []
-      end
-    end)
+        quota =
+          case distributions_not_reflected_in_quota do
+            %{^start_date => extra_vacation} -> q.quota - extra_vacation
+            _distributions -> q.quota
+          end
+
+        if quota > 0 do
+          {true,
+           %VacationDistribution{
+             employee_id: employee.employee_id,
+             interval_type: interval_type,
+             start_date: start_date,
+             end_date: q.end_date
+           }}
+        else
+          false
+        end
+      end,
+      employee.available_quota
+    )
   end
 
   @spec count_by_start_date(acc_vacation_distributions()) :: %{Date.t() => integer()}
@@ -266,62 +278,35 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     distributions
   end
 
-  @spec permutations_take(list(), non_neg_integer()) :: Enumerable.t()
+  @spec permutations_take(list(), non_neg_integer(), acc, (any(), acc -> acc)) ::
+          Enumerable.t()
+        when acc: any()
+
   @doc """
-  Returns an Enumerable of each permutation of a given list (keeping order) of length n.
+  Returns an Enumerable of each permutation of a given list of length n.
+
+  To create the return value, a function is called with the item and an
+  accumulator, returning the accumulator.
   """
-  def permutations_take(list, n)
+  def permutations_take(list, n, acc, fun)
 
-  def permutations_take(list, 0) when is_list(list) do
+  def permutations_take(list, 0, _acc, fun) when is_list(list) and is_function(fun, 2) do
     []
   end
 
-  def permutations_take([], n) when is_integer(n) and n >= 0 do
+  def permutations_take([], n, _acc, fun) when is_integer(n) and n >= 0 and is_function(fun, 2) do
     []
   end
 
-  def permutations_take(list, 1) when is_list(list) do
-    Enum.map(list, &[&1])
-  end
-
-  def permutations_take([first | rest], n) when is_integer(n) and n > 1 do
-    with_first = Stream.map(permutations_take(rest, n - 1), &[first | &1])
-    without_first = permutations_take(rest, n)
+  def permutations_take([first | rest], n, acc, fun)
+      when is_integer(n) and n > 1 and is_function(fun, 2) do
+    acc_with_first = fun.(first, acc)
+    with_first = permutations_take(rest, n - 1, acc_with_first, fun)
+    without_first = permutations_take(rest, n, acc, fun)
     Stream.concat(with_first, without_first)
   end
 
-  @spec take_result(Enumerable.t(), evaluation_strategy) ::
-          {:ok, [VacationDistribution.t()]} | {:error, any()}
-  defp take_result(dists, evaluation_strategy) do
-    list =
-      case evaluation_strategy do
-        :evaluate_until_first_solution_found ->
-          Enum.take(dists, 1)
-
-        :evaluate_all_possible_solutions ->
-          # iterate over the entire stream, but only keep the first option (if any)
-          reduce_keeping_first(dists)
-      end
-
-    case list do
-      [solution] ->
-        {:ok, Enum.sort_by(solution, &{Date.to_erl(&1.start_date), &1.employee_id})}
-
-      _no_solution ->
-        {:error, :no_possible_assignments_remaining}
-    end
-  end
-
-  @spec reduce_keeping_first(Enumerable.t()) :: [any()] | []
-  defp reduce_keeping_first(enum) do
-    Enum.reduce(enum, [], fn solution, acc ->
-      if acc == [] do
-        # haven't see a solution yet, keep the current one
-        [solution]
-      else
-        # already have a solution, don't need to keep track of any others
-        acc
-      end
-    end)
+  def permutations_take(list, 1, acc, fun) when is_list(list) and is_function(fun, 2) do
+    :lists.map(fn x -> fun.(x, acc) end, list)
   end
 end

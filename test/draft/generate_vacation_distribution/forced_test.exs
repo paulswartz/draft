@@ -10,12 +10,17 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       n = 2
 
       expected = [
-        [1, 2],
-        [1, 3],
-        [2, 3]
+        [2, 1],
+        [3, 1],
+        [3, 2]
       ]
 
-      actual = Enum.to_list(GenerateVacationDistribution.Forced.permutations_take(list, n))
+      actual =
+        Enum.to_list(
+          GenerateVacationDistribution.Forced.permutations_take(list, n, [], fn x, acc ->
+            [x | acc]
+          end)
+        )
 
       assert actual == expected
     end
@@ -26,7 +31,12 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       expected = []
 
-      actual = Enum.to_list(GenerateVacationDistribution.Forced.permutations_take(list, n))
+      actual =
+        Enum.to_list(
+          GenerateVacationDistribution.Forced.permutations_take(list, n, [], fn x, acc ->
+            [x | acc]
+          end)
+        )
 
       assert actual == expected
     end
@@ -480,7 +490,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           group_number: 1
         })
 
-      assert {:error, :no_possible_assignments_remaining} == vacation_assignments
+      assert vacation_assignments == :error
     end
   end
 end
