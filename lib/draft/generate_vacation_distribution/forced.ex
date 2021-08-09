@@ -9,13 +9,20 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   alias Draft.VacationDistribution
   require Logger
 
-  @type acc_vacation_distributions() :: {%{Date.t() => pos_integer}, [VacationDistribution.t()]}
+  @type gregorian_date :: pos_integer()
+  @type acc_vacation_distributions() ::
+          {%{gregorian_date() => pos_integer()}, [VacationDistribution.t()]}
 
   @type calculated_employee_quota() :: %{
           remaining_quota: integer(),
-          available_quota: [%{start_date: Date.t(), quota: non_neg_integer()}],
-          employee_id: String.t(),
-          job_class: String.t()
+          available_quota: [
+            %{
+              start_date: gregorian_date(),
+              quota: non_neg_integer(),
+              distribution: VacationDistribution.t()
+            }
+          ],
+          employee_id: String.t()
         }
 
   @spec generate_for_group(%{
@@ -143,7 +150,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          memo
        ) do
     counts = count_by_start_date(acc_vacation_to_distribute)
-    possible_assignments = all_vacation_available_to_employee(first_employee, :week, counts)
+    possible_assignments = all_vacation_available_to_employee(first_employee, counts)
     # Check if we've already calculated a version of these possible
     # assignments, along with the counts of assignments made to days. If we
     # have, then we don't need to do it again.
@@ -174,16 +181,19 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     end
   end
 
+  @compile {:inline, add_distribution_to_acc: 2}
   @spec add_distribution_to_acc(VacationDistribution.t(), acc_vacation_distributions()) ::
           acc_vacation_distributions()
   defp add_distribution_to_acc(new_distribution, {counts, distributions}) do
     start_date = new_distribution.start_date
 
-    counts =
+    new_count =
       case counts do
-        %{^start_date => x} -> %{counts | start_date => x + 1}
-        _counts -> Map.put(counts, start_date, 1)
+        %{^start_date => x} -> x + 1
+        _counts -> 1
       end
+
+    counts = Map.put(counts, start_date, new_count)
 
     {counts, [new_distribution | distributions]}
   end
@@ -197,7 +207,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # returns information about their whole-unit quota (no partial) In the future it could contain
   # information about their minimum quota and maximum desired quota
   # (a preference that is user-set).
-  defp calculated_quota(round, employee, :week) do
+  defp calculated_quota(round, employee, :week = interval_type) do
     balance =
       Repo.one!(
         from q in Draft.EmployeeVacationQuota,
@@ -217,17 +227,29 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     %{
       employee_id: employee.employee_id,
-      job_class: employee.job_class,
+      # job_class: employee.job_class,
       remaining_quota: max_weeks,
-      available_quota: available_quota
+      available_quota:
+        Enum.map(available_quota, fn q ->
+          %{
+            start_date: Date.to_gregorian_days(q.start_date),
+            quota: q.quota,
+            distribution: %VacationDistribution{
+              employee_id: employee.employee_id,
+              interval_type: interval_type,
+              start_date: q.start_date,
+              end_date: q.end_date
+            }
+          }
+        end)
     }
   end
 
+  @compile {:inline, all_vacation_available_to_employee: 2}
   @spec all_vacation_available_to_employee(
           calculated_employee_quota(),
-          Draft.IntervalTypeEnum.t(),
           %{
-            Date.t() => integer()
+            gregorian_date() => integer()
           }
         ) :: [VacationDistribution.t()]
   # Get all vacation available to the given employee,
@@ -237,36 +259,21 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # (the latest possible vacation will be first in the list)
   defp all_vacation_available_to_employee(
          employee,
-         :week = interval_type,
          distributions_not_reflected_in_quota
        ) do
-    :lists.filtermap(
-      fn q ->
-        start_date = q.start_date
-
-        quota =
-          case distributions_not_reflected_in_quota do
-            %{^start_date => extra_vacation} -> q.quota - extra_vacation
-            _distributions -> q.quota
-          end
-
-        if quota > 0 do
-          {true,
-           %VacationDistribution{
-             employee_id: employee.employee_id,
-             interval_type: interval_type,
-             start_date: start_date,
-             end_date: q.end_date
-           }}
-        else
-          false
+    :lists.filter(
+      fn %{start_date: start_date, quota: quota} ->
+        case distributions_not_reflected_in_quota do
+          %{^start_date => extra_vacation} -> quota > extra_vacation
+          _distributions -> true
         end
       end,
       employee.available_quota
     )
   end
 
-  @spec count_by_start_date(acc_vacation_distributions()) :: %{Date.t() => integer()}
+  @compile {:inline, count_by_start_date: 1}
+  @spec count_by_start_date(acc_vacation_distributions()) :: %{gregorian_date() => integer()}
   defp count_by_start_date({counts, _distributions}) do
     counts
   end
@@ -275,7 +282,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           VacationDistribution.t()
         ]
   defp distributions_from_acc_vacation({_counts, distributions}) do
-    distributions
+    Enum.map(distributions, & &1.distribution)
   end
 
   @spec permutations_take(list(), non_neg_integer(), acc, (any(), acc -> acc)) ::
