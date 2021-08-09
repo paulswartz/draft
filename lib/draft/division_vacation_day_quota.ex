@@ -88,24 +88,60 @@ defmodule Draft.DivisionVacationDayQuota do
   def available_quota(round, employee) do
     selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
 
-    conflicting_selected_dates_query =
-      from s in Draft.EmployeeVacationSelection,
-        where:
-          s.start_date <= parent_as(:division_day_quota).date and
-            s.end_date >= parent_as(:division_day_quota).date and
-            s.employee_id == ^employee.employee_id and
-            s.status == :assigned
+    quotas =
+      Repo.all(
+        from d in Draft.DivisionVacationDayQuota,
+          as: :division_day_quota,
+          where:
+            d.division_id == ^round.division_id and d.quota > 0 and
+              d.employee_selection_set == ^selection_set and
+              d.date >= ^round.rating_period_start_date and
+              d.date <= ^round.rating_period_end_date and
+              not exists(conflicting_selected_dates_for_employee(employee)),
+          order_by: [desc: d.date]
+      )
 
-    Repo.all(
-      from d in Draft.DivisionVacationDayQuota,
-        as: :division_day_quota,
-        where:
-          d.division_id == ^round.division_id and d.quota > 0 and
-            d.employee_selection_set == ^selection_set and
-            d.date >= ^round.rating_period_start_date and
-            d.date <= ^round.rating_period_end_date and
-            not exists(conflicting_selected_dates_query),
-        order_by: [desc: d.date]
-    )
+    filter_cancelled_quotas(quotas, employee)
+  end
+
+  @spec conflicting_selected_dates_for_employee(Draft.EmployeeRanking.t()) :: Ecto.Queryable.t()
+  defp conflicting_selected_dates_for_employee(employee) do
+    from s in Draft.EmployeeVacationSelection,
+      where:
+        s.start_date <= parent_as(:division_day_quota).date and
+          s.end_date >= parent_as(:division_day_quota).date and
+          s.employee_id == ^employee.employee_id and
+          s.status == :assigned
+  end
+
+  @spec filter_cancelled_quotas([t()], Draft.EmployeeRanking.t()) :: [t()]
+  defp filter_cancelled_quotas([], _employee) do
+    []
+  end
+
+  defp filter_cancelled_quotas(quotas, employee) do
+    [d | _] = quotas
+    {%{date: start_date}, %{date: end_date}} = Enum.min_max_by(quotas, &Date.to_erl(&1.date))
+
+    cancelled_dates =
+      Repo.all(
+        from s in Draft.EmployeeVacationSelection,
+          where:
+            s.start_date >= ^start_date and s.end_date <= ^end_date and
+              s.division_id == ^d.division_id and
+              s.employee_id != ^employee.employee_id and s.status == :cancelled,
+          select: [:start_date, :end_date]
+      )
+
+    cancelled_date_counts =
+      cancelled_dates
+      |> Enum.flat_map(fn s -> Date.range(s.start_date, s.end_date) end)
+      |> Enum.frequencies()
+
+    for quota <- quotas,
+        cancelled_count = Map.get(cancelled_date_counts, quota.date, 0),
+        quota.quota > cancelled_count do
+      %{quota | quota: quota.quota - cancelled_count}
+    end
   end
 end
