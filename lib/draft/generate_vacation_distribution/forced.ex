@@ -149,12 +149,13 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          acc_vacation_to_distribute,
          memo
        ) do
+    %{employee_id: employee_id} = first_employee
     counts = count_by_start_date(acc_vacation_to_distribute)
     possible_assignments = all_vacation_available_to_employee(first_employee, counts)
     # Check if we've already calculated a version of these possible
     # assignments, along with the counts of assignments made to days. If we
     # have, then we don't need to do it again.
-    hashed_key = :erlang.phash2({first_employee.employee_id, counts})
+    hashed_key = :erlang.phash2({employee_id, counts})
 
     cond do
       :ets.member(memo, hashed_key) ->
@@ -185,7 +186,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   @spec add_distribution_to_acc(VacationDistribution.t(), acc_vacation_distributions()) ::
           acc_vacation_distributions()
   defp add_distribution_to_acc(new_distribution, {counts, distributions}) do
-    start_date = new_distribution.start_date
+    %{start_date: start_date} = new_distribution
 
     new_count =
       case counts do
