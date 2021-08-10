@@ -29,4 +29,20 @@ defmodule Draft.JobClassHelpersTest do
       assert pt == JobClassHelpers.get_selection_set("000900")
     end
   end
+
+  describe "job_classes_of_selection_set/1" do
+    test "correct job_classes_returned for full time" do
+      assert Enum.sort(JobClassHelpers.job_classes_of_selection_set("FTVacQuota")) == [
+               "000100",
+               "000300",
+               "000800"
+             ]
+
+      assert Enum.sort(JobClassHelpers.job_classes_of_selection_set("PTVacQuota")) == [
+               "000200",
+               "000900",
+               "001100"
+             ]
+    end
+  end
 end

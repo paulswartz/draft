@@ -23,6 +23,16 @@ defmodule Draft.JobClassHelpers do
     @job_class_to_selection_set[job_class]
   end
 
+  @spec job_classes_of_selection_set(String.t()) :: Enumerable.t()
+  @doc """
+  Get the job classes which meet a given selection set identifier.
+  """
+  def job_classes_of_selection_set(selection_set) do
+    for {job_class, ^selection_set} <- @job_class_to_selection_set do
+      job_class
+    end
+  end
+
   @spec pt_or_ft(String.t()) :: :ft | :pt
   @doc """
   Determine if the given job class is categorized as part time or full time
