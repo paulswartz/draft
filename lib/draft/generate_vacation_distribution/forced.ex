@@ -301,36 +301,34 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     permutations_take_internal(list, l, n, acc, fun)
   end
 
-  defp permutations_take_internal(_list, _l, 0, _acc, _fun) do
-    []
-  end
-
-  defp permutations_take_internal([], _l, _n, _acc, _fun) do
-    []
-  end
-
-  defp permutations_take_internal([first | rest], l, n, acc, fun) when n > 1 do
+  defp permutations_take_internal([first | rest], l, n, acc, fun) when n > 1 and l > n do
     acc_with_first = fun.(first, acc)
     with_first = permutations_take_internal(rest, l - 1, n - 1, acc_with_first, fun)
 
-    without_first =
-      if l == n do
-        # need to take every item, so we don't need to bother trying the cases
-        # where we don't use the first item
-        []
-      else
-        permutations_take_internal(rest, l - 1, n, acc, fun)
-      end
+    if with_first == [] do
+      []
+    else
+      without_first = permutations_take_internal(rest, l - 1, n, acc, fun)
 
-    case {with_first, without_first} do
-      {[], []} -> []
-      {[], other} -> other
-      {other, []} -> other
-      {with_first, without_first} -> Stream.concat(with_first, without_first)
+      if without_first == [] do
+        with_first
+      else
+        Stream.concat(with_first, without_first)
+      end
     end
   end
 
   defp permutations_take_internal(list, _l, 1, acc, fun) do
+    # permutations of length 1 is taking each item
     :lists.map(&fun.(&1, acc), list)
+  end
+
+  defp permutations_take_internal(list, l, l, acc, fun) do
+    # only permutation is taking each item
+    [:lists.foldl(fun, acc, list)]
+  end
+
+  defp permutations_take_internal(_list, _l, _n, _acc, _fun) do
+    []
   end
 end
