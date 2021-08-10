@@ -296,24 +296,41 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   accumulator, returning the accumulator.
   """
   def permutations_take(list, n, acc, fun)
+      when is_list(list) and is_integer(n) and n >= 0 and is_function(fun, 2) do
+    l = length(list)
+    permutations_take_internal(list, l, n, acc, fun)
+  end
 
-  def permutations_take(list, 0, _acc, fun) when is_list(list) and is_function(fun, 2) do
+  defp permutations_take_internal(_list, _l, 0, _acc, _fun) do
     []
   end
 
-  def permutations_take([], n, _acc, fun) when is_integer(n) and n >= 0 and is_function(fun, 2) do
+  defp permutations_take_internal([], _l, _n, _acc, _fun) do
     []
   end
 
-  def permutations_take([first | rest], n, acc, fun)
-      when is_integer(n) and n > 1 and is_function(fun, 2) do
+  defp permutations_take_internal([first | rest], l, n, acc, fun) when n > 1 do
     acc_with_first = fun.(first, acc)
-    with_first = permutations_take(rest, n - 1, acc_with_first, fun)
-    without_first = permutations_take(rest, n, acc, fun)
-    Stream.concat(with_first, without_first)
+    with_first = permutations_take_internal(rest, l - 1, n - 1, acc_with_first, fun)
+
+    without_first =
+      if l == n do
+        # need to take every item, so we don't need to bother trying the cases
+        # where we don't use the first item
+        []
+      else
+        permutations_take_internal(rest, l - 1, n, acc, fun)
+      end
+
+    case {with_first, without_first} do
+      {[], []} -> []
+      {[], other} -> other
+      {other, []} -> other
+      {with_first, without_first} -> Stream.concat(with_first, without_first)
+    end
   end
 
-  def permutations_take(list, 1, acc, fun) when is_list(list) and is_function(fun, 2) do
-    :lists.map(fn x -> fun.(x, acc) end, list)
+  defp permutations_take_internal(list, _l, 1, acc, fun) do
+    :lists.map(&fun.(&1, acc), list)
   end
 end

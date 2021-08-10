@@ -447,6 +447,52 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       assert %{employee_id: "00024", start_date: ~D[2021-10-14]} = last_assignment
     end
 
+    test "with few employees and larger quotas, completes in a reasonable amount of time" do
+      # worse case scenario: last employee must be forced into last (most-preferred) date
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 2,
+            ~D[2021-08-08] => 2,
+            ~D[2021-08-15] => 2,
+            ~D[2021-08-22] => 2,
+            ~D[2021-08-29] => 2,
+            ~D[2021-09-01] => 2,
+            ~D[2021-09-08] => 2,
+            ~D[2021-09-15] => 2,
+            ~D[2021-09-22] => 2,
+            ~D[2021-09-29] => 2,
+            ~D[2021-10-07] => 2,
+            ~D[2021-10-14] => 1
+          },
+          %{
+            "00001" => 6,
+            "00002" => 6,
+            "00003" => 6,
+            "00004" => 5
+          },
+          %{
+            "00004" => [
+              ~D[2021-08-01],
+              ~D[2021-08-08],
+              ~D[2021-08-15],
+              ~D[2021-08-22],
+              ~D[2021-08-29],
+              ~D[2021-09-01],
+              ~D[2021-09-08]
+            ]
+          }
+        )
+
+      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      # {:ok, {:ok, vacation_assignments}} =
+      #   :eprof.profile(fn -> GenerateVacationDistribution.Forced.generate_for_group(group) end)
+
+      # :eprof.analyze(:total, filter: [calls: 100])
+      assignments = Enum.filter(vacation_assignments, &(&1.employee_id == "00004"))
+      assert [_, _, _, _, %{start_date: ~D[2021-10-14]}] = assignments
+    end
+
     test "Returns an error if no possible forcing solution found" do
       insert_round_with_employees(
         %{
