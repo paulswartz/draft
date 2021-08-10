@@ -101,7 +101,7 @@ defmodule Draft.DivisionVacationDayQuota do
           order_by: [desc: d.date]
       )
 
-    filter_cancelled_quotas(quotas, employee)
+    filter_cancelled_quotas(quotas, employee, selection_set)
   end
 
   @spec conflicting_selected_dates_for_employee(Draft.EmployeeRanking.t()) :: Ecto.Queryable.t()
@@ -114,12 +114,12 @@ defmodule Draft.DivisionVacationDayQuota do
           s.status == :assigned
   end
 
-  @spec filter_cancelled_quotas([t()], Draft.EmployeeRanking.t()) :: [t()]
-  defp filter_cancelled_quotas([], _employee) do
+  @spec filter_cancelled_quotas([t()], Draft.EmployeeRanking.t(), String.t()) :: [t()]
+  defp filter_cancelled_quotas([], _employee, _selection_Set) do
     []
   end
 
-  defp filter_cancelled_quotas(quotas, employee) do
+  defp filter_cancelled_quotas(quotas, employee, selection_set) do
     [d | _] = quotas
     {%{date: start_date}, %{date: end_date}} = Enum.min_max_by(quotas, &Date.to_erl(&1.date))
 
@@ -129,6 +129,7 @@ defmodule Draft.DivisionVacationDayQuota do
           where:
             s.start_date >= ^start_date and s.end_date <= ^end_date and
               s.division_id == ^d.division_id and
+              s.job_class in ^Draft.JobClassHelpers.job_classes_of_selection_set(selection_set) and
               s.employee_id != ^employee.employee_id and s.status == :cancelled,
           select: [:start_date, :end_date]
       )
