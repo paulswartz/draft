@@ -490,10 +490,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         )
 
       {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
-      # {:ok, {:ok, vacation_assignments}} =
-      #   :eprof.profile(fn -> GenerateVacationDistribution.Forced.generate_for_group(group) end)
 
-      # :eprof.analyze(:total, filter: [calls: 100])
       assignments = Enum.filter(vacation_assignments, &(&1.employee_id == "00004"))
       assert [_, _, _, _, %{start_date: ~D[2021-10-14]}] = assignments
     end
