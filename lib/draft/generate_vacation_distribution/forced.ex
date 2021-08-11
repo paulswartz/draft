@@ -149,36 +149,40 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          acc_vacation_to_distribute,
          memo
        ) do
-    %{employee_id: employee_id} = first_employee
+    %{employee_id: employee_id, remaining_quota: remaining_quota} = first_employee
     counts = count_by_start_date(acc_vacation_to_distribute)
-    possible_assignments = all_vacation_available_to_employee(first_employee, counts)
     # Check if we've already calculated a version of these possible
     # assignments, along with the counts of assignments made to days. If we
     # have, then we don't need to do it again.
     hashed_key = :erlang.phash2({employee_id, counts})
 
-    cond do
-      :ets.member(memo, hashed_key) ->
-        nil
+    if :ets.member(memo, hashed_key) do
+      nil
+    else
+      :ets.insert(memo, {hashed_key})
+      possible_assignments = all_vacation_available_to_employee(first_employee, counts)
 
-      possible_assignments == [] ->
-        :ets.insert(memo, {hashed_key})
-        nil
+      possible_assignment_permutations =
+        permutations_take(
+          possible_assignments,
+          remaining_quota,
+          acc_vacation_to_distribute,
+          &add_distribution_to_acc/2
+        )
 
-      true ->
-        :ets.insert(memo, {hashed_key})
+      case possible_assignment_permutations do
+        [] ->
+          nil
 
-        possible_assignment_permutations =
-          permutations_take(
-            possible_assignments,
-            first_employee.remaining_quota,
-            acc_vacation_to_distribute,
-            &add_distribution_to_acc/2
-          )
-
-        Enum.find_value(possible_assignment_permutations, nil, fn acc ->
+        [acc] ->
+          # only one possibility
           generate_distributions(remaining_employees, acc, memo)
-        end)
+
+        possible_assignment_permutations ->
+          Enum.find_value(possible_assignment_permutations, nil, fn acc ->
+            generate_distributions(remaining_employees, acc, memo)
+          end)
+      end
     end
   end
 
