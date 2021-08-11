@@ -9,19 +9,14 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   alias Draft.VacationDistribution
   require Logger
 
-  @type gregorian_date :: pos_integer()
+  @type gregorian_date() :: pos_integer()
+  @type available_quota() :: {gregorian_date(), non_neg_integer(), VacationDistribution.t()}
   @type acc_vacation_distributions() ::
           {%{gregorian_date() => pos_integer()}, [VacationDistribution.t()]}
 
   @type calculated_employee_quota() :: %{
           remaining_quota: integer(),
-          available_quota: [
-            %{
-              start_date: gregorian_date(),
-              quota: non_neg_integer(),
-              distribution: VacationDistribution.t()
-            }
-          ],
+          available_quota: [available_quota()],
           employee_id: String.t()
         }
 
@@ -187,10 +182,13 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   end
 
   @compile {:inline, add_distribution_to_acc: 2}
-  @spec add_distribution_to_acc(VacationDistribution.t(), acc_vacation_distributions()) ::
+  @spec add_distribution_to_acc(
+          available_quota(),
           acc_vacation_distributions()
-  defp add_distribution_to_acc(new_distribution, {counts, distributions}) do
-    %{start_date: start_date} = new_distribution
+        ) ::
+          acc_vacation_distributions()
+  defp add_distribution_to_acc(available_quota, {counts, distributions}) do
+    {start_date, _quota, distribution} = available_quota
 
     new_count =
       case counts do
@@ -200,7 +198,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     counts = Map.put(counts, start_date, new_count)
 
-    {counts, [new_distribution | distributions]}
+    {counts, [distribution | distributions]}
   end
 
   @spec calculated_quota(
@@ -244,10 +242,10 @@ defmodule Draft.GenerateVacationDistribution.Forced do
       remaining_quota: max_weeks,
       available_quota:
         Enum.map(available_quota, fn q ->
-          %{
-            start_date: Date.to_gregorian_days(q.start_date),
-            quota: q.quota,
-            distribution: %VacationDistribution{
+          {
+            Date.to_gregorian_days(q.start_date),
+            q.quota,
+            %VacationDistribution{
               employee_id: employee.employee_id,
               interval_type: interval_type,
               start_date: q.start_date,
@@ -277,7 +275,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          distributions_not_reflected_in_quota
        ) do
     :lists.filter(
-      fn %{start_date: start_date, quota: quota} ->
+      fn {start_date, quota, _distribution} ->
         case distributions_not_reflected_in_quota do
           %{^start_date => extra_vacation} -> quota > extra_vacation
           _distributions -> true
@@ -297,7 +295,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           VacationDistribution.t()
         ]
   defp distributions_from_acc_vacation({_counts, distributions}) do
-    Enum.map(distributions, & &1.distribution)
+    distributions
   end
 
   @spec permutations_take(list(), non_neg_integer(), acc, (any(), acc -> acc)) ::
