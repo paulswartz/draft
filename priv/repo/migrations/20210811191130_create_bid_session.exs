@@ -18,7 +18,7 @@ defmodule Draft.Repo.Migrations.CreateBidSession do
       add :booking_id, :string
 
       add :type, :string
-      add :type_alowed, :string
+      add :type_allowed, :string
       add :service_context, :string
       add :scheduling_unit, :string
       add :division_id, :string

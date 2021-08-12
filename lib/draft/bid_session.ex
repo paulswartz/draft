@@ -14,7 +14,7 @@ defmodule Draft.BidSession do
           session_id: String.t(),
           booking_id: String.t(),
           type: Draft.BidTypeEnum.t(),
-          type_alowed: Draft.IntervalTypeEnum.t() | nil,
+          type_allowed: Draft.IntervalTypeEnum.t() | nil,
           service_context: String.t() | nil,
           scheduling_unit: String.t() | nil,
           division_id: String.t(),
@@ -23,13 +23,13 @@ defmodule Draft.BidSession do
         }
 
   @primary_key false
-  schema "bid_groups" do
+  schema "bid_sessions" do
     field :process_id, :string, primary_key: true
     field :round_id, :string, primary_key: true
     field :session_id, :string, primary_key: true
     field :booking_id, :string
     field :type, Draft.BidTypeEnum
-    field :type_alowed, Draft.IntervalTypeEnum
+    field :type_allowed, Draft.IntervalTypeEnum
     field :service_context, :string
     field :scheduling_unit, :string
     field :division_id, :string
@@ -68,7 +68,7 @@ defmodule Draft.BidSession do
       session_id: session_id,
       booking_id: booking_id,
       type: Draft.BidTypeEnum.from_hastus(type),
-      type_alowed: type_allowed_enum,
+      type_allowed: type_allowed_enum,
       service_context: service_context,
       scheduling_unit: scheduling_unit,
       division_id: division_id,

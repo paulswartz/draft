@@ -7,6 +7,7 @@ defmodule Draft.BidProcessSetup do
 
   alias Draft.BidGroup
   alias Draft.BidRound
+  alias Draft.BidSession
   alias Draft.EmployeeRanking
   alias Draft.Parsable
   alias Draft.ParsingHelpers
@@ -36,7 +37,7 @@ defmodule Draft.BidProcessSetup do
     Repo.transaction(fn ->
       delete_rounds(records_by_type[BidRound])
 
-      Enum.each([BidRound, BidGroup, EmployeeRanking], fn record_type ->
+      Enum.each([BidRound, BidSession, BidGroup, EmployeeRanking], fn record_type ->
         insert_all_records(records_by_type[record_type])
       end)
 

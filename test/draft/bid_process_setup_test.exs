@@ -83,5 +83,48 @@ defmodule Draft.BidProcessSetupTest do
 
       assert 3 == updated_employee_ranking.rank
     end
+
+    test "Bid session imported as expected" do
+      session =
+        Repo.get_by!(Draft.BidSession,
+          process_id: "BUS22021-122",
+          round_id: "Vacation",
+          session_id: "Vac_FT"
+        )
+
+      assert %{
+               process_id: "BUS22021-122",
+               round_id: "Vacation",
+               session_id: "Vac_FT",
+               type: :vacation,
+               type_allowed: :week,
+               rating_period_start_date: ~D[2021-08-29],
+               rating_period_end_date: ~D[2021-12-31]
+             } = session
+    end
+
+    test "Bid session updated as expected" do
+      BidProcessSetup.update_bid_process(
+        {"../../test/support/test_data/test_rounds_updated_data.csv",
+         "../../test/support/test_data/test_sessions_updated.csv"}
+      )
+
+      session =
+        Repo.get_by!(Draft.BidSession,
+          process_id: "BUS22021-122",
+          round_id: "Vacation",
+          session_id: "Vac_FT"
+        )
+
+      assert %{
+               process_id: "BUS22021-122",
+               round_id: "Vacation",
+               session_id: "Vac_FT",
+               type: :vacation,
+               type_allowed: :day,
+               rating_period_start_date: ~D[2021-08-30],
+               rating_period_end_date: ~D[2021-12-30]
+             } = session
+    end
   end
 end
