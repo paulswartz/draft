@@ -4,6 +4,7 @@ defmodule Draft.Parsable do
   """
   alias Draft.BidGroup
   alias Draft.BidRound
+  alias Draft.BidSession
   alias Draft.EmployeeRanking
 
   @callback from_parts([String.t()]) :: t()
@@ -32,4 +33,5 @@ defmodule Draft.Parsable do
   defp record_struct("R"), do: BidRound
   defp record_struct("E"), do: EmployeeRanking
   defp record_struct("G"), do: BidGroup
+  defp record_struct("S"), do: BidSession
 end

@@ -9,7 +9,7 @@ defmodule Draft.BidRound do
   alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
-          bid_type: String.t(),
+          bid_type: Draft.BidTypeEnum.t(),
           booking_id: String.t(),
           division_description: String.t(),
           division_id: String.t(),
@@ -25,7 +25,7 @@ defmodule Draft.BidRound do
 
   @primary_key false
   schema "bid_rounds" do
-    field :bid_type, :string
+    field :bid_type, Draft.BidTypeEnum
     field :booking_id, :string
     field :division_description, :string
     field :division_id, :string
@@ -63,7 +63,7 @@ defmodule Draft.BidRound do
       round_id: round_id,
       round_opening_date: ParsingHelpers.to_date(round_opening_date),
       round_closing_date: ParsingHelpers.to_date(round_closing_date),
-      bid_type: bid_type,
+      bid_type: Draft.BidTypeEnum.from_hastus(bid_type),
       rank: String.to_integer(rank),
       service_context: service_context,
       division_id: division_id,

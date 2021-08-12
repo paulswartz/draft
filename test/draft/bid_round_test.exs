@@ -25,7 +25,7 @@ defmodule Draft.BidRoundTest do
                round_id: "Work",
                round_opening_date: ~D[2021-02-09],
                round_closing_date: ~D[2021-03-03],
-               bid_type: "Work",
+               bid_type: :work,
                rank: 1,
                service_context: nil,
                division_id: "122",
