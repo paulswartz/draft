@@ -13,8 +13,8 @@ defmodule Draft.BidSession do
           round_id: String.t(),
           session_id: String.t(),
           booking_id: String.t(),
-          type: Draft.BidTypeEnum.t(),
-          type_allowed: Draft.IntervalTypeEnum.t() | nil,
+          type: Draft.BidType.t(),
+          type_allowed: Draft.IntervalType.t() | nil,
           service_context: String.t() | nil,
           scheduling_unit: String.t() | nil,
           division_id: String.t(),
@@ -28,8 +28,8 @@ defmodule Draft.BidSession do
     field :round_id, :string, primary_key: true
     field :session_id, :string, primary_key: true
     field :booking_id, :string
-    field :type, Draft.BidTypeEnum
-    field :type_allowed, Draft.IntervalTypeEnum
+    field :type, Draft.BidType
+    field :type_allowed, Draft.IntervalType
     field :service_context, :string
     field :scheduling_unit, :string
     field :division_id, :string
@@ -55,20 +55,13 @@ defmodule Draft.BidSession do
       rating_period_end_date
     ] = row
 
-    type_allowed_enum =
-      case type_allowed do
-        "Only weekly" -> :week
-        "Only dated" -> :day
-        nil -> nil
-      end
-
     %__MODULE__{
       process_id: process_id,
       round_id: round_id,
       session_id: session_id,
       booking_id: booking_id,
-      type: Draft.BidTypeEnum.from_hastus(type),
-      type_allowed: type_allowed_enum,
+      type: Draft.BidType.from_hastus(type),
+      type_allowed: Draft.IntervalType.from_hastus_session_allowed(type_allowed),
       service_context: service_context,
       scheduling_unit: scheduling_unit,
       division_id: division_id,

@@ -27,7 +27,7 @@ defmodule Draft.BidProcessSetup do
   """
   def update_bid_process(
         {round_file, session_file} \\ {"../../data/latest/BW_Project_Draft-Bid_Round-Group-Emp.csv",
-         "data/latest/BW_Project_Draft-Bid_Session-Roster_Set.csv"}
+         "../../data/latest/BW_Project_Draft-Bid_Session-Roster_Set.csv"}
       ) do
     parsed_files =
       Stream.flat_map([round_file, session_file], &ParsingHelpers.parse_pipe_separated_file(&1))

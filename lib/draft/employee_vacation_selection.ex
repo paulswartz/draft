@@ -9,7 +9,7 @@ defmodule Draft.EmployeeVacationSelection do
 
   @type t :: %__MODULE__{
           employee_id: String.t(),
-          vacation_interval_type: Draft.IntervalTypeEnum.t(),
+          vacation_interval_type: Draft.IntervalType.t(),
           start_date: Date.t(),
           end_date: Date.t(),
           status: Draft.VacationStatusEnum.t(),
@@ -21,7 +21,7 @@ defmodule Draft.EmployeeVacationSelection do
   @primary_key false
   schema "employee_vacation_selections" do
     field :employee_id, :string
-    field :vacation_interval_type, Draft.IntervalTypeEnum
+    field :vacation_interval_type, Draft.IntervalType
     field :start_date, :date
     field :end_date, :date
     field :status, Draft.VacationStatusEnum

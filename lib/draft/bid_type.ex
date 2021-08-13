@@ -1,4 +1,4 @@
-defmodule Draft.BidTypeEnum do
+defmodule Draft.BidType do
   @moduledoc """
   Represent bid types
   """
@@ -12,7 +12,7 @@ defmodule Draft.BidTypeEnum do
     {:ok, type_enum} =
       bid_type
       |> String.downcase()
-      |> Draft.BidTypeEnum.load()
+      |> Draft.BidType.load()
 
     type_enum
   end

@@ -11,7 +11,7 @@ defmodule Draft.VacationDistribution do
   schema "vacation_distributions" do
     field :run_id, :integer
     field :employee_id, :string
-    field :interval_type, Draft.IntervalTypeEnum
+    field :interval_type, Draft.IntervalType
     field :start_date, :date
     field :end_date, :date
     field :status, Draft.VacationStatusEnum, default: :assigned
@@ -24,7 +24,7 @@ defmodule Draft.VacationDistribution do
   @type t :: %__MODULE__{
           run_id: integer(),
           employee_id: String.t(),
-          interval_type: Draft.IntervalTypeEnum.t(),
+          interval_type: Draft.IntervalType.t(),
           start_date: Date.t(),
           end_date: Date.t(),
           status: Draft.VacationStatusEnum.t(),
@@ -65,7 +65,7 @@ defmodule Draft.VacationDistribution do
     end)
   end
 
-  @spec count_unsynced_assignments_by_date(integer(), Draft.IntervalTypeEnum.t()) :: %{
+  @spec count_unsynced_assignments_by_date(integer(), Draft.IntervalType.t()) :: %{
           Date.t() => String.t()
         }
   @doc """
