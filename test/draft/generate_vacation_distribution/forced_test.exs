@@ -57,7 +57,8 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         %{
           employee_count: 1,
           group_size: 10
-        }
+        },
+        %{type: :vacation, type_allowed: :week}
       )
 
       insert!(:division_vacation_week_quota, %{

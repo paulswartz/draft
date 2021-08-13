@@ -7,13 +7,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
   describe "run_all_rounds/1" do
     test "Operator is not assigned vacation week with quota of 0" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -45,13 +39,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Distribution runner saves to DB" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -86,13 +74,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator is not assigned vacation day with quota of 0" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :day, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -115,13 +97,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator with no vacation time is not assigned vacation" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -138,13 +114,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator with quota of two weeks is assigned two different weeks" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -182,13 +152,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator with quota of two days is assigned two different days" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :day, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -217,13 +181,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Second operator is not given vacation day where quota has been filled by previous operator" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 2,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :day, employee_count: 2})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -255,13 +213,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Second operator is not given vacation week where quota has been filled by previous operator" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 2,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 2})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -307,13 +259,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the week they've already selected" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -352,13 +298,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator is given first available week that doesn't conflict with the day they've already selected" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -397,13 +337,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the day they've already selected" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :day, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -440,13 +374,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator is given first available day that doesn't conflict with the week they've already selected" do
-      insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 1,
-        group_size: 10
-      })
+      setup_pick(%{interval_type: :day, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -483,19 +411,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator whose anniversary date has passed can take full amount of vacation time available" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        }
-      )
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -541,19 +457,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator whose anniversary date is during the round is only assigned vacation time earned before anniversary week" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        }
-      )
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -595,19 +499,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator whose anniversary date is after the round is only assigned vacation before anniversary date" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        }
-      )
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -652,29 +544,18 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
   describe "distribute_vacation_to_group/1" do
     test "Returns error if group is not found" do
       assert {:error, _error} =
-               BasicVacationDistributionRunner.distribute_vacation_to_group(%{
-                 round_id: "missing_round",
-                 group_number: 1,
-                 process_id: "missing_process"
-               })
+               BasicVacationDistributionRunner.distribute_vacation_to_group(
+                 %{
+                   round_id: "missing_round",
+                   group_number: 1,
+                   process_id: "missing_process"
+                 },
+                 :week
+               )
     end
 
     test "Returns successfully if group is found" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_id: "round_1",
-          process_id: "process_1",
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        }
-      )
+      setup_pick(%{interval_type: :week, employee_count: 1})
 
       insert!(:employee_vacation_quota, %{
         employee_id: "00001",
@@ -697,11 +578,14 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                   employee_id: "00001"
                 }
               ]} =
-               BasicVacationDistributionRunner.distribute_vacation_to_group(%{
-                 round_id: "round_1",
-                 group_number: 1,
-                 process_id: "process_1"
-               })
+               BasicVacationDistributionRunner.distribute_vacation_to_group(
+                 %{
+                   round_id: "round_1",
+                   group_number: 1,
+                   process_id: "process_1"
+                 },
+                 :week
+               )
     end
   end
 
@@ -709,5 +593,24 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     Enum.filter(assignments, fn x ->
       x.employee_id == employee_id
     end)
+  end
+
+  defp setup_pick(%{interval_type: interval_type, employee_count: employee_count}) do
+    insert_round_with_employees(
+      %{
+        rank: 1,
+        round_opening_date: ~D[2021-01-01],
+        round_id: "round_1",
+        process_id: "process_1",
+        round_closing_date: ~D[2021-02-01],
+        rating_period_start_date: ~D[2021-03-15],
+        rating_period_end_date: ~D[2021-05-01]
+      },
+      %{
+        employee_count: employee_count,
+        group_size: 10
+      },
+      %{type: :vacation, type_allowed: interval_type}
+    )
   end
 end

@@ -18,7 +18,8 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
       %{
         employee_count: 1,
         group_size: 10
-      }
+      },
+      %{type: :vacation, type_allowed: :day}
     )
 
     insert!(:division_vacation_day_quota, %{
@@ -50,7 +51,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           2,
-          [],
           %{
             anniversary_date: ~D[2021-03-01],
             anniversary_weeks: 0,
@@ -82,7 +82,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           2,
-          [],
           nil
         )
 
@@ -110,7 +109,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           2,
-          [],
           %{
             anniversary_date: ~D[2021-04-01],
             anniversary_weeks: 0,
@@ -142,7 +140,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           2,
-          [],
           %{
             anniversary_date: ~D[2021-04-02],
             anniversary_weeks: 0,
@@ -168,7 +165,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           2,
-          [],
           %{
             anniversary_date: ~D[2021-06-01],
             anniversary_weeks: 0,
@@ -194,7 +190,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           0,
-          [],
           %{
             anniversary_date: ~D[2021-03-01],
             anniversary_weeks: 0,
@@ -213,7 +208,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           0,
-          [],
           %{
             anniversary_date: ~D[2021-06-01],
             anniversary_weeks: 0,
@@ -248,7 +242,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -291,7 +284,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -334,7 +326,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -371,7 +362,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -420,7 +410,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -441,7 +430,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
@@ -468,7 +456,6 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
           state.round,
           state.employee_ranking,
           1,
-          [],
           nil
         )
 
