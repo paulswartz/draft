@@ -125,6 +125,15 @@ defmodule Draft.Factory do
     }
   end
 
+  def build(:vacation_preference_set) do
+    %Draft.EmployeeVacationPreferenceSet{
+      process_id: "BUS22021-122",
+      round_id: "Vacation",
+      employee_id: "00001",
+      vacation_preferences: []
+    }
+  end
+
   # Convenience API
 
   @spec build(
@@ -240,12 +249,14 @@ defmodule Draft.Factory do
   @spec insert_round_with_employees_and_vacation(
           %{Date.t() => pos_integer()},
           %{String.t() => pos_integer()},
+          %{String.t() => [Date.t()]},
           %{String.t() => [Date.t()]}
         ) :: %{round_id: String.t(), process_id: String.t(), group_number: pos_integer()}
   def insert_round_with_employees_and_vacation(
         start_date_to_quota,
         employee_to_date_quota,
-        existing_vacation
+        existing_vacation,
+        vacation_preferences \\ %{}
       ) do
     dates = Enum.sort_by(Map.keys(start_date_to_quota), &Date.to_erl/1)
     employee_count = map_size(employee_to_date_quota)
@@ -275,6 +286,7 @@ defmodule Draft.Factory do
     insert_week_quotas(start_date_to_quota)
     insert_employee_quotas(employee_to_date_quota)
     insert_vacation_selections(existing_vacation)
+    insert_vacation_preferences(round_id, process_id, vacation_preferences)
 
     %{
       round_id: round_id,
@@ -323,6 +335,31 @@ defmodule Draft.Factory do
           end_date: Date.add(week_start, 6)
         }
       )
+    end
+  end
+
+  defp insert_vacation_preferences(round_id, process_id, vacation_preferences)
+
+  defp insert_vacation_preferences(_round_id, _process_id, vacation_preferences)
+       when vacation_preferences == %{} do
+  end
+
+  defp insert_vacation_preferences(round_id, process_id, vacation_preferences) do
+    for {employee_id, preferences} <- vacation_preferences do
+      insert!(:vacation_preference_set, %{
+        round_id: round_id,
+        process_id: process_id,
+        employee_id: employee_id,
+        vacation_preferences:
+          Enum.map(Enum.with_index(preferences, 1), fn {start_date, rank} ->
+            %Draft.EmployeeVacationPreference{
+              start_date: start_date,
+              rank: rank,
+              interval_type: :week,
+              end_date: Date.add(start_date, 6)
+            }
+          end)
+      })
     end
   end
 end
