@@ -216,7 +216,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   @spec calculated_quota(
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
-          Draft.IntervalTypeEnum.t()
+          Draft.IntervalType.t()
         ) ::
           {:ok, %{remaining: integer()}}
           | {:error, :multiple_vacation_balances | :no_vacation_balance}
@@ -245,7 +245,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   @spec calculated_quota_from_balance(
           Draft.EmployeeVacationQuota.t(),
           String.t(),
-          Draft.IntervalTypeEnum.t()
+          Draft.IntervalType.t()
         ) :: %{remaining: integer()}
   defp calculated_quota_from_balance(employee_balance, job_class, :week) do
     max_minutes = employee_balance.maximum_minutes
@@ -261,7 +261,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   @spec all_vacation_available_to_employee(
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
-          Draft.IntervalTypeEnum.t(),
+          Draft.IntervalType.t(),
           %{
             Date.t() => integer()
           }

@@ -13,12 +13,22 @@ defmodule Draft.VacationQuotaSetup do
   alias Draft.ParsingHelpers
   alias Draft.Repo
 
+  @default_vacation_files [
+    {Draft.DivisionVacationDayQuota,
+     "../../data/latest/BW_Project_Draft-Vac_Div_Quota_Dated.csv"},
+    {Draft.DivisionVacationWeekQuota,
+     "../../data/latest/BW_Project_Draft-Vac_Div_Quota_Weekly.csv"},
+    {Draft.EmployeeVacationSelection,
+     "../../data/latest/BW_Project_Draft-Vac_Emp_Selections.csv"},
+    {Draft.EmployeeVacationQuota, "../../data/latest/BW_Project_Draft-Vac_Emp_Quota.csv"}
+  ]
+
   @spec update_vacation_quota_data([{module(), String.t()}]) :: [{integer(), nil | [term()]}]
   @doc """
   Reads each type of vacation data from the given files and stores it in the database.
   All previous records are deleted before inserting the data from the given files.
   """
-  def update_vacation_quota_data(vacation_files) do
+  def update_vacation_quota_data(vacation_files \\ @default_vacation_files) do
     parsed_records =
       vacation_files
       |> Keyword.take([

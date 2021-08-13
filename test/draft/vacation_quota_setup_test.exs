@@ -18,7 +18,7 @@ defmodule Draft.VacationQuotaSetupTest do
     :ok
   end
 
-  describe "update_bid_round_data/1" do
+  describe "update_vacation_quota_data/1" do
     test "Correct number of records present" do
       all_div_quota_dated = Repo.all(DivisionVacationDayQuota)
       assert length(all_div_quota_dated) == 12
