@@ -103,7 +103,12 @@ defmodule Draft.DivisionVacationWeekQuota do
     )
   end
 
-  @spec available_quota(Draft.BidRound.t(), Draft.EmployeeRanking.t()) :: [t()]
+  @spec available_quota(Draft.BidRound.t(), %{
+          required(:employee_id) => String.t(),
+          required(:job_class) => String.t(),
+          optional(atom()) => any()
+        }) ::
+          [t()]
   @doc """
   Get all vacation weeks that are available for the given employee, based on their job class, the available quota for their division,
   and their previously selected vacation time. Available weeks are returned in descending order by start date (latest available date will be listed first)

@@ -4,6 +4,44 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
   alias Draft.GenerateVacationDistribution
   alias Draft.VacationDistribution
 
+  describe "permutations_take/2" do
+    test "basic case" do
+      list = [1, 2, 3]
+      n = 2
+
+      expected = [
+        [2, 1],
+        [3, 1],
+        [3, 2]
+      ]
+
+      actual =
+        Enum.to_list(
+          GenerateVacationDistribution.Forced.permutations_take(list, n, [], fn x, acc ->
+            [x | acc]
+          end)
+        )
+
+      assert actual == expected
+    end
+
+    test "taking more items than there are" do
+      list = [1]
+      n = 2
+
+      expected = []
+
+      actual =
+        Enum.to_list(
+          GenerateVacationDistribution.Forced.permutations_take(list, n, [], fn x, acc ->
+            [x | acc]
+          end)
+        )
+
+      assert actual == expected
+    end
+  end
+
   describe "distribute_to_group/4" do
     test "One operator being forced gets the latest available weeks" do
       insert_round_with_employees(
@@ -261,6 +299,200 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
               ]} = vacation_distributions
     end
 
+    test "backtracking can handle case where earlier assignments affect later employees" do
+      # Division Quota:
+      # 8/22: 1
+      # 8/15: 2
+      # 8/8: 1
+      # 8/1: 1
+
+      # Employee Quota:
+      # A: 1. Possible assignments: 8/22, 8/15, 8/8, 8/1
+      # B: 3. Possible assignments: 8/15, 8/8, 8/1 (Maybe took 8/22 in the annual)
+      # C: 1. Possible assignments: 8/22 (Maybe took 8/1, 8/8, 8/15 in the annual)
+
+      # Focusing on employee B as the "first employee" in the normal case.
+      # In a previously explored branch, employee A was assigned 8/22, B was
+      # assigned all 3 of their possibilities, C couldn't be assigned
+      # anything, so the path was invalid.
+
+      # In the current branch, A was assigned 8/15 instead. B can still be
+      # assigned all 3 of their possibilities, which we find in the cache, so
+      # we return an empty list. However, now it would be possible to assign
+      # employee C 8/22, so this schedule could be valid.
+
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 1,
+            ~D[2021-08-08] => 1,
+            ~D[2021-08-15] => 2,
+            ~D[2021-08-22] => 1
+          },
+          %{
+            "00001" => 1,
+            "00002" => 3,
+            "00003" => 1
+          },
+          %{
+            "00002" => [~D[2021-08-22]],
+            "00003" => [~D[2021-08-01], ~D[2021-08-08], ~D[2021-08-15]]
+          }
+        )
+
+      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+
+      assert [
+               %{employee_id: "00002", start_date: ~D[2021-08-01]},
+               %{employee_id: "00002", start_date: ~D[2021-08-08]},
+               %{employee_id: "00001", start_date: ~D[2021-08-15]},
+               %{employee_id: "00002", start_date: ~D[2021-08-15]},
+               %{employee_id: "00003", start_date: ~D[2021-08-22]}
+             ] = vacation_assignments
+    end
+
+    test "internal dates are also taken into account" do
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 2,
+            ~D[2021-08-08] => 2,
+            ~D[2021-08-15] => 2
+          },
+          %{
+            "00001" => 1,
+            "00002" => 3,
+            "00003" => 1
+          },
+          %{
+            "00003" => [~D[2021-08-01], ~D[2021-08-08]]
+          }
+        )
+
+      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+
+      assert [
+               %{employee_id: "00002", start_date: ~D[2021-08-01]},
+               %{employee_id: "00001", start_date: ~D[2021-08-08]},
+               %{employee_id: "00002", start_date: ~D[2021-08-08]},
+               %{employee_id: "00002", start_date: ~D[2021-08-15]},
+               %{employee_id: "00003", start_date: ~D[2021-08-15]}
+             ] = vacation_assignments
+    end
+
+    test "with many employees, completes in a reasonable amount of time" do
+      # worse case scenario: last employee must be forced into last (most-preferred) date
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 2,
+            ~D[2021-08-08] => 2,
+            ~D[2021-08-15] => 2,
+            ~D[2021-08-22] => 2,
+            ~D[2021-08-29] => 2,
+            ~D[2021-09-01] => 2,
+            ~D[2021-09-08] => 2,
+            ~D[2021-09-15] => 2,
+            ~D[2021-09-22] => 2,
+            ~D[2021-09-29] => 2,
+            ~D[2021-10-07] => 2,
+            ~D[2021-10-14] => 2
+          },
+          %{
+            "00001" => 1,
+            "00002" => 1,
+            "00003" => 1,
+            "00004" => 1,
+            "00005" => 1,
+            "00006" => 1,
+            "00007" => 1,
+            "00008" => 1,
+            "00009" => 1,
+            "00010" => 1,
+            "00011" => 1,
+            "00012" => 1,
+            "00013" => 1,
+            "00014" => 1,
+            "00015" => 1,
+            "00016" => 1,
+            "00017" => 1,
+            "00018" => 1,
+            "00019" => 1,
+            "00020" => 1,
+            "00021" => 1,
+            "00022" => 1,
+            "00023" => 1,
+            "00024" => 1
+          },
+          %{
+            "00024" => [
+              ~D[2021-08-01],
+              ~D[2021-08-08],
+              ~D[2021-08-15],
+              ~D[2021-08-22],
+              ~D[2021-08-29],
+              ~D[2021-09-01],
+              ~D[2021-09-08],
+              ~D[2021-09-15],
+              ~D[2021-09-22],
+              ~D[2021-09-29],
+              ~D[2021-10-07]
+            ]
+          }
+        )
+
+      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+
+      last_assignment = Enum.at(vacation_assignments, -1)
+      assert %{employee_id: "00024", start_date: ~D[2021-10-14]} = last_assignment
+    end
+
+    test "with few employees and larger quotas, completes in a reasonable amount of time" do
+      # worse case scenario: last employee must be forced into last (most-preferred) date
+      group =
+        insert_round_with_employees_and_vacation(
+          %{
+            ~D[2021-08-01] => 2,
+            ~D[2021-08-08] => 2,
+            ~D[2021-08-15] => 2,
+            ~D[2021-08-22] => 2,
+            ~D[2021-08-29] => 2,
+            ~D[2021-09-01] => 2,
+            ~D[2021-09-08] => 2,
+            ~D[2021-09-15] => 2,
+            ~D[2021-09-22] => 2,
+            ~D[2021-09-29] => 2,
+            ~D[2021-10-07] => 2,
+            ~D[2021-10-14] => 1
+          },
+          %{
+            "00001" => 6,
+            "00002" => 6,
+            "00003" => 6,
+            "00004" => 5
+          },
+          %{
+            "00004" => [
+              ~D[2021-08-01],
+              ~D[2021-08-08],
+              ~D[2021-08-15],
+              ~D[2021-08-22],
+              ~D[2021-08-29],
+              ~D[2021-09-01],
+              ~D[2021-09-08]
+            ]
+          }
+        )
+
+      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      # {:ok, {:ok, vacation_assignments}} =
+      #   :eprof.profile(fn -> GenerateVacationDistribution.Forced.generate_for_group(group) end)
+
+      # :eprof.analyze(:total, filter: [calls: 100])
+      assignments = Enum.filter(vacation_assignments, &(&1.employee_id == "00004"))
+      assert [_, _, _, _, %{start_date: ~D[2021-10-14]}] = assignments
+    end
+
     test "Returns an error if no possible forcing solution found" do
       insert_round_with_employees(
         %{
@@ -304,7 +536,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           group_number: 1
         })
 
-      assert {:error, :no_possible_assignments_remaining} == vacation_assignments
+      assert vacation_assignments == :error
     end
   end
 end
