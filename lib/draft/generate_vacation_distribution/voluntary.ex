@@ -6,9 +6,10 @@ defmodule Draft.GenerateVacationDistribution.Voluntary do
 
   alias Draft.GenerateVacationDistribution.Days
   alias Draft.GenerateVacationDistribution.Weeks
+  alias Draft.VacationDistributionRun
 
   @callback generate(
-              integer(),
+              VacationDistributionRun.id(),
               Draft.BidRound.t(),
               Draft.EmployeeRanking.t(),
               integer(),
@@ -16,7 +17,7 @@ defmodule Draft.GenerateVacationDistribution.Voluntary do
             ) :: [Draft.VacationDistribution.t()]
 
   @spec generate(
-          integer(),
+          VacationDistributionRun.id(),
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
           integer(),
@@ -26,15 +27,6 @@ defmodule Draft.GenerateVacationDistribution.Voluntary do
   @doc """
   Generate a list of vacations to distribute to the employee voluntarily taking vacation.
   """
-  def generate(
-        distribution_run_id,
-        round,
-        employee,
-        max_quota,
-        anniversary_vacation,
-        interval_type
-      )
-
   def generate(
         distribution_run_id,
         round,

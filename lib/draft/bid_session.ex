@@ -72,8 +72,8 @@ defmodule Draft.BidSession do
   end
 
   @spec vacation_interval(%{
-          required(:round_id) => String.t(),
-          required(:process_id) => String.t(),
+          :round_id => String.t(),
+          :process_id => String.t(),
           optional(atom()) => any()
         }) :: Draft.IntervalType.t() | nil
   @doc """

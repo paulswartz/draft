@@ -17,9 +17,7 @@ defmodule Draft.VacationDistributionWorker do
     bid_type =
       Draft.Repo.one(
         from r in Draft.BidRound,
-          where:
-            r.round_id == ^group.round_id and
-              r.process_id == ^group.process_id,
+          where: r.round_id == ^group.round_id and r.process_id == ^group.process_id,
           select: r.bid_type
       )
 
@@ -35,7 +33,7 @@ defmodule Draft.VacationDistributionWorker do
   defp process_group(group, :vacation) do
     case Draft.BidSession.vacation_interval(group) do
       nil ->
-        {:error, "Vacation interval not defined on sesson"}
+        {:error, "Vacation interval not defined on session"}
 
       vacation_interval ->
         BasicVacationDistributionRunner.distribute_vacation_to_group(group, vacation_interval)

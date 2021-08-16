@@ -156,6 +156,14 @@ defmodule Draft.Factory do
     factory_name |> build(attributes) |> Repo.insert!()
   end
 
+  @spec insert_round_with_employees(integer()) :: :ok
+  @doc """
+    Insert a default round with the given number of employees in a single group
+  """
+  def insert_round_with_employees(employee_count) do
+    insert_round_with_employees(%{}, %{group_size: employee_count, employee_count: employee_count})
+  end
+
   @spec insert_round_with_employees(
           map(),
           %{

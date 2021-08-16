@@ -3,6 +3,11 @@ defmodule Draft.BidSessionTest do
   import Draft.Factory
   alias Draft.BidSession
 
+  setup do
+    insert!(:round, %{round_id: "round_1", process_id: "process_1"})
+    :ok
+  end
+
   describe "from_parts/1" do
     test "Successfully weekly vacation session" do
       session =
@@ -100,22 +105,12 @@ defmodule Draft.BidSessionTest do
 
   describe "vacation_interval/1" do
     test "Returns day for vacation day session" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-01-01],
-          round_id: "round_1",
-          process_id: "process_1",
-          round_closing_date: ~D[2021-02-01],
-          rating_period_start_date: ~D[2021-03-15],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :vacation, type_allowed: :day}
-      )
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :vacation,
+        type_allowed: :day
+      })
 
       assert :day =
                Draft.BidSession.vacation_interval(%{
@@ -125,22 +120,12 @@ defmodule Draft.BidSessionTest do
     end
 
     test "Returns week for vacation week session" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-01-01],
-          round_id: "round_1",
-          process_id: "process_1",
-          round_closing_date: ~D[2021-02-01],
-          rating_period_start_date: ~D[2021-03-15],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :vacation, type_allowed: :week}
-      )
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :vacation,
+        type_allowed: :week
+      })
 
       assert :week =
                Draft.BidSession.vacation_interval(%{
@@ -150,22 +135,12 @@ defmodule Draft.BidSessionTest do
     end
 
     test "Returns nil if passed work session" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_opening_date: ~D[2021-01-01],
-          round_id: "round_1",
-          process_id: "process_1",
-          round_closing_date: ~D[2021-02-01],
-          rating_period_start_date: ~D[2021-03-15],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :work, type_allowed: nil}
-      )
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :work,
+        type_allowed: nil
+      })
 
       assert nil ==
                Draft.BidSession.vacation_interval(%{

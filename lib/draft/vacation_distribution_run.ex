@@ -17,6 +17,8 @@ defmodule Draft.VacationDistributionRun do
           vacation_distributions: [Draft.VacationDistribution.t()]
         }
 
+  @type id :: integer()
+
   schema "vacation_distribution_runs" do
     field :end_time, :utc_datetime
     field :process_id, :string

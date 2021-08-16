@@ -46,9 +46,9 @@ defmodule Draft.BasicVacationDistributionRunner do
 
   @spec distribute_vacation_to_group(
           %{
-            :group_number => integer(),
-            :process_id => String.t(),
-            :round_id => String.t()
+            group_number: integer(),
+            process_id: String.t(),
+            round_id: String.t()
           },
           Draft.IntervalType.t()
         ) :: {:ok, VacationDistribution.t()} | {:error, any()}
