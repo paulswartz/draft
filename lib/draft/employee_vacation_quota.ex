@@ -44,7 +44,11 @@ defmodule Draft.EmployeeVacationQuota do
       interval_start_date,
       interval_end_date,
       weekly_quota,
+      # Value not accurate from HASTUS export yet
+      _remaining_weekly_quota,
       dated_quota,
+      # Value not accurate from HASTUS export yet
+      _remaining_dated_quota,
       restricted_week_quota,
       available_after_date,
       available_after_weekly_quota,

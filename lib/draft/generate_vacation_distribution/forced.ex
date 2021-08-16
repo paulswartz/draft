@@ -202,7 +202,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   @spec calculated_quota(
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
-          Draft.IntervalTypeEnum.t()
+          Draft.IntervalType.t()
         ) :: calculated_employee_quota()
   # Get the given employee's vacation quota for the specified interval type. This currently only
   # returns information about their whole-unit quota (no partial) In the future it could contain

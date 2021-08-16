@@ -19,7 +19,7 @@ defmodule Draft.Factory do
       round_id: "Vacation",
       round_opening_date: ~D[2021-02-09],
       round_closing_date: ~D[2021-03-03],
-      bid_type: "Vacation",
+      bid_type: :vacation,
       rank: 1,
       service_context: nil,
       division_id: "122",

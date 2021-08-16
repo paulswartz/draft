@@ -11,6 +11,8 @@ defmodule Draft.EmployeeVacationQuotaTest do
           "01/01/2021",
           "12/31/2021",
           "2",
+          "2",
+          "5",
           "5",
           nil,
           "06/30/2021",
