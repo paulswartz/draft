@@ -13,6 +13,7 @@ defmodule Draft.Factory do
           | :group
           | :round
           | :session
+          | :vacation_preference_set
         ) :: struct()
   def build(:round) do
     %Draft.BidRound{
@@ -134,7 +135,8 @@ defmodule Draft.Factory do
           | :employee_vacation_selection
           | :group
           | :round
-          | :session,
+          | :session
+          | :vacation_preference_set,
           map()
         ) :: struct
   def build(factory_name, attributes) do
@@ -149,7 +151,8 @@ defmodule Draft.Factory do
           | :employee_vacation_selection
           | :group
           | :round
-          | :session,
+          | :session
+          | :vacation_preference_set,
           map()
         ) :: struct()
   def insert!(factory_name, attributes) do

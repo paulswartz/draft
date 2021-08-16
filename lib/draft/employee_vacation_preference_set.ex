@@ -96,7 +96,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     end
   end
 
-  @spec latest_preference_set(String.t(), String.t(), String.t(), [Draft.IntervalTypeEnum.t()]) ::
+  @spec latest_preference_set(String.t(), String.t(), String.t(), [Draft.IntervalType.t()]) ::
           __MODULE__.t() | nil
   @doc """
   Get the most recently entered preference set entered by the given operator for the given pick.
@@ -122,7 +122,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     Repo.one(latest_preference_set_query)
   end
 
-  @spec latest_preferences(String.t(), String.t(), String.t(), Draft.IntervalTypeEnum.t()) ::
+  @spec latest_preferences(String.t(), String.t(), String.t(), Draft.IntervalType.t()) ::
           %{Date.t() => pos_integer()}
   @doc """
   Get the latest preferences (day or week) for the given operator & pick.

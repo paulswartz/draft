@@ -109,7 +109,8 @@ defmodule Draft.GenerateVacationDistribution.Days do
       Draft.EmployeeVacationPreferenceSet.latest_preference_set(
         employee.process_id,
         employee.round_id,
-        employee.employee_id
+        employee.employee_id,
+        [:day]
       )
 
     all_available_days = get_all_days_available_to_employee(distribution_run_id, round, employee)

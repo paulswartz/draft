@@ -4,7 +4,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   ensuring that it will be possible to force all remaining employees to take vacation as well.
   """
   import Ecto.Query
-  alias Draft.DivisionVacationWeekQuota
+  alias Draft.DivisionQuotaRanked
   alias Draft.Repo
   alias Draft.VacationDistribution
   require Logger
@@ -228,7 +228,11 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), balance.weekly_quota)
 
     available_quota =
-      DivisionVacationWeekQuota.available_quota_with_preference_rank(round, employee)
+      DivisionQuotaRanked.available_quota_with_preference_rank(
+        round,
+        employee,
+        interval_type
+      )
 
     %{
       employee_id: employee.employee_id,
