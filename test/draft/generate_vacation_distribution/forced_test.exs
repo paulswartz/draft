@@ -324,6 +324,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 1,
             ~D[2021-08-08] => 1,
@@ -355,6 +356,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     test "internal dates are also taken into account" do
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -385,6 +387,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # worse case scenario: last employee must be forced into last (most-preferred) date
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -452,6 +455,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # worse case scenario: last employee must be forced into last (most-preferred) date
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -543,6 +547,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     test "Assigns employee their top preference when possible" do
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 1,
             ~D[2021-08-08] => 1
@@ -599,6 +604,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
     group =
       insert_round_with_employees_and_vacation(
+        :week,
         %{
           # week 1
           ~D[2021-08-01] => 10,
