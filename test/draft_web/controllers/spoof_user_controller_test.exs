@@ -20,14 +20,7 @@ defmodule DraftWeb.SpoofUserControllerTest do
 
   @tag :authenticated_admin
   test "POST /admin/spoof with badge number that exists", %{conn: conn} do
-    Draft.Factory.insert_round_with_employees(%{
-      round_rank: 1,
-      round_opening_date: ~D[2021-02-01],
-      round_closing_date: ~D[2021-03-01],
-      employee_count: 1,
-      group_size: 10
-    })
-
+    Draft.Factory.insert_round_with_employees(1)
     conn = post(conn, "/admin/spoof", %{"user" => %{"badge_number" => "00001"}})
     assert redirected_to(conn) == "/admin/spoof/operator"
   end

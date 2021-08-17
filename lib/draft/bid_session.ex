@@ -6,6 +6,7 @@ defmodule Draft.BidSession do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
@@ -68,6 +69,25 @@ defmodule Draft.BidSession do
       rating_period_start_date: ParsingHelpers.to_date(rating_period_start_date),
       rating_period_end_date: ParsingHelpers.to_date(rating_period_end_date)
     }
+  end
+
+  @spec vacation_interval(%{
+          :round_id => String.t(),
+          :process_id => String.t(),
+          optional(atom()) => any()
+        }) :: Draft.IntervalType.t() | nil
+  @doc """
+  Get the type of vacation allowed for the one vacation session in the given round.
+  """
+  def vacation_interval(%{round_id: round_id, process_id: process_id}) do
+    Draft.Repo.one(
+      from s in Draft.BidSession,
+        where:
+          s.round_id == ^round_id and
+            s.process_id == ^process_id and
+            s.type == :vacation,
+        select: s.type_allowed
+    )
   end
 
   @doc false

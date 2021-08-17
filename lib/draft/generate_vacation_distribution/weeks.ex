@@ -2,22 +2,18 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   @moduledoc """
   Generate a list of vacation weeks that can be assigned to the given employee
   """
+  @behaviour Draft.GenerateVacationDistribution.Voluntary
   alias Draft.DivisionVacationWeekQuota
+  alias Draft.GenerateVacationDistribution.Voluntary
   alias Draft.VacationDistribution
-  require Logger
 
-  @spec generate(
-          integer(),
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          integer(),
-          nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
-        ) :: [VacationDistribution.t()]
+  require Logger
 
   @doc """
   generate a list of vacation weeks for an employee based on what is available in their division/job class in the rating period they are picking for.
   If the employee has an upcoming anniversary date, vacation weeks are only generated up to that date.
   """
+  @impl Voluntary
   def generate(
         distribution_run_id,
         round,

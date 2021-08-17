@@ -1,6 +1,12 @@
 defmodule Draft.BidSessionTest do
-  use ExUnit.Case
+  use Draft.DataCase
+  import Draft.Factory
   alias Draft.BidSession
+
+  setup do
+    insert!(:round, %{round_id: "round_1", process_id: "process_1"})
+    :ok
+  end
 
   describe "from_parts/1" do
     test "Successfully weekly vacation session" do
@@ -94,6 +100,53 @@ defmodule Draft.BidSessionTest do
                rating_period_start_date: ~D[2021-08-29],
                rating_period_end_date: ~D[2021-12-31]
              } = session
+    end
+  end
+
+  describe "vacation_interval/1" do
+    test "Returns day for vacation day session" do
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :vacation,
+        type_allowed: :day
+      })
+
+      assert :day =
+               Draft.BidSession.vacation_interval(%{
+                 round_id: "round_1",
+                 process_id: "process_1"
+               })
+    end
+
+    test "Returns week for vacation week session" do
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :vacation,
+        type_allowed: :week
+      })
+
+      assert :week =
+               Draft.BidSession.vacation_interval(%{
+                 round_id: "round_1",
+                 process_id: "process_1"
+               })
+    end
+
+    test "Returns nil if passed work session" do
+      insert!(:session, %{
+        round_id: "round_1",
+        process_id: "process_1",
+        type: :work,
+        type_allowed: nil
+      })
+
+      assert nil ==
+               Draft.BidSession.vacation_interval(%{
+                 round_id: "round_1",
+                 process_id: "process_1"
+               })
     end
   end
 end

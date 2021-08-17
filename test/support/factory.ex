@@ -12,6 +12,7 @@ defmodule Draft.Factory do
           | :employee_vacation_selection
           | :group
           | :round
+          | :session
         ) :: struct()
   def build(:round) do
     %Draft.BidRound{
@@ -25,6 +26,22 @@ defmodule Draft.Factory do
       division_id: "122",
       division_description: "Arborway",
       booking_id: "BUS22021",
+      rating_period_start_date: ~D[2021-03-14],
+      rating_period_end_date: ~D[2021-06-19]
+    }
+  end
+
+  def build(:session) do
+    %Draft.BidSession{
+      process_id: "BUS22021-122",
+      round_id: "Vacation",
+      session_id: "Vacation_FT",
+      booking_id: "BUS22021",
+      type: :vacation,
+      type_allowed: :week,
+      division_id: "122",
+      service_context: nil,
+      scheduling_unit: nil,
       rating_period_start_date: ~D[2021-03-14],
       rating_period_end_date: ~D[2021-06-19]
     }
@@ -116,7 +133,8 @@ defmodule Draft.Factory do
           | :employee_vacation_quota
           | :employee_vacation_selection
           | :group
-          | :round,
+          | :round
+          | :session,
           map()
         ) :: struct
   def build(factory_name, attributes) do
@@ -130,57 +148,60 @@ defmodule Draft.Factory do
           | :employee_vacation_quota
           | :employee_vacation_selection
           | :group
-          | :round,
+          | :round
+          | :session,
           map()
         ) :: struct()
   def insert!(factory_name, attributes) do
     factory_name |> build(attributes) |> Repo.insert!()
   end
 
-  @spec insert_round_with_employees(%{
-          :employee_count => integer(),
-          :group_size => integer(),
-          :round_closing_date => Date.t(),
-          :round_opening_date => Date.t(),
-          :round_rank => integer()
-        }) :: :ok
+  @spec insert_round_with_employees(integer()) :: :ok
   @doc """
-  Insert a single round with the specified number of employees, broken into the specified number of groups.
-  Employee ids are created with 0 padding to be 5 digits.
+    Insert a default round with the given number of employees in a single group
   """
-  def insert_round_with_employees(%{
-        round_rank: round_rank,
-        round_opening_date: round_opening_date,
-        round_closing_date: round_closing_date,
-        employee_count: employee_count,
-        group_size: group_size
-      }) do
-    insert_round_with_employees(
-      %{
-        rank: round_rank,
-        round_opening_date: round_opening_date,
-        round_closing_date: round_closing_date
-      },
-      %{
-        employee_count: employee_count,
-        group_size: group_size
-      }
-    )
+  def insert_round_with_employees(employee_count) do
+    insert_round_with_employees(%{}, %{group_size: employee_count, employee_count: employee_count})
   end
 
-  @spec insert_round_with_employees(map(), %{
-          :employee_count => integer(),
-          :group_size => integer()
-        }) :: :ok
+  @spec insert_round_with_employees(
+          map(),
+          %{
+            :employee_count => integer(),
+            :group_size => integer()
+          },
+          map()
+        ) :: :ok
   @doc """
   Insert a single round with the given specifications the specified number of employees, broken into the specified number of groups.
   Employee ids are created with 0 padding to be 5 digits.
   """
-  def insert_round_with_employees(round_attrs, %{
-        employee_count: employee_count,
-        group_size: group_size
-      }) do
+  def insert_round_with_employees(
+        round_attrs,
+        %{
+          employee_count: employee_count,
+          group_size: group_size
+        },
+        session_attrs \\ %{type: :vacation, type_allowed: :week}
+      ) do
     inserted_round = Draft.Factory.insert!(:round, round_attrs)
+
+    session_attrs =
+      inserted_round
+      |> Map.from_struct()
+      |> Map.take([
+        :round_id,
+        :process_id,
+        :rating_period_start_date,
+        :rating_period_end_date,
+        :service_context,
+        :division_id,
+        :booking_id
+      ])
+      |> Map.merge(session_attrs)
+      |> Map.put(:session_id, "session_id_#{:erlang.unique_integer([:positive])}")
+
+    Draft.Factory.insert!(:session, session_attrs)
 
     grouped_employees = Enum.with_index(Enum.chunk_every(1..employee_count, group_size), 1)
 

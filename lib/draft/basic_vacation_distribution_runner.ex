@@ -44,19 +44,25 @@ defmodule Draft.BasicVacationDistributionRunner do
     )
   end
 
-  @spec distribute_vacation_to_group(%{
-          :group_number => integer(),
-          :process_id => String.t(),
-          :round_id => String.t()
-        }) :: {:ok, VacationDistribution.t()} | {:error, any()}
+  @spec distribute_vacation_to_group(
+          %{
+            group_number: integer(),
+            process_id: String.t(),
+            round_id: String.t()
+          },
+          Draft.IntervalType.t()
+        ) :: {:ok, VacationDistribution.t()} | {:error, any()}
   @doc """
   Distribute vacation to all employees in the given group in seniority order.
   """
-  def distribute_vacation_to_group(%{
-        round_id: round_id,
-        process_id: process_id,
-        group_number: group_number
-      }) do
+  def distribute_vacation_to_group(
+        %{
+          round_id: round_id,
+          process_id: process_id,
+          group_number: group_number
+        },
+        vacation_interval
+      ) do
     group =
       Repo.get_by(BidGroup,
         round_id: round_id,
@@ -66,7 +72,7 @@ defmodule Draft.BasicVacationDistributionRunner do
 
     if group do
       round = Repo.get_by!(BidRound, round_id: round_id, process_id: process_id)
-      assign_vacation_for_group(round, group)
+      assign_vacation_for_group(round, group, vacation_interval)
     else
       {:error, "No group found with
   round_id: #{round_id},
@@ -116,12 +122,17 @@ defmodule Draft.BasicVacationDistributionRunner do
           order_by: [asc: g.group_number]
       )
 
-    process_until_error(bid_groups, &assign_vacation_for_group(round, &1))
+    interval_type = Draft.BidSession.vacation_interval(round)
+
+    process_until_error(
+      bid_groups,
+      &assign_vacation_for_group(round, &1, interval_type)
+    )
   end
 
-  @spec assign_vacation_for_group(BidRound.t(), BidGroup.t()) ::
+  @spec assign_vacation_for_group(BidRound.t(), BidGroup.t(), Draft.IntervalType.t()) ::
           distribution_result()
-  defp assign_vacation_for_group(round, group) do
+  defp assign_vacation_for_group(round, group, interval_type) do
     Logger.info(
       "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
         group.group_number
@@ -145,7 +156,8 @@ defmodule Draft.BasicVacationDistributionRunner do
         &assign_vacation_for_employee(
           &1,
           round,
-          distribution_run_id
+          distribution_run_id,
+          interval_type
         )
       )
 
@@ -153,12 +165,18 @@ defmodule Draft.BasicVacationDistributionRunner do
     assigned_vacation
   end
 
-  @spec assign_vacation_for_employee(EmployeeRanking.t(), BidRound.t(), integer()) ::
+  @spec assign_vacation_for_employee(
+          EmployeeRanking.t(),
+          BidRound.t(),
+          integer(),
+          Draft.IntervalType.t()
+        ) ::
           distribution_result()
   defp assign_vacation_for_employee(
          employee,
          round,
-         distribution_run_id
+         distribution_run_id,
+         interval_type
        ) do
     Logger.info("-------\nDistributing vacation for employee #{employee.rank}")
 
@@ -172,14 +190,20 @@ defmodule Draft.BasicVacationDistributionRunner do
                  q.interval_end_date >= ^round.rating_period_end_date)
       )
 
-    assign_vacation(round, employee, distribution_run_id, employee_balances)
+    assign_vacation(round, employee, distribution_run_id, employee_balances, interval_type)
   end
 
-  @spec assign_vacation(BidRound.t(), EmployeeRanking.t(), integer(), [EmployeeVacationQuota.t()]) ::
+  @spec assign_vacation(
+          BidRound.t(),
+          EmployeeRanking.t(),
+          integer(),
+          [EmployeeVacationQuota.t()],
+          Draft.IntervalType.t()
+        ) ::
           distribution_result()
-  defp assign_vacation(round, employee, distribution_run_id, employee_balances)
+  defp assign_vacation(round, employee, distribution_run_id, employee_balances, interval_type)
 
-  defp assign_vacation(round, employee, distribution_run_id, [employee_balance]) do
+  defp assign_vacation(round, employee, distribution_run_id, [employee_balance], interval_type) do
     Logger.info(
       "Employee balance for period #{employee_balance.interval_start_date} - #{
         employee_balance.interval_end_date
@@ -192,45 +216,40 @@ defmodule Draft.BasicVacationDistributionRunner do
 
     num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class)
 
-    # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
-    max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
-
     anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
-    assigned_weeks =
-      GenerateVacationDistribution.Weeks.generate(
+    # Cap vacation by the maximum number of paid vacation minutes an operator has remaining
+    # In the future, this will need to take into account whether an employee is working
+    # 4 days a week or 5 (8 or 10 hour days)
+    max_quota =
+      case interval_type do
+        :week -> min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
+        :day -> min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+      end
+
+    vacation_distributions =
+      GenerateVacationDistribution.Voluntary.generate(
         distribution_run_id,
         round,
         employee,
-        max_weeks,
-        anniversary_quota
-      )
-
-    max_days = min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
-
-    assigned_days =
-      GenerateVacationDistribution.Days.generate(
-        distribution_run_id,
-        round,
-        employee,
-        max_days,
-        assigned_weeks,
-        anniversary_quota
+        max_quota,
+        anniversary_quota,
+        interval_type
       )
 
     case Draft.VacationDistribution.add_distributions_to_run(
            distribution_run_id,
-           assigned_weeks ++ assigned_days
+           vacation_distributions
          ) do
       {:ok, _result} ->
-        {:ok, assigned_weeks ++ assigned_days}
+        {:ok, vacation_distributions}
 
       {:error, errors} ->
         {:error, "Error saving vacation distributions. #{inspect(errors)}"}
     end
   end
 
-  defp assign_vacation(_round, _employee, _distribution_run_id, []) do
+  defp assign_vacation(_round, _employee, _distribution_run_id, [], _interval_type) do
     Logger.info(
       "Skipping assignment for this employee - no quota interval encompassing the rating period."
     )
@@ -238,7 +257,13 @@ defmodule Draft.BasicVacationDistributionRunner do
     {:ok, []}
   end
 
-  defp assign_vacation(_round, _employee, _distribution_run_id, _employee_balances) do
+  defp assign_vacation(
+         _round,
+         _employee,
+         _distribution_run_id,
+         _employee_balances,
+         _interval_type
+       ) do
     Logger.info(
       "Skipping assignment for this employee - simplifying to only assign if a single interval encompasses the rating period."
     )

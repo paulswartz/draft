@@ -4,13 +4,7 @@ defmodule Draft.EmployeePickOverviewTest do
 
   describe "get_latest/1" do
     test "Returns pick overview for present employee" do
-      Draft.Factory.insert_round_with_employees(%{
-        round_rank: 1,
-        round_opening_date: ~D[2021-02-01],
-        round_closing_date: ~D[2021-03-01],
-        employee_count: 2,
-        group_size: 10
-      })
+      Draft.Factory.insert_round_with_employees(2)
 
       assert %EmployeePickOverview{
                employee_id: "00002",

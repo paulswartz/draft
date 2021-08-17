@@ -2,39 +2,31 @@ defmodule Draft.GenerateVacationDistribution.Days do
   @moduledoc """
   Generate a list of VacationDistributions that can be assigned to the given employee
   """
+  @behaviour Draft.GenerateVacationDistribution.Voluntary
   alias Draft.DivisionVacationDayQuota
+  alias Draft.GenerateVacationDistribution.Voluntary
   alias Draft.VacationDistribution
   require Logger
-
-  @spec generate(
-          integer(),
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          integer(),
-          [VacationDistribution.t()],
-          nil | %{anniversary_date: Date.t(), anniversary_days: number()}
-        ) :: [VacationDistribution.t()]
 
   @doc """
   Generate vacation days to assign for the employee based on what is available in their division/job class in the rating period they are picking for.
   If the employee has an upcoming anniversary date, vacation days are only generated up to that date.
   """
+  @impl Voluntary
   def generate(
         distribution_run_id,
         round,
         employee,
         max_days,
-        assigned_weeks,
         anniversary_vacation
       )
 
-  def generate(distribution_run_id, round, employee, max_days, assigned_weeks, nil) do
+  def generate(distribution_run_id, round, employee, max_days, nil) do
     generate_from_available(
       distribution_run_id,
       round,
       employee,
-      max_days,
-      assigned_weeks
+      max_days
     )
   end
 
@@ -43,7 +35,6 @@ defmodule Draft.GenerateVacationDistribution.Days do
         round,
         employee,
         day_quota_including_anniversary_days,
-        assigned_weeks,
         %{
           anniversary_date: anniversary_date,
           anniversary_days: anniversary_days
@@ -59,8 +50,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
           distribution_run_id,
           round,
           employee,
-          day_quota_including_anniversary_days,
-          assigned_weeks
+          day_quota_including_anniversary_days
         )
 
       :in_range ->
@@ -73,8 +63,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
           Draft.EmployeeVacationQuota.adjust_quota(
             day_quota_including_anniversary_days,
             anniversary_days
-          ),
-          assigned_weeks
+          )
         )
 
       :after_range ->
@@ -85,8 +74,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
           Draft.EmployeeVacationQuota.adjust_quota(
             day_quota_including_anniversary_days,
             anniversary_days
-          ),
-          assigned_weeks
+          )
         )
     end
   end
@@ -95,16 +83,14 @@ defmodule Draft.GenerateVacationDistribution.Days do
          distribution_run_id,
          round,
          employee,
-         max_days,
-         assigned_weeks
+         max_days
        )
 
   defp generate_from_available(
          _distribution_run_id,
          _round,
          _employee,
-         0,
-         _assigned_weeks
+         0
        ) do
     Logger.info(
       "Skipping vacation day assignment - employee cannot take any days off in this rating period."
@@ -117,8 +103,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
          distribution_run_id,
          round,
          employee,
-         max_days,
-         [] = _assigned_weeks
+         max_days
        ) do
     preference_set =
       Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
@@ -142,20 +127,6 @@ defmodule Draft.GenerateVacationDistribution.Days do
       preferred_vacation_days,
       max_days
     )
-  end
-
-  defp generate_from_available(
-         _distribution_run_id,
-         _round,
-         _employee,
-         _max_days,
-         _assigned_weeks
-       ) do
-    Logger.info(
-      "Skipping vacation day assignment -- only assigning weeks or days for now, and weeks have already been assigned."
-    )
-
-    []
   end
 
   defp get_all_days_available_to_employee(distribution_run_id, round, employee) do
