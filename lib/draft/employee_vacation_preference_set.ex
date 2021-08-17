@@ -131,10 +131,10 @@ defmodule Draft.EmployeeVacationPreferenceSet do
   def latest_preferences(process_id, round_id, employee_id, interval_type) do
     pref_set = latest_preference_set(process_id, round_id, employee_id, [interval_type])
 
-    if is_nil(pref_set) do
-      %{}
-    else
+    if pref_set do
       Enum.into(pref_set.vacation_preferences, %{}, &{&1.start_date, &1.rank})
+    else
+      %{}
     end
   end
 end
