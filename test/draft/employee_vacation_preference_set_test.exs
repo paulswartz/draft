@@ -5,10 +5,10 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
   alias Draft.EmployeeVacationPreference
   alias Draft.EmployeeVacationPreferenceSet
 
-  describe "get_latest_preferences/3" do
+  describe "latest_preference_set/3" do
     test "Returns nil if no preferences" do
       assert nil ==
-               EmployeeVacationPreferenceSet.get_latest_preferences(
+               EmployeeVacationPreferenceSet.latest_preference_set(
                  "process_1",
                  "round_1",
                  "00001"
@@ -63,7 +63,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                  }
                ]
              } =
-               EmployeeVacationPreferenceSet.get_latest_preferences(
+               EmployeeVacationPreferenceSet.latest_preference_set(
                  "process_1",
                  "vacation_1",
                  "00001"
@@ -133,7 +133,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                  }
                ]
              } =
-               EmployeeVacationPreferenceSet.get_latest_preferences(
+               EmployeeVacationPreferenceSet.latest_preference_set(
                  "process_1",
                  "vacation_1",
                  "00001"
@@ -221,7 +221,7 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                  }
                ]
              } =
-               EmployeeVacationPreferenceSet.get_latest_preferences(
+               EmployeeVacationPreferenceSet.latest_preference_set(
                  "process_1",
                  "vacation_1",
                  "00001"
@@ -527,6 +527,68 @@ defmodule Draft.EmployeeVacationPreferenceSetTest do
                    }
                  ]
                })
+    end
+  end
+
+  describe "latest_preferences/4" do
+    test "Returns empty map when no preferences" do
+      assert %{} ==
+               EmployeeVacationPreferenceSet.latest_preferences(
+                 "process_1",
+                 "round_1",
+                 "00001",
+                 :week
+               )
+    end
+
+    test "Returns only the specified preference type" do
+      insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          round_rank: 1,
+          round_opening_date: ~D[2021-02-01],
+          round_closing_date: ~D[2021-03-01],
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      first_preference_set = %EmployeeVacationPreferenceSet{
+        process_id: "process_1",
+        round_id: "vacation_1",
+        employee_id: "00001",
+        vacation_preferences: [
+          %EmployeeVacationPreference{
+            start_date: ~D[2021-02-01],
+            end_date: ~D[2021-02-07],
+            rank: 1,
+            interval_type: :week
+          },
+          %EmployeeVacationPreference{
+            start_date: ~D[2021-02-01],
+            end_date: ~D[2021-02-01],
+            rank: 1,
+            interval_type: :day
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(first_preference_set)
+
+      assert %{~D[2021-02-01] => 1} =
+               EmployeeVacationPreferenceSet.latest_preferences(
+                 "process_1",
+                 "vacation_1",
+                 "00001",
+                 :week
+               )
     end
   end
 end

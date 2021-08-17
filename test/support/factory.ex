@@ -13,6 +13,7 @@ defmodule Draft.Factory do
           | :group
           | :round
           | :session
+          | :vacation_preference_set
         ) :: struct()
   def build(:round) do
     %Draft.BidRound{
@@ -124,6 +125,15 @@ defmodule Draft.Factory do
     }
   end
 
+  def build(:vacation_preference_set) do
+    %Draft.EmployeeVacationPreferenceSet{
+      process_id: "BUS22021-122",
+      round_id: "Vacation",
+      employee_id: "00001",
+      vacation_preferences: []
+    }
+  end
+
   # Convenience API
 
   @spec build(
@@ -134,7 +144,8 @@ defmodule Draft.Factory do
           | :employee_vacation_selection
           | :group
           | :round
-          | :session,
+          | :session
+          | :vacation_preference_set,
           map()
         ) :: struct
   def build(factory_name, attributes) do
@@ -149,7 +160,8 @@ defmodule Draft.Factory do
           | :employee_vacation_selection
           | :group
           | :round
-          | :session,
+          | :session
+          | :vacation_preference_set,
           map()
         ) :: struct()
   def insert!(factory_name, attributes) do
@@ -235,20 +247,24 @@ defmodule Draft.Factory do
   Draft.GenerateVacationDistribution.Forced.generate_for_group/1.
   """
   @spec insert_round_with_employees_and_vacation(
+          Draft.IntervalType.t(),
           %{Date.t() => pos_integer()},
           %{String.t() => pos_integer()},
+          %{String.t() => [Date.t()]},
           %{String.t() => [Date.t()]}
         ) :: %{round_id: String.t(), process_id: String.t(), group_number: pos_integer()}
   def insert_round_with_employees_and_vacation(
+        interval_type,
         start_date_to_quota,
         employee_to_date_quota,
-        existing_vacation
+        existing_vacation,
+        vacation_preferences \\ %{}
       ) do
     dates = Enum.sort_by(Map.keys(start_date_to_quota), &Date.to_erl/1)
     employee_count = map_size(employee_to_date_quota)
 
     start_date = Enum.at(dates, 0)
-    end_date = Enum.at(dates, -1)
+    last_date = Enum.at(dates, -1)
     unique_int = :erlang.unique_integer([:positive])
     round_id = "round_#{unique_int}"
     process_id = "process_#{unique_int}"
@@ -261,7 +277,7 @@ defmodule Draft.Factory do
         round_opening_date: Date.add(start_date, -180),
         round_closing_date: Date.add(start_date, -165),
         rating_period_start_date: start_date,
-        rating_period_end_date: Date.add(end_date, 6)
+        rating_period_end_date: end_of_week(last_date)
       },
       %{
         employee_count: employee_count,
@@ -269,9 +285,10 @@ defmodule Draft.Factory do
       }
     )
 
-    insert_week_quotas(start_date_to_quota)
-    insert_employee_quotas(employee_to_date_quota)
+    insert_quotas(start_date_to_quota, interval_type)
+    insert_employee_quotas(employee_to_date_quota, interval_type)
     insert_vacation_selections(existing_vacation)
+    insert_vacation_preferences(round_id, process_id, vacation_preferences, interval_type)
 
     %{
       round_id: round_id,
@@ -280,17 +297,38 @@ defmodule Draft.Factory do
     }
   end
 
-  defp insert_week_quotas(start_date_to_quota) do
-    for {week_start, quota} <- start_date_to_quota do
+  defp end_of_week(date) do
+    Date.add(date, 6)
+  end
+
+  defp end_of_interval(date, :day) do
+    date
+  end
+
+  defp end_of_interval(date, :week) do
+    end_of_week(date)
+  end
+
+  defp insert_quotas(start_date_to_quota, :week) do
+    for {start_date, quota} <- start_date_to_quota do
       insert!(:division_vacation_week_quota, %{
-        start_date: week_start,
-        end_date: Date.add(week_start, 6),
+        start_date: start_date,
+        end_date: end_of_week(start_date),
         quota: quota
       })
     end
   end
 
-  defp insert_employee_quotas(employee_to_date_quotas) do
+  defp insert_quotas(start_date_to_quota, :day) do
+    for {start_date, quota} <- start_date_to_quota do
+      insert!(:division_vacation_day_quota, %{
+        date: start_date,
+        quota: quota
+      })
+    end
+  end
+
+  defp insert_employee_quotas(employee_to_date_quotas, :week) do
     for {employee_id, quota} <- employee_to_date_quotas do
       insert!(
         :employee_vacation_quota,
@@ -308,6 +346,24 @@ defmodule Draft.Factory do
     end
   end
 
+  defp insert_employee_quotas(employee_to_date_quotas, :day) do
+    for {employee_id, quota} <- employee_to_date_quotas do
+      insert!(
+        :employee_vacation_quota,
+        %{
+          employee_id: employee_id,
+          weekly_quota: 0,
+          dated_quota: quota,
+          restricted_week_quota: 0,
+          available_after_date: nil,
+          available_after_weekly_quota: nil,
+          available_after_dated_quota: 0,
+          maximum_minutes: 480 * quota
+        }
+      )
+    end
+  end
+
   defp insert_vacation_selections(existing_vacation) do
     for {employee_id, vacation_selections} <- existing_vacation,
         week_start <- vacation_selections do
@@ -320,6 +376,29 @@ defmodule Draft.Factory do
           end_date: Date.add(week_start, 6)
         }
       )
+    end
+  end
+
+  defp insert_vacation_preferences(_round_id, _process_id, vacation_preferences, _interval_type)
+       when vacation_preferences == %{} do
+  end
+
+  defp insert_vacation_preferences(round_id, process_id, vacation_preferences, interval_type) do
+    for {employee_id, preferences} <- vacation_preferences do
+      insert!(:vacation_preference_set, %{
+        round_id: round_id,
+        process_id: process_id,
+        employee_id: employee_id,
+        vacation_preferences:
+          Enum.map(Enum.with_index(preferences, 1), fn {start_date, rank} ->
+            %Draft.EmployeeVacationPreference{
+              start_date: start_date,
+              rank: rank,
+              interval_type: interval_type,
+              end_date: end_of_interval(start_date, interval_type)
+            }
+          end)
+      })
     end
   end
 end

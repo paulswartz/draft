@@ -96,12 +96,12 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     end
   end
 
-  @spec get_latest_preferences(String.t(), String.t(), String.t()) ::
+  @spec latest_preference_set(String.t(), String.t(), String.t(), [Draft.IntervalType.t()]) ::
           __MODULE__.t() | nil
   @doc """
-  Get the most recently entered preferences entered by the given operator for the given pick.
+  Get the most recently entered preference set entered by the given operator for the given pick.
   """
-  def get_latest_preferences(process_id, round_id, employee_id) do
+  def latest_preference_set(process_id, round_id, employee_id, interval_types \\ [:week, :day]) do
     latest_preference_set_query =
       from(preference_set in Draft.EmployeeVacationPreferenceSet,
         where:
@@ -113,11 +113,28 @@ defmodule Draft.EmployeeVacationPreferenceSet do
           vacation_preferences:
             ^from(
               p in EmployeeVacationPreference,
+              where: p.interval_type in ^interval_types,
               order_by: [asc: p.rank]
             )
         ]
       )
 
     Repo.one(latest_preference_set_query)
+  end
+
+  @spec latest_preferences(String.t(), String.t(), String.t(), Draft.IntervalType.t()) ::
+          %{Date.t() => pos_integer()}
+  @doc """
+  Get the latest preferences (day or week) for the given operator & pick.
+  Return value representes preferences as a map %{start_date : rank}
+  """
+  def latest_preferences(process_id, round_id, employee_id, interval_type) do
+    pref_set = latest_preference_set(process_id, round_id, employee_id, [interval_type])
+
+    if pref_set do
+      Enum.into(pref_set.vacation_preferences, %{}, &{&1.start_date, &1.rank})
+    else
+      %{}
+    end
   end
 end

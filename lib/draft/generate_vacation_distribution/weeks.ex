@@ -81,10 +81,11 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
          max_weeks
        ) do
     preference_set =
-      Draft.EmployeeVacationPreferenceSet.get_latest_preferences(
+      Draft.EmployeeVacationPreferenceSet.latest_preference_set(
         employee.process_id,
         employee.round_id,
-        employee.employee_id
+        employee.employee_id,
+        [:week]
       )
 
     all_available_weeks =

@@ -165,7 +165,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
     end
   end
 
-  describe "all_quota_desc/3" do
+  describe "available_quota/3" do
     test "Only includes weeks with quota > 0" do
       Draft.Factory.insert_round_with_employees(
         %{

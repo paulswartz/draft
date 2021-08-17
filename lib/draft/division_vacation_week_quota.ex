@@ -3,6 +3,7 @@ defmodule Draft.DivisionVacationWeekQuota do
     Represents the division vacation quota for a given type of employee for a particular week
   """
   @behaviour Draft.Parsable
+
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query

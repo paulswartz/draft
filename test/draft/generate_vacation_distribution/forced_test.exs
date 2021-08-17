@@ -324,6 +324,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 1,
             ~D[2021-08-08] => 1,
@@ -355,6 +356,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     test "internal dates are also taken into account" do
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -385,6 +387,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # worse case scenario: last employee must be forced into last (most-preferred) date
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -452,6 +455,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # worse case scenario: last employee must be forced into last (most-preferred) date
       group =
         insert_round_with_employees_and_vacation(
+          :week,
           %{
             ~D[2021-08-01] => 2,
             ~D[2021-08-08] => 2,
@@ -539,5 +543,139 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       assert vacation_assignments == :error
     end
+
+    test "Assigns employee their top preference when possible" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{
+            ~D[2021-08-01] => 1,
+            ~D[2021-08-08] => 1
+          },
+          %{
+            "00001" => 1,
+            "00002" => 1
+          },
+          %{}
+        )
+
+      first_preference_set = %Draft.EmployeeVacationPreferenceSet{
+        process_id: group.process_id,
+        round_id: group.round_id,
+        employee_id: "00001",
+        vacation_preferences: [
+          %Draft.EmployeeVacationPreference{
+            start_date: ~D[2021-08-01],
+            end_date: ~D[2021-08-07],
+            rank: 1,
+            interval_type: :week
+          }
+        ]
+      }
+
+      Draft.Repo.insert!(first_preference_set)
+
+      vacation_assignments =
+        GenerateVacationDistribution.Forced.generate_for_group(%{
+          round_id: group.round_id,
+          process_id: group.process_id,
+          group_number: group.group_number
+        })
+
+      assert {:ok,
+              [
+                %{employee_id: "00001", start_date: ~D[2021-08-01], preference_rank: 1},
+                %{employee_id: "00002", start_date: ~D[2021-08-08], preference_rank: nil}
+              ]} = vacation_assignments
+    end
+  end
+
+  test "WMP Scenario 6 -- Draft finds optimal solution" do
+    # Expecting outcome on slide 36 here
+    # https://massdot.app.box.com/s/d4iuxl2wvum2caoj9lvarll2s9scnopg/file/820171090750
+
+    week_desc = %{
+      ~D[2021-08-01] => :week_1,
+      ~D[2021-08-08] => :week_2,
+      ~D[2021-08-15] => :week_3,
+      ~D[2021-08-22] => :week_4,
+      ~D[2021-08-29] => :week_5
+    }
+
+    group =
+      insert_round_with_employees_and_vacation(
+        :week,
+        %{
+          # week 1
+          ~D[2021-08-01] => 10,
+          # week 2
+          ~D[2021-08-08] => 6,
+          # week 3
+          ~D[2021-08-15] => 4,
+          # week 4
+          ~D[2021-08-22] => 3,
+          # week 5
+          ~D[2021-08-29] => 2
+        },
+        %{
+          "00001" => 0,
+          "00002" => 1,
+          "00003" => 1,
+          "00004" => 1,
+          "00005" => 2,
+          "00006" => 2,
+          "00007" => 2,
+          "00008" => 2,
+          "00009" => 2,
+          "00010" => 2,
+          "00011" => 2,
+          "00012" => 2,
+          "00013" => 2,
+          "00014" => 2,
+          "00015" => 2
+        },
+        %{},
+        %{
+          "00001" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00002" => [~D[2021-08-22], ~D[2021-08-01]],
+          "00003" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00004" => [~D[2021-08-29], ~D[2021-08-22]],
+          "00005" => [~D[2021-08-22], ~D[2021-08-08]],
+          "00006" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00007" => [~D[2021-08-22], ~D[2021-08-01]],
+          "00008" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00009" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00010" => [~D[2021-08-22], ~D[2021-08-15]],
+          "00011" => [~D[2021-08-22], ~D[2021-08-08]],
+          "00012" => [~D[2021-08-29], ~D[2021-08-15]],
+          "00013" => [~D[2021-08-29], ~D[2021-08-22]],
+          "00014" => [~D[2021-08-22], ~D[2021-08-01]],
+          "00015" => [~D[2021-08-08], ~D[2021-08-01]]
+        }
+      )
+
+    {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+
+    vacation_assignments_formatted =
+      Enum.group_by(vacation_assignments, & &1.employee_id, &Map.get(week_desc, &1.start_date))
+
+    expected_assignments = %{
+      "00002" => [:week_4],
+      "00003" => [:week_5],
+      "00004" => [:week_5],
+      "00005" => [:week_2, :week_4],
+      "00006" => [:week_1, :week_3],
+      "00007" => [:week_1, :week_4],
+      "00008" => [:week_1, :week_3],
+      "00009" => [:week_1, :week_3],
+      "00010" => [:week_1, :week_3],
+      "00011" => [:week_1, :week_2],
+      "00012" => [:week_1, :week_2],
+      "00013" => [:week_1, :week_2],
+      "00014" => [:week_1, :week_2],
+      "00015" => [:week_1, :week_2]
+    }
+
+    assert ^expected_assignments = vacation_assignments_formatted
   end
 end
