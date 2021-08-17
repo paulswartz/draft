@@ -228,7 +228,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), balance.weekly_quota)
 
     available_quota =
-      DivisionQuotaRanked.available_quota_with_preference_rank(
+      DivisionQuotaRanked.available_to_employee(
         round,
         employee,
         interval_type

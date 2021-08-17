@@ -19,13 +19,13 @@ defmodule Draft.DivisionQuotaRanked do
   preferred vacation would be first. Any available vacation that the employee has not marked as a
   preference will be returned sorted by descending start date (latest date first)
   """
-  @spec available_quota_with_preference_rank(
+  @spec available_to_employee(
           Draft.BidRound.t(),
           Draft.EmployeeRanking.t(),
           Draft.IntervalType.t()
         ) :: [t()]
 
-  def available_quota_with_preference_rank(round, employee, interval_type) do
+  def available_to_employee(round, employee, interval_type) do
     available_quota = available_quota(round, employee, interval_type)
 
     employee_preferences =

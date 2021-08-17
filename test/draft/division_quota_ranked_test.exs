@@ -3,7 +3,7 @@ defmodule Draft.DivisionQuotaRankedTest do
   use Draft.DataCase
   import Draft.Factory
 
-  describe "available_quota_with_preference_rank/2" do
+  describe "available_to_employee/2" do
     test "Returns weeks in descending order when no preferences" do
       %{round_id: round_id, process_id: process_id} =
         insert_round_with_employees_and_vacation(
@@ -47,7 +47,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :week)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
     end
 
     test "Returns weeks with preference present before weeks w/out preference" do
@@ -94,7 +94,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :week)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
     end
 
     test "Week Preferences are returned sorted in ascending order" do
@@ -141,7 +141,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :week)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
     end
 
     test "Returns days in descending order when no preferences" do
@@ -187,7 +187,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :day)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
     end
 
     test "Returns day with preference present before day w/out preference" do
@@ -234,7 +234,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :day)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
     end
 
     test "Day preferences are returned sorted in ascending order" do
@@ -281,7 +281,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_quota_with_preference_rank(round, emp, :day)
+             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
     end
   end
 end
