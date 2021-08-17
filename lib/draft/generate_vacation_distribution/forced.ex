@@ -248,7 +248,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
               interval_type: interval_type,
               start_date: q.start_date,
               end_date: q.end_date,
-              forced: true,
+              is_forced: true,
               preference_rank: q.preference_rank
             }
           }

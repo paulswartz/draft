@@ -16,7 +16,7 @@ defmodule Draft.VacationDistribution do
     field :end_date, :date
     field :status, Draft.VacationStatusEnum, default: :assigned
     field :preference_rank, :integer
-    field :forced, :boolean, default: false
+    field :is_forced, :boolean, default: false
     field :synced_to_hastus, :boolean, default: false
     has_one :vacation_distribution_run, Draft.VacationDistributionRun, foreign_key: :id
 
@@ -31,7 +31,7 @@ defmodule Draft.VacationDistribution do
           end_date: Date.t(),
           status: Draft.VacationStatusEnum.t(),
           preference_rank: pos_integer() | nil,
-          forced: boolean(),
+          is_forced: boolean(),
           synced_to_hastus: boolean()
         }
 
