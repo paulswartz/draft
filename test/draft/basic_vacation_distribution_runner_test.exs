@@ -261,14 +261,13 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
     end
 
     test "Operator whose anniversary date has passed can take full amount of vacation time available" do
-      group =
-        insert_round_with_employees_and_vacation(
-          :week,
-          %{~D[2021-04-11] => 1, ~D[2021-04-04] => 1},
-          %{"00001" => %{total_quota: 2, anniversary_date: ~D[2021-03-15], anniversary_quota: 1}},
-          %{},
-          %{"00001" => @default_week_preferences}
-        )
+      insert_round_with_employees_and_vacation(
+        :week,
+        %{~D[2021-04-11] => 1, ~D[2021-04-04] => 1},
+        %{"00001" => %{total_quota: 2, anniversary_date: ~D[2021-03-15], anniversary_quota: 1}},
+        %{},
+        %{"00001" => @default_week_preferences}
+      )
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 

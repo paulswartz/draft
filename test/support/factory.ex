@@ -408,11 +408,17 @@ defmodule Draft.Factory do
           %{String.t() => [Date.t()]},
           Draft.IntervalType.t()
         ) :: nil | [Draft.EmployeeVacationPreferenceSet.t()]
-  defp insert_vacation_preferences(_round_id, _process_id, vacation_preferences, _interval_type)
-       when vacation_preferences == %{} do
+  @doc """
+  Insert the specified employee vacation preferences, given in order of descending preference,
+  so the first date is assumed to be the most preferred.
+  Ex: if the vacation_preferences param is %{"00001" => [~D[2021-01-01], ~D[2021-01-02]]},
+  1/1/2021 would be inserted as operator 00001's top preference.
+  """
+  def insert_vacation_preferences(_round_id, _process_id, vacation_preferences, _interval_type)
+      when vacation_preferences == %{} do
   end
 
-  defp insert_vacation_preferences(round_id, process_id, vacation_preferences, interval_type) do
+  def insert_vacation_preferences(round_id, process_id, vacation_preferences, interval_type) do
     for {employee_id, preferences} <- vacation_preferences do
       insert!(:vacation_preference_set, %{
         round_id: round_id,

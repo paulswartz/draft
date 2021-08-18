@@ -40,6 +40,14 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       quota: 1
     })
 
+    # Insert default preferences for operator, which can be overridden in particular test cases
+    insert_vacation_preferences(
+      "vacation_1",
+      "process_1",
+      %{"00001" => [~D[2021-04-15], ~D[2021-04-08], ~D[2021-04-01]]},
+      :week
+    )
+
     {:ok,
      round: Repo.one!(from(r in Draft.BidRound)),
      employee_ranking: Repo.one!(from(e in Draft.EmployeeRanking))}
@@ -47,12 +55,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
   describe "distribute/4" do
     test "Operator whose anniversary date has passed can take full amount of vacation time available",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           2,
           %{
             anniversary_date: ~D[2021-03-01],
@@ -78,12 +86,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator who has no anniversary date can take full amount of vacation time available",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           2,
           nil
         )
@@ -105,12 +113,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date on start date of rating period can take full amount of vacation ",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           2,
           %{
             anniversary_date: ~D[2021-04-01],
@@ -136,12 +144,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date in the middle of rating period only assigned vacation earned prior to anniversary",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           2,
           %{
             anniversary_date: ~D[2021-04-15],
@@ -161,12 +169,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date after rating period only assigned vacation available before anniversary date",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           2,
           %{
             anniversary_date: ~D[2021-06-01],
@@ -186,12 +194,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with no vacation weeks remaining and anniversary that has passed is not distributed any time",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           0,
           %{
             anniversary_date: ~D[2021-03-01],
@@ -204,12 +212,12 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with no vacation weeks remaining and anniversary that is upcoming is not distributed any time",
-         state do
+         %{round: round, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          state.round,
-          state.employee_ranking,
+          round,
+          employee_ranking,
           0,
           %{
             anniversary_date: ~D[2021-06-01],
@@ -223,28 +231,19 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is assigned preferred week when it is still available",
-       state do
-    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
-      process_id: "process_1",
-      round_id: "vacation_1",
-      employee_id: "00001",
-      vacation_preferences: [
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-08],
-          end_date: ~D[2021-04-14],
-          rank: 1,
-          interval_type: :week
-        }
-      ]
-    }
-
-    Draft.Repo.insert!(preferred_vacation)
+       %{round: round, employee_ranking: employee_ranking} do
+    insert_vacation_preferences(
+      round.round_id,
+      round.process_id,
+      %{"00001" => [~D[2021-04-08]]},
+      :week
+    )
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -259,34 +258,19 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is assigned only one week if only one preference is still available",
-       state do
-    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
-      process_id: "process_1",
-      round_id: "vacation_1",
-      employee_id: "00001",
-      vacation_preferences: [
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-08],
-          end_date: ~D[2021-04-14],
-          rank: 1,
-          interval_type: :week
-        },
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-21],
-          end_date: ~D[2021-04-28],
-          rank: 2,
-          interval_type: :week
-        }
-      ]
-    }
-
-    Draft.Repo.insert!(preferred_vacation)
+       %{round: round, employee_ranking: employee_ranking} do
+    insert_vacation_preferences(
+      round.round_id,
+      round.process_id,
+      %{"00001" => [~D[2021-04-22], ~D[2021-04-08]]},
+      :week
+    )
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -301,34 +285,19 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with more vacation preferences than their quota is only assigned as many weeks as is allowed by their quota",
-       state do
-    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
-      process_id: "process_1",
-      round_id: "vacation_1",
-      employee_id: "00001",
-      vacation_preferences: [
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-08],
-          end_date: ~D[2021-04-14],
-          rank: 1,
-          interval_type: :week
-        },
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-07],
-          end_date: ~D[2021-04-01],
-          rank: 2,
-          interval_type: :week
-        }
-      ]
-    }
-
-    Draft.Repo.insert!(preferred_vacation)
+       %{round: round, employee_ranking: employee_ranking} do
+    insert_vacation_preferences(
+      round.round_id,
+      round.process_id,
+      %{"00001" => [~D[2021-04-08], ~D[2021-04-01]]},
+      :week
+    )
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -343,28 +312,19 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is not assigned their preferred week when it is not available",
-       state do
-    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
-      process_id: "process_1",
-      round_id: "vacation_1",
-      employee_id: "00001",
-      vacation_preferences: [
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-22],
-          end_date: ~D[2021-04-28],
-          rank: 1,
-          interval_type: :week
-        }
-      ]
-    }
-
-    Draft.Repo.insert!(preferred_vacation)
+       %{round: round, employee_ranking: employee_ranking} do
+    insert_vacation_preferences(
+      round.round_id,
+      round.process_id,
+      %{"00001" => [~D[2021-04-22]]},
+      :week
+    )
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -373,13 +333,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is not assigned that week when it has been taken by someone earlier in the same run",
-       state do
+       %{round: round, employee_ranking: employee_ranking} do
     group_number = 1234
 
     run_id =
       Draft.VacationDistributionRun.insert(%Draft.BidGroup{
-        process_id: "process_1",
-        round_id: "vacation_1",
+        process_id: round.process_id,
+        round_id: round.round_id,
         group_number: group_number
       })
 
@@ -392,27 +352,18 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
       }
     ])
 
-    preferred_vacation = %Draft.EmployeeVacationPreferenceSet{
-      process_id: "process_1",
-      round_id: "vacation_1",
-      employee_id: "00001",
-      vacation_preferences: [
-        %Draft.EmployeeVacationPreference{
-          start_date: ~D[2021-04-08],
-          end_date: ~D[2021-04-14],
-          rank: 1,
-          interval_type: :week
-        }
-      ]
-    }
-
-    Draft.Repo.insert!(preferred_vacation)
+    insert_vacation_preferences(
+      round.round_id,
+      round.process_id,
+      %{"00001" => [~D[2021-04-08]]},
+      :week
+    )
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         run_id,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -420,7 +371,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     assert [] = vacation_assignments
   end
 
-  test "Operator is not assigned vacation week they've already selected", state do
+  test "Operator is not assigned vacation week they've already selected", %{
+    round: round,
+    employee_ranking: employee_ranking
+  } do
     insert!(:employee_vacation_selection, %{
       vacation_interval_type: :week,
       start_date: ~D[2021-04-15],
@@ -431,8 +385,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1234,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
@@ -446,13 +400,16 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
            ] = vacation_assignments
   end
 
-  test "Operator can be re-assigned vacation week that has been previously cancelled", state do
+  test "Operator can be re-assigned vacation week that has been previously cancelled", %{
+    round: round,
+    employee_ranking: employee_ranking
+  } do
     group_number = 1234
 
     run_id =
       Draft.VacationDistributionRun.insert(%Draft.BidGroup{
-        process_id: "process_1",
-        round_id: "vacation_1",
+        process_id: round.process_id,
+        round_id: round.round_id,
         group_number: group_number
       })
 
@@ -466,8 +423,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         run_id,
-        state.round,
-        state.employee_ranking,
+        round,
+        employee_ranking,
         1,
         nil
       )
