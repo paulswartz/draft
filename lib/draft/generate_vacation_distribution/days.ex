@@ -92,13 +92,13 @@ defmodule Draft.GenerateVacationDistribution.Days do
          employee,
          max_days
        ) do
-        preferred_days =
-          distribution_run_id
-          |> ranked_available_days(round, employee)
-          |> Enum.take(max_days)
-          |> Enum.filter(& &1.preference_rank)
+    preferred_days =
+      distribution_run_id
+      |> ranked_available_days(round, employee)
+      |> Enum.take(max_days)
+      |> Enum.filter(& &1.preference_rank)
 
-        Enum.map(preferred_days, &to_distribution(employee, &1))
+    Enum.map(preferred_days, &to_distribution(employee, &1))
   end
 
   defp ranked_available_days(

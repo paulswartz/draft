@@ -249,7 +249,15 @@ defmodule Draft.Factory do
   @spec insert_round_with_employees_and_vacation(
           Draft.IntervalType.t(),
           %{Date.t() => pos_integer()},
-          %{String.t() => pos_integer()},
+          %{
+            String.t() =>
+              pos_integer()
+              | %{
+                  :total_quota => pos_integer(),
+                  optional(:anniversary_date) => Date.t(),
+                  optional(:anniversary_quota) => pos_integer()
+                }
+          },
           %{String.t() => [Date.t()]},
           %{String.t() => [Date.t()]}
         ) :: %{round_id: String.t(), process_id: String.t(), group_number: pos_integer()}
@@ -282,7 +290,8 @@ defmodule Draft.Factory do
       %{
         employee_count: employee_count,
         group_size: employee_count
-      }
+      },
+      %{type: :vacation, type_allowed: interval_type}
     )
 
     insert_quotas(start_date_to_quota, interval_type)
@@ -328,40 +337,54 @@ defmodule Draft.Factory do
     end
   end
 
-  defp insert_employee_quotas(employee_to_date_quotas, :week) do
+  defp insert_employee_quotas(employee_to_date_quotas, interval_type) do
     for {employee_id, quota} <- employee_to_date_quotas do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          employee_id: employee_id,
-          weekly_quota: quota,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 2400 * quota
-        }
-      )
+      insert_employee_quota(employee_id, quota, interval_type)
     end
   end
 
-  defp insert_employee_quotas(employee_to_date_quotas, :day) do
-    for {employee_id, quota} <- employee_to_date_quotas do
-      insert!(
-        :employee_vacation_quota,
-        %{
-          employee_id: employee_id,
-          weekly_quota: 0,
-          dated_quota: quota,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 480 * quota
-        }
-      )
-    end
+  defp insert_employee_quota(employee_id, quota, interval_type) when is_integer(quota) do
+    insert_employee_quota(employee_id, %{total_quota: quota}, interval_type)
+  end
+
+  defp insert_employee_quota(employee_id, quota, :week) do
+    total_quota = Map.get(quota, :total_quota)
+    anniversary = Map.get(quota, :anniversary_date)
+    anniversary_quota = Map.get(quota, :anniversary_quota)
+
+    insert!(
+      :employee_vacation_quota,
+      %{
+        employee_id: employee_id,
+        weekly_quota: total_quota,
+        dated_quota: 0,
+        restricted_week_quota: 0,
+        available_after_date: anniversary,
+        available_after_weekly_quota: anniversary_quota,
+        available_after_dated_quota: 0,
+        maximum_minutes: 2400 * total_quota
+      }
+    )
+  end
+
+  defp insert_employee_quota(employee_id, quota, :day) do
+    total_quota = Map.get(quota, :total_quota)
+    anniversary = Map.get(quota, :anniversary_date)
+    anniversary_quota = Map.get(quota, :anniversary_quota)
+
+    insert!(
+      :employee_vacation_quota,
+      %{
+        employee_id: employee_id,
+        weekly_quota: 0,
+        dated_quota: total_quota,
+        restricted_week_quota: 0,
+        available_after_date: anniversary,
+        available_after_weekly_quota: 0,
+        available_after_dated_quota: anniversary_quota,
+        maximum_minutes: 480 * total_quota
+      }
+    )
   end
 
   defp insert_vacation_selections(existing_vacation) do
@@ -379,6 +402,12 @@ defmodule Draft.Factory do
     end
   end
 
+  @spec insert_vacation_preferences(
+          String.t(),
+          String.t(),
+          %{String.t() => [Date.t()]},
+          Draft.IntervalType.t()
+        ) :: nil | [Draft.EmployeeVacationPreferenceSet.t()]
   defp insert_vacation_preferences(_round_id, _process_id, vacation_preferences, _interval_type)
        when vacation_preferences == %{} do
   end
