@@ -3,14 +3,15 @@ defmodule Draft.GenerateVacationDistribution.Days do
   Generate a list of VacationDistributions that can be assigned to the given employee
   """
   @behaviour Draft.GenerateVacationDistribution.Voluntary
-  alias Draft.DivisionVacationDayQuota
   alias Draft.GenerateVacationDistribution.Voluntary
   alias Draft.VacationDistribution
   require Logger
 
   @doc """
-  Generate vacation days to assign for the employee based on what is available in their division/job class in the rating period they are picking for.
-  If the employee has an upcoming anniversary date, vacation days are only generated up to that date.
+  Generate vacation days to assign for the employee based on what is available in their
+  division/job class in the rating period they are picking for.
+  If the employee has an upcoming anniversary date, distributions will be generated only
+  for the amount of quota earned prior to the anniversary.
   """
   @impl Voluntary
   def generate(
@@ -94,14 +95,13 @@ defmodule Draft.GenerateVacationDistribution.Days do
        ) do
     preferred_days =
       distribution_run_id
-      |> ranked_available_days(round, employee)
+      |> preferred_available_days(round, employee)
       |> Enum.take(max_days)
-      |> Enum.filter(& &1.preference_rank)
 
     Enum.map(preferred_days, &to_distribution(employee, &1))
   end
 
-  defp ranked_available_days(
+  defp preferred_available_days(
          distribution_run_id,
          round,
          employee
@@ -120,6 +120,7 @@ defmodule Draft.GenerateVacationDistribution.Days do
       }
     end)
     |> Enum.filter(fn q -> q.quota > 0 end)
+    |> Enum.filter(& &1.preference_rank)
   end
 
   defp to_distribution(employee, assigned_day) do

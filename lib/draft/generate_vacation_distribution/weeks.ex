@@ -3,16 +3,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   Generate a list of vacation weeks that can be assigned to the given employee
   based on their preferences
   """
+  @behaviour Draft.GenerateVacationDistribution.Voluntary
+  alias Draft.GenerateVacationDistribution.Voluntary
   alias Draft.VacationDistribution
   require Logger
-
-  @spec generate(
-          integer(),
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          integer(),
-          nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
-        ) :: [VacationDistribution.t()]
 
   @doc """
   generate a list of vacation weeks for an employee based on their preferences and what is
@@ -20,6 +14,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   If the employee has an upcoming anniversary date, distributions will be generated only
   for the amount of quota earned prior to the anniversary.
   """
+  @impl Voluntary
   def generate(
         distribution_run_id,
         round,
@@ -88,14 +83,13 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
        ) do
     preferred_weeks =
       distribution_run_id
-      |> ranked_available_weeks(round, employee)
+      |> preferred_available_weeks(round, employee)
       |> Enum.take(max_weeks)
-      |> Enum.filter(& &1.preference_rank)
 
     Enum.map(preferred_weeks, &to_distribution(employee, &1))
   end
 
-  defp ranked_available_weeks(
+  defp preferred_available_weeks(
          distribution_run_id,
          round,
          employee
@@ -114,6 +108,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
       }
     end)
     |> Enum.filter(fn q -> q.quota > 0 end)
+    |> Enum.filter(& &1.preference_rank)
   end
 
   defp to_distribution(employee, assigned_week) do
