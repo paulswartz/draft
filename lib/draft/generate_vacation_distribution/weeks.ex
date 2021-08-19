@@ -81,12 +81,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
          employee,
          max_weeks
        ) do
-    preferred_weeks =
-      distribution_run_id
-      |> preferred_available_weeks(round, employee)
-      |> Enum.take(max_weeks)
-
-    Enum.map(preferred_weeks, &to_distribution(employee, &1))
+    distribution_run_id
+    |> preferred_available_weeks(round, employee)
+    |> Enum.take(max_weeks)
+    |> Enum.map(&to_distribution(&1, employee))
   end
 
   defp preferred_available_weeks(
@@ -111,7 +109,7 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
     |> Enum.filter(& &1.preference_rank)
   end
 
-  defp to_distribution(employee, assigned_week) do
+  defp to_distribution(assigned_week, employee) do
     Logger.info("assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}")
 
     %VacationDistribution{
