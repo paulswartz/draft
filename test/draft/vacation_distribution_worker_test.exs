@@ -6,98 +6,57 @@ defmodule Draft.VacationDistributionWorkerTest do
 
   describe "perform/1" do
     test "Successfully distributes vacation weeks" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_id: "round_1",
-          process_id: "process_1",
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :vacation, type_allowed: :week}
-      )
-
-      insert!(:employee_vacation_quota, %{
-        employee_id: "00001",
-        weekly_quota: 1,
-        dated_quota: 0,
-        maximum_minutes: 2400
-      })
-
-      insert!(:division_vacation_week_quota, %{
-        start_date: ~D[2021-04-01],
-        end_date: ~D[2021-04-07],
-        quota: 1
-      })
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 1},
+          %{"00001" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
 
       assert {:ok,
               [
                 %VacationDistribution{
-                  start_date: ~D[2021-04-01],
-                  end_date: ~D[2021-04-07],
+                  start_date: ~D[2021-04-04],
+                  end_date: ~D[2021-04-10],
                   interval_type: :week,
                   employee_id: "00001"
                 }
               ]} =
                VacationDistributionWorker.perform(%Oban.Job{
                  args: %{
-                   "round_id" => "round_1",
-                   "process_id" => "process_1",
-                   "group_number" => 1
+                   "round_id" => group.round_id,
+                   "process_id" => group.process_id,
+                   "group_number" => group.group_number
                  }
                })
     end
 
     test "Successfully distributes vacation days" do
-      insert_round_with_employees(
-        %{
-          rank: 1,
-          round_id: "round_1",
-          process_id: "process_1",
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :vacation, type_allowed: :day}
-      )
-
-      insert!(:employee_vacation_quota, %{
-        employee_id: "00001",
-        weekly_quota: 0,
-        dated_quota: 1,
-        maximum_minutes: 2400
-      })
-
-      insert!(:division_vacation_day_quota, %{
-        date: ~D[2021-04-01],
-        quota: 1
-      })
+      group =
+        insert_round_with_employees_and_vacation(
+          :day,
+          %{~D[2021-04-04] => 1},
+          %{"00001" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
 
       assert {:ok,
               [
                 %VacationDistribution{
-                  start_date: ~D[2021-04-01],
-                  end_date: ~D[2021-04-01],
+                  start_date: ~D[2021-04-04],
+                  end_date: ~D[2021-04-04],
                   interval_type: :day,
                   employee_id: "00001"
                 }
               ]} =
                VacationDistributionWorker.perform(%Oban.Job{
                  args: %{
-                   "round_id" => "round_1",
-                   "process_id" => "process_1",
-                   "group_number" => 1
+                   "round_id" => group.round_id,
+                   "process_id" => group.process_id,
+                   "group_number" => group.group_number
                  }
                })
     end
