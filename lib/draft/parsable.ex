@@ -6,6 +6,8 @@ defmodule Draft.Parsable do
   alias Draft.BidRound
   alias Draft.BidSession
   alias Draft.EmployeeRanking
+  alias Draft.RosterAvailability
+  alias Draft.RosterSet
 
   @callback from_parts([String.t()]) :: t()
 
@@ -15,23 +17,23 @@ defmodule Draft.Parsable do
   @doc """
   Returns a struct for the given module type created from the given ordered list of strings.
   """
+  def from_parts(BidRound, [record_type | parts]) do
+    case record_type do
+      "R" -> BidRound.from_parts(parts)
+      "E" -> EmployeeRanking.from_parts(parts)
+      "G" -> BidGroup.from_parts(parts)
+    end
+  end
+
+  def from_parts(BidSession, [record_type | parts]) do
+    case record_type do
+      "S" -> BidSession.from_parts(parts)
+      "R" -> RosterSet.from_parts(parts)
+      "A" -> RosterAvailability.from_parts(parts)
+    end
+  end
+
   def from_parts(record_module, parts) do
     record_module.from_parts(parts)
   end
-
-  @spec from_parts([String.t()]) :: t()
-  @doc """
-  Returns a struct created from the given ordered list of strings. The type of struct returned is determined
-  by the first string in the list.
-  """
-  def from_parts([record_type | rest]) do
-    record_type
-    |> record_struct()
-    |> from_parts(rest)
-  end
-
-  defp record_struct("R"), do: BidRound
-  defp record_struct("E"), do: EmployeeRanking
-  defp record_struct("G"), do: BidGroup
-  defp record_struct("S"), do: BidSession
 end

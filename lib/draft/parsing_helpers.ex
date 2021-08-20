@@ -25,6 +25,13 @@ defmodule Draft.ParsingHelpers do
   def to_int(""), do: 0
   def to_int(string), do: String.to_integer(string)
 
+  @spec to_boolean(String.t()) :: boolean()
+  @doc """
+  Parse the given string into a boolean.
+  """
+  def to_boolean("1"), do: true
+  def to_boolean("0"), do: false
+
   @spec to_optional_date(String.t() | nil) :: Date.t() | nil
   @doc """
   Parse the given string into a date if not nil. Otherwise, returns nil

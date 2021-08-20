@@ -7,10 +7,11 @@ defmodule Draft.BidProcessSetupTest do
   alias Draft.EmployeeRanking
 
   setup do
-    BidProcessSetup.update_bid_process(
-      {"../../test/support/test_data/test_rounds.csv",
-       "../../test/support/test_data/test_sessions.csv"}
-    )
+    BidProcessSetup.update_bid_process([
+      {Draft.BidRound, "../../test/support/test_data/test_rounds.csv"},
+      {Draft.BidSession, "../../test/support/test_data/test_sessions.csv"},
+      {Draft.RosterDay, "../../test/support/test_data/test_roster_days.csv"}
+    ])
 
     :ok
   end
@@ -18,11 +19,11 @@ defmodule Draft.BidProcessSetupTest do
   describe "update_bid_process/1" do
     test "Correct number of rounds / groups / employee rankings present" do
       all_rounds = Repo.all(BidRound)
-      assert length(all_rounds) == 1
+      assert length(all_rounds) == 2
       all_groups = Repo.all(BidGroup)
-      assert length(all_groups) == 2
+      assert length(all_groups) == 4
       all_employee_rankings = Repo.all(EmployeeRanking)
-      assert length(all_employee_rankings) == 6
+      assert length(all_employee_rankings) == 12
     end
 
     test "Round has expected data changed after importing updated file" do
@@ -31,10 +32,11 @@ defmodule Draft.BidProcessSetupTest do
       assert %{rating_period_start_date: ~D[2021-03-14], rating_period_end_date: ~D[2021-06-19]} =
                initial_round
 
-      BidProcessSetup.update_bid_process(
-        {"../../test/support/test_data/test_rounds_updated_data.csv",
-         "../../test/support/test_data/test_sessions_updated.csv"}
-      )
+      BidProcessSetup.update_bid_process([
+        {Draft.BidRound, "../../test/support/test_data/test_rounds_updated_data.csv"},
+        {Draft.BidSession, "../../test/support/test_data/test_sessions_updated.csv"},
+        {Draft.RosterDay, "../../test/support/test_data/test_roster_days.csv"}
+      ])
 
       updated_round = Repo.get_by!(BidRound, process_id: "BUS22021-122", round_id: "Vacation")
 
@@ -48,10 +50,11 @@ defmodule Draft.BidProcessSetupTest do
 
       assert ~U[2021-02-11 22:00:00Z] == initial_group.cutoff_datetime
 
-      BidProcessSetup.update_bid_process(
-        {"../../test/support/test_data/test_rounds_updated_data.csv",
-         "../../test/support/test_data/test_sessions_updated.csv"}
-      )
+      BidProcessSetup.update_bid_process([
+        {Draft.BidRound, "../../test/support/test_data/test_rounds_updated_data.csv"},
+        {Draft.BidSession, "../../test/support/test_data/test_sessions_updated.csv"},
+        {Draft.RosterDay, "../../test/support/test_data/test_roster_days.csv"}
+      ])
 
       updated_group =
         Repo.get_by!(BidGroup, process_id: "BUS22021-122", round_id: "Vacation", group_number: 1)
@@ -69,10 +72,11 @@ defmodule Draft.BidProcessSetupTest do
 
       assert 1 == initial_employee_ranking.rank
 
-      BidProcessSetup.update_bid_process(
-        {"../../test/support/test_data/test_rounds_updated_data.csv",
-         "../../test/support/test_data/test_sessions_updated.csv"}
-      )
+      BidProcessSetup.update_bid_process([
+        {Draft.BidRound, "../../test/support/test_data/test_rounds_updated_data.csv"},
+        {Draft.BidSession, "../../test/support/test_data/test_sessions_updated.csv"},
+        {Draft.RosterDay, "../../test/support/test_data/test_roster_days.csv"}
+      ])
 
       updated_employee_ranking =
         Repo.get_by!(EmployeeRanking,
@@ -104,10 +108,11 @@ defmodule Draft.BidProcessSetupTest do
     end
 
     test "Bid session updated as expected" do
-      BidProcessSetup.update_bid_process(
-        {"../../test/support/test_data/test_rounds_updated_data.csv",
-         "../../test/support/test_data/test_sessions_updated.csv"}
-      )
+      BidProcessSetup.update_bid_process([
+        {Draft.BidRound, "../../test/support/test_data/test_rounds_updated_data.csv"},
+        {Draft.BidSession, "../../test/support/test_data/test_sessions_updated.csv"},
+        {Draft.RosterDay, "../../test/support/test_data/test_roster_days.csv"}
+      ])
 
       session =
         Repo.get_by!(Draft.BidSession,
