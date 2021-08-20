@@ -13,7 +13,7 @@ defmodule Draft.RosterAvailability do
           roster_set_id: String.t(),
           roster_set_internal_id: integer(),
           session_id: String.t(),
-          work_off_ratio: String.t()
+          work_off_ratio: Draft.WorkRatio.t()
         }
 
   @primary_key false
@@ -24,7 +24,7 @@ defmodule Draft.RosterAvailability do
     field :roster_set_id, :string
     field :roster_set_internal_id, :integer, primary_key: true
     field :session_id, :string, primary_key: true
-    field :work_off_ratio, :string
+    field :work_off_ratio, Draft.WorkRatio
 
     timestamps(type: :utc_datetime)
   end
@@ -47,8 +47,7 @@ defmodule Draft.RosterAvailability do
       roster_set_id: roster_set_id,
       roster_set_internal_id: String.to_integer(roster_set_internal_id),
       roster_id: roster_id,
-      # TODO -- enum?
-      work_off_ratio: work_off_ratio,
+      work_off_ratio: Draft.WorkRatio.load(work_off_ratio),
       is_available: Draft.ParsingHelpers.to_boolean(is_available)
     }
   end

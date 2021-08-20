@@ -10,7 +10,7 @@ defmodule Draft.WorkAssignment do
           assignment: String.t(),
           employee_id: String.t(),
           hours_worked: integer(),
-          internal_duty_id: String.t(),
+          duty_internal_id: String.t(),
           is_dated_exception: boolean(),
           is_from_primary_pick: boolean(),
           is_vr: boolean(),
@@ -24,7 +24,7 @@ defmodule Draft.WorkAssignment do
     field :assignment, :string
     field :employee_id, :string
     field :hours_worked, :integer
-    field :internal_duty_id, :string
+    field :duty_internal_id, :string
     field :is_dated_exception, :boolean
     field :is_from_primary_pick, :boolean
     field :is_vr, :boolean
@@ -46,11 +46,13 @@ defmodule Draft.WorkAssignment do
       _employee_record_number,
       _employee_start_date,
       division_id,
+      roster_set_internal_id,
+      is_from_primary_pick,
       _start_date_of_roster_set,
       _end_date_of_roster_set,
       job_class,
       assignment,
-      internal_duty_id,
+      duty_internal_id,
       _operating_days
     ] = row
 
@@ -60,11 +62,13 @@ defmodule Draft.WorkAssignment do
       operating_date: Draft.ParsingHelpers.to_date(operating_date),
       is_vr: Draft.ParsingHelpers.to_boolean(is_vr),
       division_id: division_id,
+      roster_set_internal_id: String.to_integer(roster_set_internal_id),
+      is_from_primary_pick: Draft.ParsingHelpers.to_boolean(is_from_primary_pick),
       job_class: job_class,
       # These values would be comma separated in the case of trippers.
       # Can assume the first listed is the primary duty.
       assignment: List.first(String.split(assignment, ",")),
-      internal_duty_id: List.first(String.split(internal_duty_id, ","))
+      duty_internal_id: List.first(String.split(duty_internal_id, ","))
     }
   end
 
@@ -81,7 +85,7 @@ defmodule Draft.WorkAssignment do
       :roster_set_internal_id,
       :is_from_primary_pick,
       :assignment,
-      :internal_duty_id,
+      :duty_internal_id,
       :hours_worked
     ])
     |> validate_required([
@@ -93,7 +97,7 @@ defmodule Draft.WorkAssignment do
       :roster_set_internal_id,
       :is_from_primary_pick,
       :assignment,
-      :internal_duty_id,
+      :duty_internal_id,
       :hours_worked
     ])
   end

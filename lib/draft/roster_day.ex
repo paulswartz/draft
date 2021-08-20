@@ -7,6 +7,7 @@ defmodule Draft.RosterDay do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @type t :: %__MODULE__{
           assignment: String.t(),
@@ -64,6 +65,50 @@ defmodule Draft.RosterDay do
       duty_internal_id: Draft.ParsingHelpers.to_int(duty_internal_id),
       crew_schedule_internal_id: String.to_integer(crew_schedule_internal_id)
     }
+  end
+
+  @spec work_ratio_for_duty(integer(), integer(), Date.t()) :: Draft.WorkRatio.t()
+  @doc """
+  Determine the work/off ratio for the given day that a duty is being worked.
+  """
+
+  def work_ratio_for_duty(roster_set_internal_id, duty_internal_id, operating_date) do
+    roster_id_for_day =
+      roster_id_for_day(roster_set_internal_id, duty_internal_id, operating_date)
+
+    Draft.Repo.one!(
+      from a in Draft.RosterAvailability,
+        where:
+          a.roster_set_internal_id == ^roster_set_internal_id and
+            a.roster_id == ^roster_id_for_day,
+        select: a.work_off_ratio,
+        limit: 1
+    )
+  end
+
+  defp roster_id_for_day(roster_set_internal_id, duty_internal_id, operating_date) do
+    case Draft.Repo.one(
+           from d in __MODULE__,
+             where:
+               d.roster_set_internal_id == ^roster_set_internal_id and
+                 d.duty_internal_id == ^duty_internal_id and
+                 d.day ==
+                   ^Draft.FormattingHelpers.to_date_string(operating_date)
+         ) do
+      %{roster_id: roster_id} ->
+        roster_id
+
+      nil ->
+        # Not an entry for that specific date -- look at the base schedule by day of week
+        Draft.Repo.one!(
+          from d in __MODULE__,
+            where:
+              d.roster_set_internal_id == ^roster_set_internal_id and
+                d.duty_internal_id == ^duty_internal_id and
+                d.day == ^Draft.FormattingHelpers.to_day_of_week(operating_date),
+            select: d.roster_id
+        )
+    end
   end
 
   @doc false

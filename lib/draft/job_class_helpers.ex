@@ -23,6 +23,29 @@ defmodule Draft.JobClassHelpers do
     @job_class_to_selection_set[job_class]
   end
 
+  @spec pt_or_ft(String.t()) :: :ft | :pt
+  @doc """
+  Determine if the given job class is categorized as part time or full time
+  """
+  def pt_or_ft(job_class) do
+    case @job_class_to_selection_set[job_class] do
+      @full_time_vacation_group -> :ft
+      @part_time_vacation_group -> :pt
+    end
+  end
+
+  @spec num_hours_per_day(String.t(), Draft.WorkRatio.t()) :: integer()
+  @doc """
+  Determine if the given job class is categorized as part time or full time
+  """
+  def num_hours_per_day(job_class, work_ratio) do
+    case {pt_or_ft(job_class), work_ratio} do
+      {:ft, :five_two} -> 8
+      {:ft, :four_three} -> 6
+      {:pt, :five_two} -> 6
+    end
+  end
+
   @doc """
   Get the number of hours per day that are worked by a particular job class
   Assumes 5/2 schedule.

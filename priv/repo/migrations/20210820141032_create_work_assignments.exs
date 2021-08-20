@@ -12,7 +12,7 @@ defmodule Draft.Repo.Migrations.CreateWorkAssignments do
       add :is_from_primary_pick, :boolean
       add :job_class, :string
       add :assignment, :string
-      add :internal_duty_id, :string
+      add :duty_internal_id, :string
       add :hours_worked, :integer
 
       timestamps(type: :timestamptz)
