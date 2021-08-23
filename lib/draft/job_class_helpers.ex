@@ -41,7 +41,7 @@ defmodule Draft.JobClassHelpers do
   def num_hours_per_day(job_class, work_ratio) do
     case {pt_or_ft(job_class), work_ratio} do
       {:ft, :five_two} -> 8
-      {:ft, :four_three} -> 6
+      {:ft, :four_three} -> 10
       {:pt, :five_two} -> 6
     end
   end

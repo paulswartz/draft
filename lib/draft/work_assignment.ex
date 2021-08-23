@@ -5,12 +5,13 @@ defmodule Draft.WorkAssignment do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @type t :: %__MODULE__{
           assignment: String.t(),
           employee_id: String.t(),
           hours_worked: integer() | nil,
-          duty_internal_id: String.t(),
+          duty_internal_id: integer() | nil,
           is_dated_exception: boolean(),
           is_from_primary_pick: boolean(),
           is_vr: boolean(),
@@ -20,17 +21,18 @@ defmodule Draft.WorkAssignment do
           roster_set_internal_id: integer()
         }
 
+  @primary_key false
   schema "work_assignments" do
     field :assignment, :string
-    field :employee_id, :string
+    field :employee_id, :string, primary_key: true
     field :hours_worked, :integer
-    field :duty_internal_id, :string
+    field :duty_internal_id, :integer
     field :is_dated_exception, :boolean
     field :is_from_primary_pick, :boolean
     field :is_vr, :boolean
     field :division_id, :string
     field :job_class, :string
-    field :operating_date, :date
+    field :operating_date, :date, primary_key: true
     field :roster_set_internal_id, :integer
 
     timestamps(type: :utc_datetime)
@@ -104,5 +106,13 @@ defmodule Draft.WorkAssignment do
       :duty_internal_id,
       :hours_worked
     ])
+  end
+
+  @spec delete_all_records_for_divisions([String.t()]) :: {integer(), nil | [term()]}
+  @doc """
+  Delete all work assignments in the given divisions.
+  """
+  def delete_all_records_for_divisions(division_ids) do
+    Draft.Repo.delete_all(from w in __MODULE__, where: w.division_id in ^division_ids)
   end
 end

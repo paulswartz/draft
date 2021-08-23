@@ -67,7 +67,7 @@ defmodule Draft.RosterDay do
     }
   end
 
-  @spec work_ratio_for_duty(integer(), integer(), Date.t()) :: Draft.WorkRatio.t()
+  @spec work_ratio_for_duty(integer(), integer(), Date.t()) :: Draft.WorkRatio.t() | nil
   @doc """
   Determine the work/off ratio for the given day that a duty is being worked.
   """

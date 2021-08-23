@@ -13,6 +13,20 @@ defmodule Draft.JobClassHelpersTest do
     end
   end
 
+  describe "num_hours_per_day/2" do
+    test "8 for full time position w/ 5/2" do
+      8 = JobClassHelpers.num_hours_per_day("000100", :five_two)
+    end
+
+    test "10 for full time position w/ 4/3" do
+      10 = JobClassHelpers.num_hours_per_day("000100", :four_three)
+    end
+
+    test "6 for part time position w/ 5/2" do
+      6 = JobClassHelpers.num_hours_per_day("001100", :five_two)
+    end
+  end
+
   describe "get_selection_set/1" do
     test "Correct selection set returned" do
       ft = "FTVacQuota"

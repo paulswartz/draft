@@ -13,6 +13,9 @@ defmodule Draft.Factory do
           | :group
           | :round
           | :session
+          | :roster_set
+          | :roster_availability
+          | :roster_day
           | :vacation_preference_set
         ) :: struct()
   def build(:round) do
@@ -45,6 +48,45 @@ defmodule Draft.Factory do
       scheduling_unit: nil,
       rating_period_start_date: ~D[2021-03-14],
       rating_period_end_date: ~D[2021-06-19]
+    }
+  end
+
+  def build(:roster_set) do
+    %Draft.RosterSet{
+      booking_id: "BUS22021",
+      session_id: "FT_Work",
+      scheduling_unit: "Rsc122",
+      roster_set_id: "roster_set_id",
+      roster_set_internal_id: 1234,
+      scenario: 1,
+      service_context: "base"
+    }
+  end
+
+  def build(:roster_availability) do
+    %Draft.RosterAvailability{
+      booking_id: "BUS22021",
+      session_id: "FT_Work",
+      roster_set_id: "roster_set_id",
+      roster_set_internal_id: 1234,
+      roster_id: "1-BB",
+      work_off_ratio: :five_two,
+      is_available: true
+    }
+  end
+
+  def build(:roster_day) do
+    %Draft.RosterDay{
+      booking_id: "BUS22021",
+      roster_set_id: "roster_set_id",
+      roster_set_internal_id: 1234,
+      roster_id: "1-BB",
+      roster_position_id: "122155",
+      roster_position_internal_id: 0,
+      day: "Monday",
+      assignment: "LR08",
+      duty_internal_id: nil,
+      crew_schedule_internal_id: 4321
     }
   end
 
@@ -134,6 +176,22 @@ defmodule Draft.Factory do
     }
   end
 
+  def build(:work_assignment) do
+    %Draft.WorkAssignment{
+      employee_id: "00001",
+      assignment: "LR08",
+      hours_worked: nil,
+      duty_internal_id: 1001,
+      is_dated_exception: false,
+      is_from_primary_pick: true,
+      is_vr: false,
+      division_id: "122",
+      job_class: "000100",
+      operating_date: ~D[2021-08-23],
+      roster_set_internal_id: 1234
+    }
+  end
+
   # Convenience API
 
   @spec build(
@@ -145,6 +203,9 @@ defmodule Draft.Factory do
           | :group
           | :round
           | :session
+          | :roster_set
+          | :roster_availability
+          | :roster_day
           | :vacation_preference_set,
           map()
         ) :: struct
@@ -161,11 +222,80 @@ defmodule Draft.Factory do
           | :group
           | :round
           | :session
+          | :roster_set
+          | :roster_availability
+          | :roster_day
           | :vacation_preference_set,
           map()
         ) :: struct()
-  def insert!(factory_name, attributes) do
+  def insert!(factory_name, attributes \\ %{}) do
     factory_name |> build(attributes) |> Repo.insert!()
+  end
+
+  @spec insert_work_round([
+          %{
+            session_id: String.t(),
+            roster_set_internal_id: integer(),
+            available_rosters: %{
+              work_ratio: Draft.WorkRatio.t() | nil,
+              is_available: boolean(),
+              id: String.t(),
+              roster_days: [%{day: String.t(), duty_id: integer() | nil}]
+            }
+          }
+        ]) :: none
+  def insert_work_round(sessions) do
+    insert!(:round)
+    Enum.each(sessions, &insert_session_with_rosters(&1))
+  end
+
+  defp insert_session_with_rosters(session) do
+    roster_set_id = Integer.to_string(session.roster_set_internal_id)
+
+    insert!(:session, %{
+      type: :work,
+      type_allowed: nil,
+      service_context: "Base",
+      scheduling_unit: "Rsc122",
+      session_id: session.session_id
+    })
+
+    insert!(:roster_set, %{
+      session_id: session.session_id,
+      roster_set_internal_id: session.roster_set_internal_id,
+      roster_set_id: roster_set_id
+    })
+
+    session.available_rosters
+    |> Enum.map(
+      &Map.merge(&1, %{
+        roster_set_internal_id: session.roster_set_internal_id,
+        roster_set_id: roster_set_id,
+        session_id: session.session_id
+      })
+    )
+    |> Enum.each(&insert_available_roster_with_days(&1))
+  end
+
+  defp insert_available_roster_with_days(available_roster) do
+    insert!(:roster_availability, %{
+      work_off_ratio: available_roster.work_ratio,
+      session_id: available_roster.session_id,
+      roster_set_internal_id: available_roster.roster_set_internal_id,
+      roster_id: available_roster.roster_id,
+      roster_set_id: available_roster.roster_set_id
+    })
+
+    Enum.each(
+      available_roster.roster_days,
+      &insert!(:roster_day, %{
+        roster_set_internal_id: available_roster.roster_set_internal_id,
+        roster_id: available_roster.roster_id,
+        roster_set_id: available_roster.roster_set_id,
+        day: &1.day,
+        duty_internal_id: &1.duty_id
+      })
+    )
   end
 
   @spec insert_round_with_employees(integer()) :: :ok

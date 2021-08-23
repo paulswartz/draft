@@ -13,7 +13,7 @@ defmodule Draft.RosterAvailability do
           roster_set_id: String.t(),
           roster_set_internal_id: integer(),
           session_id: String.t(),
-          work_off_ratio: Draft.WorkRatio.t()
+          work_off_ratio: Draft.WorkRatio.t() | nil
         }
 
   @primary_key false

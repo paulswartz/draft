@@ -20,9 +20,13 @@ defmodule Draft.WorkAssignmentSetup do
       |> Enum.filter(&(&1.assignment != "VR"))
       |> Enum.map(&work_assignment_with_hours(&1))
 
-    # This should probably be an insert_all -- one per operator per day
     Draft.Repo.transaction(fn ->
-      # Delete all existing work assignments within the given divisions?
+      _deleted_records =
+        work_assignments
+        |> Enum.map(& &1.division_id)
+        |> Enum.uniq()
+        |> Draft.WorkAssignment.delete_all_records_for_divisions()
+
       Enum.each(work_assignments, &Draft.Repo.insert(&1))
     end)
   end

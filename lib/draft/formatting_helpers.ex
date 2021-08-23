@@ -15,6 +15,6 @@ defmodule Draft.FormattingHelpers do
   Get the day of the week for the given date. Ex: to_day_of_week(~D[2021-08-23]) would return "Monday"
   """
   def to_day_of_week(date) do
-    Timex.format!(date, "%u")
+    Timex.format!(date, "%A", :strftime)
   end
 end

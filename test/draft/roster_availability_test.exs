@@ -67,7 +67,7 @@ defmodule Draft.RosterAvailabilityTest do
                roster_set_id: "roster_set_id",
                roster_set_internal_id: 1234,
                roster_id: "1-BB",
-               work_off_ratio: :unspecified,
+               work_off_ratio: nil,
                is_available: true
              } = roster_availability
     end

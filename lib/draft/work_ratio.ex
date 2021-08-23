@@ -4,9 +4,9 @@ defmodule Draft.WorkRatio do
   Ex: 5/2 is 5 days worked, 2 days off.
   The ratio may be "unspecified" in the case of the VR roster.
   """
-  use EctoEnum, five_two: "5/2", four_three: "4/3", unspecified: nil
+  use EctoEnum, five_two: "5/2", four_three: "4/3"
 
-  @spec from_hastus(String.t()) :: t()
+  @spec from_hastus(String.t()) :: t() | nil
   @doc """
   Convert hastus given string into correct enum
   """
@@ -19,6 +19,6 @@ defmodule Draft.WorkRatio do
   end
 
   def from_hastus("") do
-    :unspecified
+    nil
   end
 end
