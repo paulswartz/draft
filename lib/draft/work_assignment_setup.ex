@@ -27,36 +27,41 @@ defmodule Draft.WorkAssignmentSetup do
     end)
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR08"} = work_assignment) do
+  @spec work_assignment_with_hours(Draft.WorkAssignment.t()) :: Draft.WorkAssignment.t()
+  @doc """
+  Return a work assignment with the `hours_worked` field populated
+  based on the job class, assignment, and duty.
+  """
+  def work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR08"} = work_assignment) do
     %{work_assignment | hours_worked: 8}
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR10"} = work_assignment) do
+  def work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR10"} = work_assignment) do
     %{work_assignment | hours_worked: 10}
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OL"} = work_assignment) do
+  def work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OL"} = work_assignment) do
     # Assumption for now -- 0 hours for OL day
     %{work_assignment | hours_worked: 0}
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OLP"} = work_assignment) do
+  def work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OLP"} = work_assignment) do
     # Assumption for now -- 0 hours for OLPT day
     %{work_assignment | hours_worked: 0}
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OFF"} = work_assignment) do
+  def work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OFF"} = work_assignment) do
     %{work_assignment | hours_worked: 0}
   end
 
-  defp work_assignment_with_hours(
-         %Draft.WorkAssignment{
-           duty_internal_id: duty_internal_id,
-           roster_set_internal_id: roster_set_internal_id,
-           job_class: job_class,
-           operating_date: date
-         } = work_assignment
-       ) do
+  def work_assignment_with_hours(
+        %Draft.WorkAssignment{
+          duty_internal_id: duty_internal_id,
+          roster_set_internal_id: roster_set_internal_id,
+          job_class: job_class,
+          operating_date: date
+        } = work_assignment
+      ) do
     work_ratio =
       Draft.RosterDay.work_ratio_for_duty(roster_set_internal_id, duty_internal_id, date)
 

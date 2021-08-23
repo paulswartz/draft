@@ -9,7 +9,7 @@ defmodule Draft.WorkAssignment do
   @type t :: %__MODULE__{
           assignment: String.t(),
           employee_id: String.t(),
-          hours_worked: integer(),
+          hours_worked: integer() | nil,
           duty_internal_id: String.t(),
           is_dated_exception: boolean(),
           is_from_primary_pick: boolean(),
@@ -68,7 +68,11 @@ defmodule Draft.WorkAssignment do
       # These values would be comma separated in the case of trippers.
       # Can assume the first listed is the primary duty.
       assignment: List.first(String.split(assignment, ",")),
-      duty_internal_id: List.first(String.split(duty_internal_id, ","))
+      duty_internal_id:
+        duty_internal_id
+        |> String.split(",")
+        |> List.first()
+        |> Draft.ParsingHelpers.to_optional_integer()
     }
   end
 

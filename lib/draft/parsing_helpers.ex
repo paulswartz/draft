@@ -25,6 +25,14 @@ defmodule Draft.ParsingHelpers do
   def to_int(""), do: 0
   def to_int(string), do: String.to_integer(string)
 
+  @spec to_optional_integer(String.t()) :: integer() | nil
+  @doc """
+  Parse the given string into an integer. If empty string, return nil
+  """
+  def to_optional_integer(string_or_nil)
+  def to_optional_integer(""), do: nil
+  def to_optional_integer(string), do: String.to_integer(string)
+
   @spec to_boolean(String.t()) :: boolean()
   @doc """
   Parse the given string into a boolean.

@@ -47,7 +47,7 @@ defmodule Draft.RosterAvailability do
       roster_set_id: roster_set_id,
       roster_set_internal_id: String.to_integer(roster_set_internal_id),
       roster_id: roster_id,
-      work_off_ratio: Draft.WorkRatio.load(work_off_ratio),
+      work_off_ratio: Draft.WorkRatio.from_hastus(work_off_ratio),
       is_available: Draft.ParsingHelpers.to_boolean(is_available)
     }
   end

@@ -62,7 +62,7 @@ defmodule Draft.RosterDay do
       roster_position_internal_id: String.to_integer(roster_position_internal_id),
       day: day,
       assignment: assignment,
-      duty_internal_id: Draft.ParsingHelpers.to_int(duty_internal_id),
+      duty_internal_id: Draft.ParsingHelpers.to_optional_integer(duty_internal_id),
       crew_schedule_internal_id: String.to_integer(crew_schedule_internal_id)
     }
   end
