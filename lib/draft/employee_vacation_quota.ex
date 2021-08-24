@@ -6,6 +6,7 @@ defmodule Draft.EmployeeVacationQuota do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
@@ -20,6 +21,14 @@ defmodule Draft.EmployeeVacationQuota do
           available_after_weekly_quota: integer(),
           maximum_minutes: integer()
         }
+  @type quota_summary_t ::
+          %{
+            employee: %{employee_id: String.t(), job_class: String.t()},
+            total_quota: integer(),
+            anniversary_date: Date.t() | nil,
+            anniversary_quota: integer() | nil,
+            employee_id: String.t()
+          }
 
   @primary_key false
   schema "employee_vacation_quotas" do
@@ -68,6 +77,40 @@ defmodule Draft.EmployeeVacationQuota do
       available_after_dated_quota: ParsingHelpers.to_int(available_after_dated_quota),
       maximum_minutes: ParsingHelpers.to_minutes(maximum_minutes)
     }
+  end
+
+  @spec quota_covering_rating_period!(
+          Draft.BidRound.t(),
+          String.t()
+        ) :: t()
+  defp quota_covering_rating_period!(
+         %{rating_period_start_date: rating_start, rating_period_end_date: rating_end},
+         employee_id
+       ) do
+    Draft.Repo.one!(
+      from q in __MODULE__,
+        where:
+          q.employee_id == ^employee_id and
+            (q.interval_start_date <= ^rating_start and
+               q.interval_end_date >= ^rating_end)
+    )
+  end
+
+  @spec week_quota!(Draft.BidRound.t(), Draft.EmployeeRanking.t()) ::
+          integer()
+  @doc """
+  Get the week quota available to an employee during the given rating period.
+  """
+  def week_quota!(round, employee) do
+    quota = quota_covering_rating_period!(round, employee.employee_id)
+
+    max_minutes_in_weeks =
+      div(
+        quota.maximum_minutes,
+        60 * Draft.JobClassHelpers.num_hours_per_week(employee.job_class)
+      )
+
+    min(max_minutes_in_weeks, quota.weekly_quota)
   end
 
   @spec get_anniversary_quota(t()) ::

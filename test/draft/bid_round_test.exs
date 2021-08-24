@@ -1,5 +1,6 @@
 defmodule Draft.BidRoundTest do
-  use ExUnit.Case
+  use Draft.DataCase
+  import Draft.Factory
   alias Draft.BidRound
 
   describe "from_parts/1" do
@@ -35,5 +36,56 @@ defmodule Draft.BidRoundTest do
                rating_period_end_date: ~D[2021-06-19]
              } = round_struct
     end
+  end
+
+  describe "calculate_point_of_equivalence/1" do
+    test "All operators need to be forced" do
+      round =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
+          %{"00001" => 1, "00002" => 1},
+          %{}
+        )
+        |> to_round()
+
+      %{has_poe_been_reached: true, employees_to_force: [{"00001", 1}, {"00002", 1}]} =
+        Draft.BidRound.calculate_point_of_equivalence(round)
+    end
+
+    test "Only the lowest ranking operator would need to be forced" do
+      round =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
+          %{"00001" => 1, "00002" => 2},
+          %{}
+        )
+        |> to_round()
+
+      %{amount_to_force: 2, has_poe_been_reached: false, employees_to_force: [{"00002", 2}]} =
+        Draft.BidRound.calculate_point_of_equivalence(round)
+    end
+
+    test "An operator would be forced only as much of their balance as is necessary" do
+      round =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
+          %{"00001" => 5},
+          %{}
+        )
+        |> to_round()
+
+      %{amount_to_force: 2, has_poe_been_reached: true, employees_to_force: [{"00001", 2}]} =
+        Draft.BidRound.calculate_point_of_equivalence(round)
+    end
+  end
+
+  defp to_round(round_spec) do
+    Repo.one!(
+      from r in Draft.BidRound,
+        where: r.round_id == ^round_spec.round_id and r.process_id == ^round_spec.process_id
+    )
   end
 end

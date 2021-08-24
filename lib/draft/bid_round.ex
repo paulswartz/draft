@@ -74,6 +74,44 @@ defmodule Draft.BidRound do
     }
   end
 
+  @spec calculate_point_of_equivalence(Draft.BidRound.t()) :: %{
+          amount_to_force: integer(),
+          employees_to_force: [{String, t(), integer()}],
+          has_poe_been_reached: boolean()
+        }
+  @doc """
+  Return whether or not the point of equivalence has been hit yet in the given round,
+  and which operators would be forced in order to fill the desired amount of quota to force,
+  assuming that no remaining operators want to voluntarily take vacation.
+  """
+  def calculate_point_of_equivalence(round) do
+    quota_to_force = Draft.DivisionVacationWeekQuota.remaining_quota(round)
+    employees_desc = Draft.EmployeeRanking.all_remaining_employees(round, :desc)
+
+    {employees_to_force, _acc_employee_quota} =
+      Enum.reduce_while(employees_desc, {[], 0}, fn %{employee_id: employee_id} = employee_ranking,
+                                                    {acc_employees_to_force, acc_quota} ->
+        employee_quota = Draft.EmployeeVacationQuota.week_quota!(round, employee_ranking)
+
+        if employee_quota + acc_quota < quota_to_force do
+          {:cont,
+           {[{employee_id, employee_quota} | acc_employees_to_force], acc_quota + employee_quota}}
+        else
+          emp_quota_to_force = quota_to_force - acc_quota
+
+          {:halt,
+           {[{employee_id, emp_quota_to_force} | acc_employees_to_force],
+            acc_quota + emp_quota_to_force}}
+        end
+      end)
+
+    %{
+      amount_to_force: quota_to_force,
+      has_poe_been_reached: length(employees_to_force) == length(employees_desc),
+      employees_to_force: employees_to_force
+    }
+  end
+
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(bid_round, attrs \\ %{}) do

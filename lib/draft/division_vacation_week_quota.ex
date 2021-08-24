@@ -56,6 +56,20 @@ defmodule Draft.DivisionVacationWeekQuota do
     }
   end
 
+  @spec remaining_quota(Draft.BidRound.t()) :: integer()
+  @doc """
+  Get the total remaining quota in the given round
+  """
+  def remaining_quota(round) do
+    Draft.Repo.one!(
+      from d in Draft.DivisionVacationWeekQuota,
+        where:
+          d.start_date >= ^round.rating_period_start_date and
+            d.end_date <= ^round.rating_period_end_date,
+        select: sum(d.quota)
+    )
+  end
+
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(division_vacation_week_quota, attrs \\ %{}) do

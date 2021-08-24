@@ -6,6 +6,7 @@ defmodule Draft.EmployeeRanking do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @type t :: %__MODULE__{
           process_id: String.t(),
@@ -51,6 +52,24 @@ defmodule Draft.EmployeeRanking do
       name: name,
       job_class: job_class
     }
+  end
+
+  @spec all_remaining_employees(Draft.BidRound.t(), :asc | :desc) ::
+          [t()]
+  @doc """
+  All employees that are part of the given round and in a later group than the one given.
+  """
+  def all_remaining_employees(round, order) do
+    last_distributed_group_number =
+      Draft.VacationDistributionRun.last_distributed_group(round) || 0
+
+    Draft.Repo.all(
+      from e in Draft.EmployeeRanking,
+        where:
+          e.round_id == ^round.round_id and e.process_id == ^round.process_id and
+            e.group_number > ^last_distributed_group_number,
+        order_by: [{^order, e.group_number}, {^order, e.rank}]
+    )
   end
 
   @doc false
