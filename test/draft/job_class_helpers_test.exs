@@ -3,16 +3,6 @@ defmodule Draft.JobClassHelpersTest do
   use ExUnit.Case
   alias Draft.JobClassHelpers
 
-  describe "num_hours_per_day/1" do
-    test "8 for full time position" do
-      8 = JobClassHelpers.num_hours_per_day("000100")
-    end
-
-    test "6 for part time position" do
-      6 = JobClassHelpers.num_hours_per_day("001100")
-    end
-  end
-
   describe "num_hours_per_day/2" do
     test "8 for full time position w/ 5/2" do
       8 = JobClassHelpers.num_hours_per_day("000100", :five_two)

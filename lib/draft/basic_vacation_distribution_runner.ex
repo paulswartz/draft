@@ -214,7 +214,8 @@ defmodule Draft.BasicVacationDistributionRunner do
 
     max_minutes = employee_balance.maximum_minutes
 
-    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class)
+    # Assuming 5/2 schedule for now
+    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class, :five_two)
 
     anniversary_quota = EmployeeVacationQuota.get_anniversary_quota(employee_balance)
 
@@ -223,8 +224,14 @@ defmodule Draft.BasicVacationDistributionRunner do
     # 4 days a week or 5 (8 or 10 hour days)
     max_quota =
       case interval_type do
-        :week -> min(div(max_minutes, 60 * num_hours_per_day * 5), employee_balance.weekly_quota)
-        :day -> min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
+        :week ->
+          min(
+            div(max_minutes, 60 * Draft.JobClassHelpers.num_hours_per_week(employee.job_class)),
+            employee_balance.weekly_quota
+          )
+
+        :day ->
+          min(div(max_minutes, num_hours_per_day * 60), employee_balance.dated_quota)
       end
 
     vacation_distributions =

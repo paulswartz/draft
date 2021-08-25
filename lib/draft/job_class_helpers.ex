@@ -36,7 +36,7 @@ defmodule Draft.JobClassHelpers do
 
   @spec num_hours_per_day(String.t(), Draft.WorkRatio.t()) :: integer()
   @doc """
-  Determine if the given job class is categorized as part time or full time
+  The number of hours that are worked in a day.
   """
   def num_hours_per_day(job_class, work_ratio) do
     case {pt_or_ft(job_class), work_ratio} do
@@ -47,16 +47,13 @@ defmodule Draft.JobClassHelpers do
   end
 
   @doc """
-  Get the number of hours per day that are worked by a particular job class
-  Assumes 5/2 schedule.
+  The number of hours that are worked in a week
   """
-  @spec num_hours_per_day(String.t()) :: number()
-  def num_hours_per_day(job_class) do
-    if String.starts_with?(
-         get_selection_set(job_class),
-         "FT"
-       ),
-       do: 8,
-       else: 6
+  @spec num_hours_per_week(String.t()) :: number()
+  def num_hours_per_week(job_class) do
+    case pt_or_ft(job_class) do
+      :pt -> 30
+      :ft -> 40
+    end
   end
 end

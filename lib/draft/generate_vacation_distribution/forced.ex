@@ -222,10 +222,10 @@ defmodule Draft.GenerateVacationDistribution.Forced do
 
     max_minutes = balance.maximum_minutes
 
-    num_hours_per_day = Draft.JobClassHelpers.num_hours_per_day(employee.job_class)
+    num_hours_per_week = Draft.JobClassHelpers.num_hours_per_week(employee.job_class)
 
     # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
-    max_weeks = min(div(max_minutes, 60 * num_hours_per_day * 5), balance.weekly_quota)
+    max_weeks = min(div(max_minutes, 60 * num_hours_per_week), balance.weekly_quota)
 
     available_quota =
       DivisionQuotaRanked.available_to_employee(
