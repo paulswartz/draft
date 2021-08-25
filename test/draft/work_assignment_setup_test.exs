@@ -10,7 +10,7 @@ defmodule Draft.WorkAssignmentSetupTest do
         roster_set_internal_id: 123_456,
         available_rosters: [
           %{
-            work_ratio: :five_two,
+            work_off_ratio: :five_two,
             is_available: true,
             roster_id: "roster02",
             roster_days: [

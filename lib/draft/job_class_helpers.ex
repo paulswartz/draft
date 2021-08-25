@@ -34,12 +34,12 @@ defmodule Draft.JobClassHelpers do
     end
   end
 
-  @spec num_hours_per_day(String.t(), Draft.WorkRatio.t()) :: integer()
+  @spec num_hours_per_day(String.t(), Draft.WorkOffRatio.t()) :: integer()
   @doc """
   The number of hours that are worked in a day.
   """
-  def num_hours_per_day(job_class, work_ratio) do
-    case {pt_or_ft(job_class), work_ratio} do
+  def num_hours_per_day(job_class, work_off_ratio) do
+    case {pt_or_ft(job_class), work_off_ratio} do
       {:ft, :five_two} -> 8
       {:ft, :four_three} -> 10
       {:pt, :five_two} -> 6

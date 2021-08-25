@@ -1,6 +1,7 @@
 defmodule Draft.FormattingHelpersTest do
   use ExUnit.Case
   alias Draft.FormattingHelpers
+  doctest FormattingHelpers
 
   describe "to_date_string/1" do
     test "Month less than 10" do

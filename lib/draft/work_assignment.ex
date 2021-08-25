@@ -72,10 +72,10 @@ defmodule Draft.WorkAssignment do
       job_class: job_class,
       # These values would be comma separated in the case of trippers.
       # Can assume the first listed is the primary duty.
-      assignment: List.first(String.split(assignment, ",")),
+      assignment: List.first(String.split(assignment, ",", parts: 2)),
       duty_internal_id:
         duty_internal_id
-        |> String.split(",")
+        |> String.split(",", parts: 2)
         |> List.first()
         |> Draft.ParsingHelpers.to_optional_integer()
     }
@@ -122,12 +122,12 @@ defmodule Draft.WorkAssignment do
            operating_date: date
          } = work_assignment
        ) do
-    work_ratio =
-      Draft.RosterDay.work_ratio_for_duty(roster_set_internal_id, duty_internal_id, date)
+    work_off_ratio =
+      Draft.RosterDay.work_off_ratio_for_duty(roster_set_internal_id, duty_internal_id, date)
 
     %{
       work_assignment
-      | hours_worked: Draft.JobClassHelpers.num_hours_per_day(job_class, work_ratio)
+      | hours_worked: Draft.JobClassHelpers.num_hours_per_day(job_class, work_off_ratio)
     }
   end
 

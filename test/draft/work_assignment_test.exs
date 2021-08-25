@@ -13,13 +13,13 @@ defmodule Draft.WorkAssignmentTest do
         roster_set_internal_id: 123_456,
         available_rosters: [
           %{
-            work_ratio: :four_three,
+            work_off_ratio: :four_three,
             is_available: true,
             roster_id: "roster01",
             roster_days: [%{day: "08/23/2021", duty_id: @four_three_duty_id}]
           },
           %{
-            work_ratio: :five_two,
+            work_off_ratio: :five_two,
             is_available: true,
             roster_id: "roster02",
             roster_days: [%{day: "08/23/2021", duty_id: @five_two_duty_id}]

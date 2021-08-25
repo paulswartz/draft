@@ -14,7 +14,13 @@ defmodule Draft.BidProcessSetup do
   alias Draft.Repo
   alias Draft.VacationDistributionScheduler
 
-  @spec update_bid_process([{module(), String.t()}]) :: [{integer(), nil | [term()]}]
+  @default_files %{
+    Draft.BidRound => "../../data/latest/BW_Project_Draft-Bid_Round-Group-Emp.csv",
+    Draft.BidSession => "../../data/latest/BW_Project_Draft-Bid_Session-Roster_Set.csv",
+    Draft.RosterDay => "../../data/latest/BW_Project_Draft-Roster_day.csv"
+  }
+
+  @spec update_bid_process(%{module() => String.t()}) :: [{integer(), nil | [term()]}]
   @doc """
   Reads all data defining the bid process & store the data in the database.
 
@@ -25,21 +31,11 @@ defmodule Draft.BidProcessSetup do
   All existing data associated with any round in the `round_file` is deleted, and new records
   inserted based on the data present in the two given files.
   """
-  def update_bid_process(
-        [
-          {Draft.BidRound, round_file},
-          {Draft.BidSession, session_file},
-          {Draft.RosterDay, roster_day_file}
-        ] \\ [
-          {Draft.BidRound, "../../data/latest/BW_Project_Draft-Bid_Round-Group-Emp.csv"},
-          {Draft.BidSession, "../../data/latest/BW_Project_Draft-Bid_Session-Roster_Set.csv"},
-          {Draft.RosterDay, "../../data/latest/BW_Project_Draft-Roster_day.csv"}
-        ]
-      ) do
+  def update_bid_process(bid_process_files \\ @default_files) do
     Repo.transaction(fn ->
-      update_rounds(round_file)
-      update_sessions(session_file)
-      update_roster_days(roster_day_file)
+      update_rounds(Map.fetch!(bid_process_files, Draft.BidRound))
+      update_sessions(Map.fetch!(bid_process_files, Draft.BidSession))
+      update_roster_days(Map.fetch!(bid_process_files, Draft.RosterDay))
     end)
   end
 

@@ -63,7 +63,7 @@ defmodule Draft.RosterDayTest do
     end
   end
 
-  describe "work_ratio_for_duty/3" do
+  describe "work_off_ratio_for_duty/3" do
     test "returns expected value when there is a roster day for the given date" do
       insert_work_round([
         %{
@@ -71,13 +71,13 @@ defmodule Draft.RosterDayTest do
           roster_set_internal_id: 123_456,
           available_rosters: [
             %{
-              work_ratio: :five_two,
+              work_off_ratio: :five_two,
               is_available: true,
               roster_id: "roster01",
               roster_days: [%{day: "08/23/2021", duty_id: 11_111}]
             },
             %{
-              work_ratio: :four_three,
+              work_off_ratio: :four_three,
               is_available: true,
               roster_id: "roster02",
               roster_days: [%{day: "Monday", duty_id: 11_111}]
@@ -86,7 +86,7 @@ defmodule Draft.RosterDayTest do
         }
       ])
 
-      assert :five_two == Draft.RosterDay.work_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
+      assert :five_two == Draft.RosterDay.work_off_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
     end
 
     test "returns expected value when there is not a roster day for the given date (base schedule)" do
@@ -96,7 +96,7 @@ defmodule Draft.RosterDayTest do
           roster_set_internal_id: 123_456,
           available_rosters: [
             %{
-              work_ratio: :four_three,
+              work_off_ratio: :four_three,
               is_available: true,
               roster_id: "roster02",
               roster_days: [%{day: "Monday", duty_id: 11_111}]
@@ -105,7 +105,8 @@ defmodule Draft.RosterDayTest do
         }
       ])
 
-      assert :four_three == Draft.RosterDay.work_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
+      assert :four_three ==
+               Draft.RosterDay.work_off_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
     end
 
     test "returns nil if roster day is VR" do
@@ -115,7 +116,7 @@ defmodule Draft.RosterDayTest do
           roster_set_internal_id: 123_456,
           available_rosters: [
             %{
-              work_ratio: nil,
+              work_off_ratio: nil,
               is_available: true,
               roster_id: "roster02",
               roster_days: [%{day: "Monday", duty_id: 11_111}]
@@ -124,7 +125,7 @@ defmodule Draft.RosterDayTest do
         }
       ])
 
-      assert nil == Draft.RosterDay.work_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
+      assert nil == Draft.RosterDay.work_off_ratio_for_duty(123_456, 11_111, ~D[2021-08-23])
     end
   end
 end

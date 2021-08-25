@@ -237,7 +237,7 @@ defmodule Draft.Factory do
             session_id: String.t(),
             roster_set_internal_id: integer(),
             available_rosters: %{
-              work_ratio: Draft.WorkRatio.t() | nil,
+              work_off_ratio: Draft.WorkOffRatio.t() | nil,
               is_available: boolean(),
               id: String.t(),
               roster_days: [%{day: String.t(), duty_id: integer() | nil}]
@@ -279,7 +279,7 @@ defmodule Draft.Factory do
 
   defp insert_available_roster_with_days(available_roster) do
     insert!(:roster_availability, %{
-      work_off_ratio: available_roster.work_ratio,
+      work_off_ratio: available_roster.work_off_ratio,
       session_id: available_roster.session_id,
       roster_set_internal_id: available_roster.roster_set_internal_id,
       roster_id: available_roster.roster_id,
