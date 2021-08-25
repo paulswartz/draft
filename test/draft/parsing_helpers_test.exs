@@ -2,6 +2,8 @@ defmodule Draft.ParsingHelpersTest do
   use ExUnit.Case
   alias Draft.ParsingHelpers
 
+  doctest ParsingHelpers
+
   describe "to_int/1" do
     test "valid integer" do
       assert ParsingHelpers.to_int("1234") == 1234

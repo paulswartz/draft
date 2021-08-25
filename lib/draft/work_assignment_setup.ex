@@ -4,7 +4,7 @@ defmodule Draft.WorkAssignmentSetup do
   """
   require Logger
 
-  @spec setup(String.t()) ::
+  @spec setup(Draft.ParsingHelpers.filename()) ::
           {:ok, Draft.WorkAssignment.t()}
           | {:error, any()}
   @doc """

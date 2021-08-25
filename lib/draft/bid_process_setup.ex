@@ -20,7 +20,9 @@ defmodule Draft.BidProcessSetup do
     Draft.RosterDay => "../../data/latest/BW_Project_Draft-Roster_day.csv"
   }
 
-  @spec update_bid_process(%{module() => String.t()}) :: [{integer(), nil | [term()]}]
+  @spec update_bid_process(%{module() => ParsingHelpers.filename()}) :: [
+          {integer(), nil | [term()]}
+        ]
   @doc """
   Reads all data defining the bid process & store the data in the database.
 

@@ -3,17 +3,30 @@ defmodule Draft.ParsingHelpers do
   Functions useful for parsing formatted strings into the correct type.
   """
 
+  @type filename :: String.t() | {:raw, String.t()}
+
   NimbleCSV.define(PipeSeparatedParser, separator: "\|")
 
-  @spec parse_pipe_separated_file(String.t()) :: Enumerable.t()
+  @spec parse_pipe_separated_file(filename) :: Enumerable.t()
   @doc """
   Parse a pipe separated file without headers.
+
+  Can take a filename or a `{:raw, body}` tuple to use the body contents directly.
+
+  iex> Enum.to_list(ParsingHelpers.parse_pipe_separated_file({:raw, "a|b\\nc|d\\n"}))
+  [["a", "b"], ["c", "d"]]
   """
-  def parse_pipe_separated_file(filename) do
+  def parse_pipe_separated_file(filename)
+
+  def parse_pipe_separated_file(filename) when is_binary(filename) do
     filename
     |> Path.expand(__DIR__)
     |> File.stream!()
     |> PipeSeparatedParser.parse_stream(skip_headers: false)
+  end
+
+  def parse_pipe_separated_file({:raw, contents}) do
+    PipeSeparatedParser.parse_string(contents, skip_headers: false)
   end
 
   @spec to_int(String.t() | nil) :: integer()
