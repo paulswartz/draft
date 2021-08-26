@@ -130,6 +130,7 @@ defmodule Draft.DivisionVacationDayQuota do
             s.start_date >= ^start_date and s.end_date <= ^end_date and
               s.division_id == ^d.division_id and
               s.job_class in ^Draft.JobClassHelpers.job_classes_of_selection_set(selection_set) and
+              s.vacation_interval_type == :day and
               s.employee_id != ^employee.employee_id and s.status == :cancelled,
           select: [:start_date, :end_date]
       )

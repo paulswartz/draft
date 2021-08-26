@@ -241,6 +241,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
       insert!(:employee_vacation_selection, %{
         start_date: ~D[2021-02-03],
         end_date: ~D[2021-02-03],
+        vacation_interval_type: :day,
         employee_id: "00001"
       })
 
@@ -294,6 +295,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
         division_id: "101",
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-01],
+        vacation_interval_type: :day,
         employee_id: "00001",
         status: :cancelled
       })
@@ -302,6 +304,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
         division_id: "101",
         start_date: ~D[2021-02-03],
         end_date: ~D[2021-02-03],
+        vacation_interval_type: :day,
         employee_id: "00001",
         status: :cancelled
       })
@@ -311,11 +314,96 @@ defmodule Draft.DivisionVacationDayQuotaTest do
         division_id: "102",
         start_date: ~D[2021-02-02],
         end_date: ~D[2021-02-02],
+        vacation_interval_type: :day,
         employee_id: "00003",
         status: :cancelled
       })
 
-      assert [%{date: ~D[2021-02-03]}, %{date: ~D[2021-02-02]}] =
+      assert [%{date: ~D[2021-02-03], quota: 1}, %{date: ~D[2021-02-02]}] =
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
+    end
+
+    test "does not treat week intervals as separate days for purposes of the quota" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 2,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+
+      employee_ranking =
+        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00002"))
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-01],
+        quota: 1
+      })
+
+      insert!(:employee_vacation_selection, %{
+        division_id: "102",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-06],
+        vacation_interval_type: :week,
+        employee_id: "00001",
+        status: :cancelled
+      })
+
+      assert [%{date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
+    end
+
+    test "does not count cancellations from a different job class" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+
+      employee_ranking =
+        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00001"))
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        date: ~D[2021-02-01],
+        quota: 1
+      })
+
+      # PT, not full-time
+      insert!(:employee_vacation_selection, %{
+        division_id: "101",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-01],
+        vacation_interval_type: :day,
+        employee_id: "00002",
+        job_class: "000900",
+        status: :cancelled
+      })
+
+      assert [%{date: ~D[2021-02-01]}] =
                Draft.DivisionVacationDayQuota.available_quota(round, employee_ranking)
     end
 
@@ -372,6 +460,7 @@ defmodule Draft.DivisionVacationDayQuotaTest do
         process_id: prior_round,
         start_date: ~D[2021-02-03],
         end_date: ~D[2021-02-03],
+        vacation_interval_type: :day,
         employee_id: "00001",
         status: :cancelled
       })
