@@ -3,44 +3,30 @@ defmodule Draft.JobClassHelpers do
   Helper functions for interpreting job class data
   """
 
-  @full_time_vacation_group "FTVacQuota"
-  @part_time_vacation_group "PTVacQuota"
-
   @job_class_to_selection_set %{
-    "000100" => @full_time_vacation_group,
-    "000300" => @full_time_vacation_group,
-    "000800" => @full_time_vacation_group,
-    "001100" => @part_time_vacation_group,
-    "000200" => @part_time_vacation_group,
-    "000900" => @part_time_vacation_group
+    "000100" => :ft,
+    "000300" => :ft,
+    "000800" => :ft,
+    "001100" => :pt,
+    "000200" => :pt,
+    "000900" => :pt
   }
 
-  @spec get_selection_set(String.t()) :: String.t()
+  @spec job_category_for_class(String.t()) :: Draft.JobClassCategory.t()
   @doc """
   Get the vacation selection set identifier for the givne job class
   """
-  def get_selection_set(job_class) do
+  def job_category_for_class(job_class) do
     @job_class_to_selection_set[job_class]
   end
 
-  @spec job_classes_of_selection_set(String.t()) :: Enumerable.t()
+  @spec job_classes_in_category(Draft.JobClassCategory.t()) :: Enumerable.t()
   @doc """
   Get the job classes which meet a given selection set identifier.
   """
-  def job_classes_of_selection_set(selection_set) do
+  def job_classes_in_category(selection_set) do
     for {job_class, ^selection_set} <- @job_class_to_selection_set do
       job_class
-    end
-  end
-
-  @spec pt_or_ft(String.t()) :: :ft | :pt
-  @doc """
-  Determine if the given job class is categorized as part time or full time
-  """
-  def pt_or_ft(job_class) do
-    case @job_class_to_selection_set[job_class] do
-      @full_time_vacation_group -> :ft
-      @part_time_vacation_group -> :pt
     end
   end
 
@@ -49,7 +35,7 @@ defmodule Draft.JobClassHelpers do
   The number of hours that are worked in a day.
   """
   def num_hours_per_day(job_class, work_off_ratio) do
-    case {pt_or_ft(job_class), work_off_ratio} do
+    case {job_category_for_class(job_class), work_off_ratio} do
       {:ft, :five_two} -> 8
       {:ft, :four_three} -> 10
       {:pt, :five_two} -> 6
@@ -61,7 +47,7 @@ defmodule Draft.JobClassHelpers do
   """
   @spec num_hours_per_week(String.t()) :: number()
   def num_hours_per_week(job_class) do
-    case pt_or_ft(job_class) do
+    case job_category_for_class(job_class) do
       :pt -> 30
       :ft -> 40
     end

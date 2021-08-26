@@ -13,7 +13,7 @@ defmodule Draft.DivisionVacationDayQuota do
 
   @type t :: %__MODULE__{
           division_id: String.t(),
-          employee_selection_set: String.t(),
+          employee_selection_set: Draft.JobClassCategory.t(),
           quota: integer(),
           date: Date.t()
         }
@@ -21,7 +21,7 @@ defmodule Draft.DivisionVacationDayQuota do
   @primary_key false
   schema "division_vacation_day_quotas" do
     field :division_id, :string, primary_key: true
-    field :employee_selection_set, :string, primary_key: true
+    field :employee_selection_set, Draft.JobClassCategory, primary_key: true
     field :quota, :integer
     field :date, :date, primary_key: true
 
@@ -40,7 +40,8 @@ defmodule Draft.DivisionVacationDayQuota do
 
     %__MODULE__{
       division_id: division_id,
-      employee_selection_set: employee_selection_set,
+      employee_selection_set:
+        Draft.JobClassCategory.from_hastus_division_quota(employee_selection_set),
       date: ParsingHelpers.to_date(date),
       quota: ParsingHelpers.to_int(remaining_quota)
     }
@@ -68,7 +69,7 @@ defmodule Draft.DivisionVacationDayQuota do
         from r in Draft.BidRound, where: r.round_id == ^round_id and r.process_id == ^process_id
       )
 
-    selection_set = Draft.JobClassHelpers.get_selection_set(job_class)
+    selection_set = Draft.JobClassHelpers.job_category_for_class(job_class)
 
     Repo.all(
       from d in Draft.DivisionVacationDayQuota,
@@ -86,7 +87,7 @@ defmodule Draft.DivisionVacationDayQuota do
   and their previously selected vacation time. Available days are returned in descending order by start date (latest available date will be listed first)
   """
   def available_quota(round, employee) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+    selection_set = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
 
     quotas =
       Repo.all(
@@ -114,7 +115,9 @@ defmodule Draft.DivisionVacationDayQuota do
           s.status == :assigned
   end
 
-  @spec filter_cancelled_quotas([t()], Draft.EmployeeRanking.t(), String.t()) :: [t()]
+  @spec filter_cancelled_quotas([t()], Draft.EmployeeRanking.t(), Draft.JobClassCategory.t()) :: [
+          t()
+        ]
   defp filter_cancelled_quotas([], _employee, _selection_Set) do
     []
   end
@@ -129,7 +132,7 @@ defmodule Draft.DivisionVacationDayQuota do
           where:
             s.start_date >= ^start_date and s.end_date <= ^end_date and
               s.division_id == ^d.division_id and
-              s.job_class in ^Draft.JobClassHelpers.job_classes_of_selection_set(selection_set) and
+              s.job_class in ^Draft.JobClassHelpers.job_classes_in_category(selection_set) and
               s.vacation_interval_type == :day and
               s.employee_id != ^employee.employee_id and s.status == :cancelled,
           select: [:start_date, :end_date]

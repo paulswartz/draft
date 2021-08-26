@@ -85,7 +85,11 @@ defmodule Draft.BidRound do
   assuming that no remaining operators want to voluntarily take vacation.
   """
   def calculate_point_of_equivalence(round) do
+    # Temporarily forcing all remaining quota -- in the future, Draft will
+    # Get the amount to force as input.
+
     quota_to_force = Draft.DivisionVacationWeekQuota.remaining_quota(round)
+
     employees_desc = Draft.EmployeeRanking.all_remaining_employees(round, :desc)
 
     {employees_to_force, _acc_employee_quota} =

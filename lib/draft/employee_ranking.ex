@@ -54,7 +54,7 @@ defmodule Draft.EmployeeRanking do
     }
   end
 
-  @spec all_remaining_employees(Draft.BidRound.t(), :asc | :desc) ::
+  @spec all_remaining_employees(any(), :asc | :desc) ::
           [t()]
   @doc """
   All employees that are part of the given round and in a later group than the one given.

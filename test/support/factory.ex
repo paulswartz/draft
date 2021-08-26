@@ -142,7 +142,7 @@ defmodule Draft.Factory do
   def build(:division_vacation_day_quota) do
     %Draft.DivisionVacationDayQuota{
       division_id: "122",
-      employee_selection_set: "FTVacQuota",
+      employee_selection_set: :ft,
       date: ~D[2021-02-11],
       quota: 5
     }
@@ -151,7 +151,7 @@ defmodule Draft.Factory do
   def build(:division_vacation_week_quota) do
     %Draft.DivisionVacationWeekQuota{
       division_id: "122",
-      employee_selection_set: "FTVacQuota",
+      employee_selection_set: :ft,
       start_date: ~D[2021-02-11],
       end_date: ~D[2021-02-17],
       quota: 5,

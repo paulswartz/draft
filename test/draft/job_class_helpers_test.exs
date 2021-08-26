@@ -17,28 +17,26 @@ defmodule Draft.JobClassHelpersTest do
     end
   end
 
-  describe "get_selection_set/1" do
+  describe "job_category_for_class/1" do
     test "Correct selection set returned" do
-      ft = "FTVacQuota"
-      pt = "PTVacQuota"
-      assert ft == JobClassHelpers.get_selection_set("000100")
-      assert ft == JobClassHelpers.get_selection_set("000300")
-      assert ft == JobClassHelpers.get_selection_set("000800")
-      assert pt == JobClassHelpers.get_selection_set("001100")
-      assert pt == JobClassHelpers.get_selection_set("000200")
-      assert pt == JobClassHelpers.get_selection_set("000900")
+      assert :ft == JobClassHelpers.job_category_for_class("000100")
+      assert :ft == JobClassHelpers.job_category_for_class("000300")
+      assert :ft == JobClassHelpers.job_category_for_class("000800")
+      assert :pt == JobClassHelpers.job_category_for_class("001100")
+      assert :pt == JobClassHelpers.job_category_for_class("000200")
+      assert :pt == JobClassHelpers.job_category_for_class("000900")
     end
   end
 
-  describe "job_classes_of_selection_set/1" do
+  describe "job_classes_in_category/1" do
     test "correct job_classes_returned for full time" do
-      assert Enum.sort(JobClassHelpers.job_classes_of_selection_set("FTVacQuota")) == [
+      assert Enum.sort(JobClassHelpers.job_classes_in_category(:ft)) == [
                "000100",
                "000300",
                "000800"
              ]
 
-      assert Enum.sort(JobClassHelpers.job_classes_of_selection_set("PTVacQuota")) == [
+      assert Enum.sort(JobClassHelpers.job_classes_in_category(:pt)) == [
                "000200",
                "000900",
                "001100"
