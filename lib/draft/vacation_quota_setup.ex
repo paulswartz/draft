@@ -47,10 +47,13 @@ defmodule Draft.VacationQuotaSetup do
       end)
 
     Enum.map(parsed_records, fn {record_type, records} ->
-      Repo.transaction(fn ->
-        delete_all(record_type)
-        insert_all_records(records)
-      end)
+      Repo.transaction(
+        fn ->
+          delete_all(record_type)
+          insert_all_records(records)
+        end,
+        timeout: 300_000
+      )
     end)
   end
 
