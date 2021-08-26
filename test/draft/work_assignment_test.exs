@@ -148,10 +148,10 @@ defmodule Draft.WorkAssignmentTest do
                |> Draft.WorkAssignment.from_parts()
     end
 
-    test "hours_worked is 8 if 8 hr list & part time" do
+    test "hours_worked is 8 if 8 hr list represented old way ('LR')" do
       assert %{hours_worked: 8} =
-               :pt
-               |> work_assignment_parts_no_duty("LR08")
+               :ft
+               |> work_assignment_parts_no_duty("LR")
                |> Draft.WorkAssignment.from_parts()
     end
 
@@ -162,10 +162,10 @@ defmodule Draft.WorkAssignmentTest do
                |> Draft.WorkAssignment.from_parts()
     end
 
-    test "hours_worked is 10 if 10 hr list & part time" do
-      assert %{hours_worked: 10} =
+    test "hours_worked is 6 if LRP and part-time" do
+      assert %{hours_worked: 6} =
                :pt
-               |> work_assignment_parts_no_duty("LR10")
+               |> work_assignment_parts_no_duty("LRP")
                |> Draft.WorkAssignment.from_parts()
     end
 
@@ -176,17 +176,24 @@ defmodule Draft.WorkAssignmentTest do
                |> Draft.WorkAssignment.from_parts()
     end
 
-    test "hours_worked is 0 if off list" do
-      assert %{hours_worked: 0} =
+    test "hours_worked is nil if off list full-time" do
+      assert %{hours_worked: nil} =
                :ft
                |> work_assignment_parts_no_duty("OL")
                |> Draft.WorkAssignment.from_parts()
     end
 
     test "hours_worked is 0 if off list part-time" do
-      assert %{hours_worked: 0} =
-               :ft
+      assert %{hours_worked: 6} =
+               :pt
                |> work_assignment_parts_no_duty("OLP")
+               |> Draft.WorkAssignment.from_parts()
+    end
+
+    test "hours_worked is 6 if VR part time" do
+      assert %{hours_worked: 6} =
+               :pt
+               |> work_assignment_parts_no_duty("VRP")
                |> Draft.WorkAssignment.from_parts()
     end
 

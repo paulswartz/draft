@@ -80,55 +80,50 @@ defmodule Draft.WorkAssignment do
         |> Draft.ParsingHelpers.to_optional_integer()
     }
 
-    work_assignment_with_hours(assignment_from_file)
+    %{assignment_from_file | hours_worked: hours_worked(assignment_from_file)}
   end
 
-  @spec work_assignment_with_hours(Draft.WorkAssignment.t()) :: Draft.WorkAssignment.t()
-
-  # Return a work assignment with the `hours_worked` field populated
-  # based on the job class, assignment, and duty. If there is not enough information
-  # to determine the hours worked (ex: assignment is VR), hours_worked will be nil.
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "VR"} = work_assignment) do
-    %{work_assignment | hours_worked: nil}
+  @spec hours_worked(Draft.WorkAssignment.t()) :: integer() | nil
+  defp hours_worked(%Draft.WorkAssignment{assignment: "OFF"}) do
+    0
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR08"} = work_assignment) do
-    %{work_assignment | hours_worked: 8}
+  defp hours_worked(%Draft.WorkAssignment{
+         assignment: assignment,
+         duty_internal_id: nil,
+         job_class: job_class
+       }) do
+    hours_worked_pending_assignment(assignment, Draft.JobClassHelpers.pt_or_ft(job_class))
   end
 
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "LR10"} = work_assignment) do
-    %{work_assignment | hours_worked: 10}
-  end
-
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OL"} = work_assignment) do
-    # Assumption for now -- 0 hours for OL day
-    %{work_assignment | hours_worked: 0}
-  end
-
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OLP"} = work_assignment) do
-    # Assumption for now -- 0 hours for OLPT day
-    %{work_assignment | hours_worked: 0}
-  end
-
-  defp work_assignment_with_hours(%Draft.WorkAssignment{assignment: "OFF"} = work_assignment) do
-    %{work_assignment | hours_worked: 0}
-  end
-
-  defp work_assignment_with_hours(
-         %Draft.WorkAssignment{
-           duty_internal_id: duty_internal_id,
-           roster_set_internal_id: roster_set_internal_id,
-           job_class: job_class,
-           operating_date: date
-         } = work_assignment
-       ) do
+  defp hours_worked(%Draft.WorkAssignment{
+         duty_internal_id: duty_internal_id,
+         roster_set_internal_id: roster_set_internal_id,
+         job_class: job_class,
+         operating_date: date
+       }) do
     work_off_ratio =
       Draft.RosterDay.work_off_ratio_for_duty(roster_set_internal_id, duty_internal_id, date)
 
-    %{
-      work_assignment
-      | hours_worked: Draft.JobClassHelpers.num_hours_per_day(job_class, work_off_ratio)
-    }
+    Draft.JobClassHelpers.num_hours_per_day(job_class, work_off_ratio)
+  end
+
+  defp hours_worked_pending_assignment(assignment, :pt) do
+    case assignment do
+      "VRP" -> 6
+      "OLP" -> 6
+      "LRP" -> 6
+    end
+  end
+
+  defp hours_worked_pending_assignment(assignment, :ft) do
+    case assignment do
+      "VR" -> nil
+      "OL" -> nil
+      "LR08" -> 8
+      "LR" -> 8
+      "LR10" -> 10
+    end
   end
 
   @doc false
