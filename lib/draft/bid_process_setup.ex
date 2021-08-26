@@ -34,11 +34,14 @@ defmodule Draft.BidProcessSetup do
   inserted based on the data present in the two given files.
   """
   def update_bid_process(bid_process_files \\ @default_files) do
-    Repo.transaction(fn ->
-      update_rounds(Map.fetch!(bid_process_files, Draft.BidRound))
-      update_sessions(Map.fetch!(bid_process_files, Draft.BidSession))
-      update_roster_days(Map.fetch!(bid_process_files, Draft.RosterDay))
-    end)
+    Repo.transaction(
+      fn ->
+        update_rounds(Map.fetch!(bid_process_files, Draft.BidRound))
+        update_sessions(Map.fetch!(bid_process_files, Draft.BidSession))
+        update_roster_days(Map.fetch!(bid_process_files, Draft.RosterDay))
+      end,
+      timeout: 300_000
+    )
   end
 
   defp update_rounds(round_file) do
