@@ -108,12 +108,9 @@ defmodule Draft.WorkAssignment do
     Draft.JobClassHelpers.num_hours_per_day(job_class, work_off_ratio)
   end
 
-  defp hours_worked_pending_assignment(assignment, :pt) do
-    case assignment do
-      "VRP" -> 6
-      "OLP" -> 6
-      "LRP" -> 6
-    end
+  defp hours_worked_pending_assignment(assignment, :pt)
+       when assignment in ["VRP", "OLP", "LRP"] do
+    6
   end
 
   defp hours_worked_pending_assignment(assignment, :ft) do

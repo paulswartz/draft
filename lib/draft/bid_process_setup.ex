@@ -86,7 +86,7 @@ defmodule Draft.BidProcessSetup do
 
     Repo.transaction(fn ->
       records
-      |> Enum.into(MapSet.new(), &{&1.booking_id, &1.roster_set_internal_id})
+      |> MapSet.new(&{&1.booking_id, &1.roster_set_internal_id})
       |> Enum.each(fn {booking_id, roster_set_internal_id} ->
         Repo.delete_all(
           from r in Draft.RosterDay,
