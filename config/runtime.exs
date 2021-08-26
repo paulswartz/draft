@@ -20,3 +20,21 @@ config :ueberauth, Ueberauth.Strategy.Cognito,
   client_secret: System.get_env("COGNITO_CLIENT_SECRET"),
   user_pool_id: System.get_env("COGNITO_USER_POOL_ID"),
   aws_region: System.get_env("COGNITO_AWS_REGION")
+
+if bucket = System.get_env("IMPORTER_S3_BUCKET") do
+  prefix = System.get_env("IMPORTER_S3_PREFIX") || ""
+  schedule = System.get_env("IMPORTER_S3_SCHEDULE") || "* * * * *"
+
+  config :draft, Oban,
+    queues: [importer: 10],
+    plugins: [
+      {Oban.Plugins.Cron,
+       crontab: [
+         {
+           schedule,
+           Draft.Importer.S3ScanWorker,
+           args: %{bucket: bucket, prefix: prefix}
+         }
+       ]}
+    ]
+end
