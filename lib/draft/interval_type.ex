@@ -20,6 +20,10 @@ defmodule Draft.IntervalType do
     :day
   end
 
+  def from_hastus_session_allowed("") do
+    nil
+  end
+
   def from_hastus_session_allowed(nil) do
     nil
   end
