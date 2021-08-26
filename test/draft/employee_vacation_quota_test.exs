@@ -1,6 +1,7 @@
 defmodule Draft.EmployeeVacationQuotaTest do
   @moduledoc false
-  use ExUnit.Case
+  use Draft.DataCase
+  import Draft.Factory
   alias Draft.EmployeeVacationQuota
 
   describe "from_parts/1" do
@@ -81,6 +82,35 @@ defmodule Draft.EmployeeVacationQuotaTest do
 
     test "Initial quota = quota to subtract" do
       assert 0 == EmployeeVacationQuota.adjust_quota(5, 5)
+    end
+  end
+
+  describe "week_quota!/2" do
+    test "returns amount specified by full weeks if it is the same as the max_minutes" do
+      round = insert!(:round)
+      insert!(:group)
+      emp = insert!(:employee_ranking)
+      insert!(:employee_vacation_quota, %{weekly_quota: 2, maximum_minutes: 4800})
+
+      assert 2 = EmployeeVacationQuota.week_quota!(round, emp)
+    end
+
+    test "Does not exceed the maximum minutes for FT operator" do
+      round = insert!(:round)
+      insert!(:group)
+      emp = insert!(:employee_ranking, %{job_class: "000100"})
+      insert!(:employee_vacation_quota, %{weekly_quota: 4, maximum_minutes: 7200})
+
+      assert 3 = EmployeeVacationQuota.week_quota!(round, emp)
+    end
+
+    test "Does not exceed the maximum minutes for PT operator" do
+      round = insert!(:round)
+      insert!(:group)
+      emp = insert!(:employee_ranking, %{job_class: "001100"})
+      insert!(:employee_vacation_quota, %{weekly_quota: 5, maximum_minutes: 7200})
+
+      assert 4 = EmployeeVacationQuota.week_quota!(round, emp)
     end
   end
 end

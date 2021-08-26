@@ -243,7 +243,7 @@ defmodule Draft.Factory do
               roster_days: [%{day: String.t(), duty_id: integer() | nil}]
             }
           }
-        ]) :: none
+        ]) :: :ok
   def insert_work_round(sessions) do
     insert!(:round)
     Enum.each(sessions, &insert_session_with_rosters(&1))
@@ -298,7 +298,7 @@ defmodule Draft.Factory do
     )
   end
 
-  @spec insert_round_with_employees(integer()) :: :ok
+  @spec insert_round_with_employees(integer()) :: Draft.BidRound.t()
   @doc """
     Insert a default round with the given number of employees in a single group
   """
@@ -313,7 +313,7 @@ defmodule Draft.Factory do
             :group_size => integer()
           },
           map()
-        ) :: :ok
+        ) :: Draft.BidRound.t()
   @doc """
   Insert a single round with the given specifications the specified number of employees, broken into the specified number of groups.
   Employee ids are created with 0 padding to be 5 digits.
@@ -368,6 +368,8 @@ defmodule Draft.Factory do
         )
       end)
     end)
+
+    inserted_round
   end
 
   @doc """
