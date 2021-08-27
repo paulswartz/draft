@@ -54,19 +54,22 @@ defmodule Draft.EmployeeRanking do
     }
   end
 
-  @spec all_remaining_employees(any(), :asc | :desc) ::
+  @spec all_remaining_employees(
+          %{:round_id => String.t(), :process_id => String.t(), optional(atom()) => any()},
+          :asc | :desc
+        ) ::
           [t()]
   @doc """
   All employees that are part of the given round and in a later group than the one given.
   """
-  def all_remaining_employees(round, order) do
+  def all_remaining_employees(%{round_id: round_id, process_id: process_id}, order) do
     last_distributed_group_number =
-      Draft.VacationDistributionRun.last_distributed_group(round) || 0
+      Draft.VacationDistributionRun.last_distributed_group(round_id, process_id) || 0
 
     Draft.Repo.all(
       from e in Draft.EmployeeRanking,
         where:
-          e.round_id == ^round.round_id and e.process_id == ^round.process_id and
+          e.round_id == ^round_id and e.process_id == ^process_id and
             e.group_number > ^last_distributed_group_number,
         order_by: [{^order, e.group_number}, {^order, e.rank}]
     )

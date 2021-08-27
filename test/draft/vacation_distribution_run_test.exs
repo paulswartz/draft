@@ -55,7 +55,9 @@ defmodule Draft.VacationDistributionRunTest do
   describe "last_distributed_group/1" do
     test "Returns nil when no distributions yet" do
       round = insert!(:round, %{process_id: "process_id", round_id: "round_id"})
-      assert nil == VacationDistributionRun.last_distributed_group(round)
+
+      assert nil ==
+               VacationDistributionRun.last_distributed_group(round.round_id, round.process_id)
     end
 
     test "Returns latest group when multiple" do
@@ -67,7 +69,7 @@ defmodule Draft.VacationDistributionRunTest do
       VacationDistributionRun.mark_complete(run_1)
       run_2 = VacationDistributionRun.insert(group2)
       VacationDistributionRun.mark_complete(run_2)
-      assert 2 = VacationDistributionRun.last_distributed_group(round)
+      assert 2 = VacationDistributionRun.last_distributed_group(round.round_id, round.process_id)
     end
 
     test "Does not return group where distribution run hasn't completed" do
@@ -78,7 +80,7 @@ defmodule Draft.VacationDistributionRunTest do
       run_1 = VacationDistributionRun.insert(group1)
       VacationDistributionRun.mark_complete(run_1)
       VacationDistributionRun.insert(group2)
-      assert 1 = VacationDistributionRun.last_distributed_group(round)
+      assert 1 = VacationDistributionRun.last_distributed_group(round.round_id, round.process_id)
     end
   end
 end

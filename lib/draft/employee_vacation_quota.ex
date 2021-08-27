@@ -21,14 +21,6 @@ defmodule Draft.EmployeeVacationQuota do
           available_after_weekly_quota: integer(),
           maximum_minutes: integer()
         }
-  @type quota_summary_t ::
-          %{
-            employee: %{employee_id: String.t(), job_class: String.t()},
-            total_quota: integer(),
-            anniversary_date: Date.t() | nil,
-            anniversary_quota: integer() | nil,
-            employee_id: String.t()
-          }
 
   @primary_key false
   schema "employee_vacation_quotas" do
@@ -79,30 +71,32 @@ defmodule Draft.EmployeeVacationQuota do
     }
   end
 
-  @spec quota_covering_rating_period!(
-          Draft.BidRound.t(),
-          String.t()
+  @spec quota_covering_interval(
+          String.t(),
+          Date.t(),
+          Date.t()
         ) :: t()
-  defp quota_covering_rating_period!(
-         %{rating_period_start_date: rating_start, rating_period_end_date: rating_end},
-         employee_id
+  defp quota_covering_interval(
+         employee_id,
+         start_date,
+         end_date
        ) do
     Draft.Repo.one!(
       from q in __MODULE__,
         where:
           q.employee_id == ^employee_id and
-            (q.interval_start_date <= ^rating_start and
-               q.interval_end_date >= ^rating_end)
+            (q.interval_start_date <= ^start_date and
+               q.interval_end_date >= ^end_date)
     )
   end
 
-  @spec week_quota!(Draft.BidRound.t(), Draft.EmployeeRanking.t()) ::
+  @spec week_quota(Draft.EmployeeRanking.t(), Date.t(), Date.t()) ::
           integer()
   @doc """
-  Get the week quota available to an employee during the given rating period.
+  Get the week quota available to an employee during the given date range
   """
-  def week_quota!(round, employee) do
-    quota = quota_covering_rating_period!(round, employee.employee_id)
+  def week_quota(employee, start_date, end_date) do
+    quota = quota_covering_interval(employee.employee_id, start_date, end_date)
 
     max_minutes_in_weeks =
       div(

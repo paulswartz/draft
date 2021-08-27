@@ -273,12 +273,20 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
   describe "remaining_quota/1" do
     test "only contains quota within rating period" do
-      round =
-        insert!(:round,
-          division_id: "112",
-          round_id: "vac_FT",
-          rating_period_start_date: ~D[2021-08-01],
-          rating_period_end_date: ~D[2021-08-28]
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
         )
 
       insert!(:division_vacation_week_quota, %{
@@ -313,16 +321,24 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         quota: 2
       })
 
-      assert 3 = DivisionVacationWeekQuota.remaining_quota(round)
+      assert 3 = DivisionVacationWeekQuota.remaining_quota(session)
     end
 
     test "only contains quota for division" do
-      round =
-        insert!(:round,
-          division_id: "112",
-          round_id: "vac_FT",
-          rating_period_start_date: ~D[2021-08-01],
-          rating_period_end_date: ~D[2021-08-28]
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
         )
 
       insert!(:division_vacation_week_quota, %{
@@ -341,16 +357,24 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         quota: 2
       })
 
-      assert 1 = DivisionVacationWeekQuota.remaining_quota(round)
+      assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
     end
 
     test "only contains quota for job class category" do
-      round =
-        insert!(:round,
-          division_id: "112",
-          round_id: "vac_FT",
-          rating_period_start_date: ~D[2021-08-01],
-          rating_period_end_date: ~D[2021-08-28]
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
         )
 
       insert!(:division_vacation_week_quota, %{
@@ -369,7 +393,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         quota: 2
       })
 
-      assert 1 = DivisionVacationWeekQuota.remaining_quota(round)
+      assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
     end
   end
 end

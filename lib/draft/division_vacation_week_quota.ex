@@ -57,14 +57,14 @@ defmodule Draft.DivisionVacationWeekQuota do
     }
   end
 
-  @spec remaining_quota(Draft.BidRound.t()) :: integer()
+  @spec remaining_quota(Draft.BidSession.t()) :: integer()
   @doc """
-  Get the total remaining quota for the round. This does **not** reflect any quota
+  Get the total remaining quota for the vacation week session. This does **not** reflect any quota
   that may be blocked-off from picking as a result of any cancelled vacations
   """
-  def remaining_quota(round) do
+  def remaining_quota(session) do
     job_category =
-      if String.starts_with?(round.round_id, "PT") do
+      if String.starts_with?(session.round_id, "PT") do
         :pt
       else
         :ft
@@ -73,9 +73,9 @@ defmodule Draft.DivisionVacationWeekQuota do
     Draft.Repo.one!(
       from d in Draft.DivisionVacationWeekQuota,
         where:
-          d.start_date >= ^round.rating_period_start_date and
-            d.end_date <= ^round.rating_period_end_date and
-            d.division_id == ^round.division_id and
+          d.start_date >= ^session.rating_period_start_date and
+            d.end_date <= ^session.rating_period_end_date and
+            d.division_id == ^session.division_id and
             d.employee_selection_set == ^job_category,
         select: sum(d.quota)
     )
