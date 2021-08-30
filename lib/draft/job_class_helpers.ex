@@ -30,6 +30,19 @@ defmodule Draft.JobClassHelpers do
     end
   end
 
+  @spec category_from_round_id(String.t()) :: Draft.JobClassCategory.t()
+  @doc """
+  Get the job class category from a round id, with the convention that a
+  trailing "PT" means it is a part-time round.
+  """
+  def category_from_round_id(round_id) do
+    if String.ends_with?(round_id, "PT") do
+      :pt
+    else
+      :ft
+    end
+  end
+
   @spec num_hours_per_day(String.t(), Draft.WorkOffRatio.t()) :: integer()
   @doc """
   The number of hours that are worked in a day.

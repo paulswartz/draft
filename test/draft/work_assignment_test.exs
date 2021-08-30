@@ -219,9 +219,9 @@ defmodule Draft.WorkAssignmentTest do
     end
   end
 
-  @job_category_map %{ft: "000100", pt: "001100"}
+  @job_class_category_map %{ft: "000100", pt: "001100"}
 
-  defp work_assignment_parts_no_duty(job_category, assignment) do
+  defp work_assignment_parts_no_duty(job_class_category, assignment) do
     [
       "00001",
       "0",
@@ -234,14 +234,14 @@ defmodule Draft.WorkAssignmentTest do
       "1",
       "09/01/2021",
       "12/01/2021",
-      Map.get(@job_category_map, job_category),
+      Map.get(@job_class_category_map, job_class_category),
       assignment,
       "",
       ""
     ]
   end
 
-  defp work_assignment_parts_with_duty(job_category, duty_id, operating_date) do
+  defp work_assignment_parts_with_duty(job_class_category, duty_id, operating_date) do
     [
       "00001",
       "0",
@@ -254,7 +254,7 @@ defmodule Draft.WorkAssignmentTest do
       "1",
       "09/01/2021",
       "12/01/2021",
-      Map.get(@job_category_map, job_category),
+      Map.get(@job_class_category_map, job_class_category),
       "assignment_id",
       Integer.to_string(duty_id),
       "23456"
