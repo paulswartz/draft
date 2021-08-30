@@ -1,9 +1,9 @@
-defmodule Draft.DivisionQuotaRanked do
+defmodule Draft.DivisionQuota do
   @moduledoc """
   Represents vacation quota as ranked by a particular employee
   """
 
-  @type t :: %{
+  @type employee_ranked_quota :: %{
           start_date: Date.t(),
           end_date: Date.t(),
           interval_type: Draft.IntervalType.t(),
@@ -19,40 +19,27 @@ defmodule Draft.DivisionQuotaRanked do
   preferred vacation would be first. Any available vacation that the employee has not marked as a
   preference will be returned sorted by descending start date (latest date first)
   """
-  @spec available_to_employee(
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          Draft.IntervalType.t()
-        ) :: [t()]
 
-  def available_to_employee(round, employee, interval_type) do
-    available_quota = available_quota(round, employee, interval_type)
+  @spec available_with_employee_rank(
+          Draft.BidSession.t(),
+          %{:employee_id => String.t(), :job_class => String.t(), optional(atom()) => any()}
+        ) :: [employee_ranked_quota()]
+  def available_with_employee_rank(session, employee) do
+    available_quota = available_quota(session, employee)
 
     employee_preferences =
       Draft.EmployeeVacationPreferenceSet.latest_preferences(
-        round.process_id,
-        round.round_id,
+        session.process_id,
+        session.round_id,
         employee.employee_id,
-        interval_type
+        session.type_allowed
       )
 
     rank_vacations(employee.employee_id, available_quota, employee_preferences)
   end
 
-  @spec available_quota(
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          Draft.IntervalType.t()
-        ) :: [
-          %{
-            start_date: Date.t(),
-            end_date: Date.t(),
-            interval_type: Draft.IntervalType.t(),
-            quota: non_neg_integer()
-          }
-        ]
-  defp available_quota(round, employee, :week) do
-    round
+  defp available_quota(%{type_allowed: :week} = session, employee) do
+    session
     |> Draft.DivisionVacationWeekQuota.available_quota(employee)
     |> Enum.map(
       &%{
@@ -60,13 +47,13 @@ defmodule Draft.DivisionQuotaRanked do
         end_date: &1.end_date,
         quota: &1.quota,
         employee_id: employee.employee_id,
-        interval_type: :week
+        interval_type: session.type_allowed
       }
     )
   end
 
-  defp available_quota(round, employee, :day) do
-    round
+  defp available_quota(%{type_allowed: :day} = session, employee) do
+    session
     |> Draft.DivisionVacationDayQuota.available_quota(employee)
     |> Enum.map(
       &%{
@@ -74,11 +61,14 @@ defmodule Draft.DivisionQuotaRanked do
         end_date: &1.date,
         quota: &1.quota,
         employee_id: employee.employee_id,
-        interval_type: :day
+        interval_type: session.type_allowed
       }
     )
   end
 
+  @spec rank_vacations(String.t(), [employee_ranked_quota()], %{Date.t() => pos_integer()}) :: [
+          employee_ranked_quota()
+        ]
   defp rank_vacations(employee_id, vacations, employee_preferences) do
     vacations
     |> Enum.map(fn vacation_quota ->

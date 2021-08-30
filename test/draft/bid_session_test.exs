@@ -103,8 +103,8 @@ defmodule Draft.BidSessionTest do
     end
   end
 
-  describe "vacation_interval/1" do
-    test "Returns day for vacation day session" do
+  describe "vacation_session/1" do
+    test "Returns vacation day session" do
       insert!(:session, %{
         round_id: "round_1",
         process_id: "process_1",
@@ -112,8 +112,13 @@ defmodule Draft.BidSessionTest do
         type_allowed: :day
       })
 
-      assert :day =
-               Draft.BidSession.vacation_interval(%{
+      assert %Draft.BidSession{
+               round_id: "round_1",
+               process_id: "process_1",
+               type: :vacation,
+               type_allowed: :day
+             } =
+               Draft.BidSession.vacation_session(%{
                  round_id: "round_1",
                  process_id: "process_1"
                })
@@ -127,14 +132,19 @@ defmodule Draft.BidSessionTest do
         type_allowed: :week
       })
 
-      assert :week =
-               Draft.BidSession.vacation_interval(%{
+      assert %Draft.BidSession{
+               round_id: "round_1",
+               process_id: "process_1",
+               type: :vacation,
+               type_allowed: :week
+             } =
+               Draft.BidSession.vacation_session(%{
                  round_id: "round_1",
                  process_id: "process_1"
                })
     end
 
-    test "Returns nil if passed work session" do
+    test "Raises error if passed work session" do
       insert!(:session, %{
         round_id: "round_1",
         process_id: "process_1",
@@ -142,11 +152,12 @@ defmodule Draft.BidSessionTest do
         type_allowed: nil
       })
 
-      assert nil ==
-               Draft.BidSession.vacation_interval(%{
-                 round_id: "round_1",
-                 process_id: "process_1"
-               })
+      assert_raise Ecto.NoResultsError, fn ->
+        Draft.BidSession.vacation_session(%{
+          round_id: "round_1",
+          process_id: "process_1"
+        })
+      end
     end
   end
 end

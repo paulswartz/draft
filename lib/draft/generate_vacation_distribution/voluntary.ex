@@ -6,58 +6,48 @@ defmodule Draft.GenerateVacationDistribution.Voluntary do
 
   alias Draft.GenerateVacationDistribution.Days
   alias Draft.GenerateVacationDistribution.Weeks
-  alias Draft.VacationDistributionRun
 
   @callback generate(
-              VacationDistributionRun.id(),
-              Draft.BidRound.t(),
-              Draft.EmployeeRanking.t(),
-              integer(),
-              nil | %{anniversary_date: Date.t(), anniversary_weeks: number()}
+              Draft.VacationDistributionRun.id(),
+              Draft.BidSession.t(),
+              Draft.EmployeeVacationQuotaSummary.t()
             ) :: [Draft.VacationDistribution.t()]
 
   @spec generate(
-          VacationDistributionRun.id(),
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          integer(),
-          nil | %{anniversary_date: Date.t(), anniversary_weeks: number()},
-          Draft.IntervalType.t()
+          Draft.VacationDistributionRun.id(),
+          Draft.BidSession.t(),
+          Draft.EmployeeVacationQuotaSummary.t()
         ) :: [Draft.VacationDistribution.t()]
   @doc """
   Generate a list of vacations to distribute to the employee voluntarily taking vacation.
   """
   def generate(
         distribution_run_id,
-        round,
-        employee,
-        max_quota,
-        anniversary_vacation,
-        :week
+        session,
+        employee_vacation_quota_summary
+      )
+
+  def generate(
+        distribution_run_id,
+        %{type: :vacation, type_allowed: :week} = session,
+        employee_vacation_quota_summary
       ) do
     Weeks.generate(
       distribution_run_id,
-      round,
-      employee,
-      max_quota,
-      anniversary_vacation
+      session,
+      employee_vacation_quota_summary
     )
   end
 
   def generate(
         distribution_run_id,
-        round,
-        employee,
-        max_quota,
-        anniversary_vacation,
-        :day
+        %{type: :vacation, type_allowed: :day} = session,
+        employee_vacation_quota_summary
       ) do
     Days.generate(
       distribution_run_id,
-      round,
-      employee,
-      max_quota,
-      anniversary_vacation
+      session,
+      employee_vacation_quota_summary
     )
   end
 end

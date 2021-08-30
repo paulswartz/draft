@@ -1,7 +1,6 @@
 defmodule Draft.PointOfEquivalenceTest do
   use Draft.DataCase
   import Draft.Factory
-  alias Draft.BidSession
 
   describe "calculate/1" do
     test "All operators need to be forced" do

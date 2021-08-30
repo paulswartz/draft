@@ -9,6 +9,7 @@ defmodule Draft.DivisionVacationWeekQuota do
   import Ecto.Query
   alias Draft.ParsingHelpers
   alias Draft.Repo
+  require Logger
 
   @derive {Jason.Encoder, only: [:start_date, :end_date, :quota]}
 
@@ -127,17 +128,20 @@ defmodule Draft.DivisionVacationWeekQuota do
     )
   end
 
-  @spec available_quota(Draft.BidRound.t(), %{
-          required(:employee_id) => String.t(),
-          required(:job_class) => String.t(),
-          optional(atom()) => any()
-        }) ::
+  @spec available_quota(
+          Draft.BidSession.t(),
+          %{
+            required(:employee_id) => String.t(),
+            required(:job_class) => String.t(),
+            optional(atom()) => any()
+          }
+        ) ::
           [t()]
   @doc """
   Get all vacation weeks that are available for the given employee, based on their job class, the available quota for their division,
   and their previously selected vacation time. Available weeks are returned in descending order by start date (latest available date will be listed first)
   """
-  def available_quota(round, employee) do
+  def available_quota(session, employee) do
     job_class_category = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
 
     quotas =
@@ -145,10 +149,11 @@ defmodule Draft.DivisionVacationWeekQuota do
         from w in Draft.DivisionVacationWeekQuota,
           as: :division_week_quota,
           where:
-            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+            w.division_id == ^session.division_id and w.quota > 0 and
+              w.is_restricted_week == false and
               w.job_class_category == ^job_class_category and
-              ^round.rating_period_start_date <= w.start_date and
-              ^round.rating_period_end_date >= w.end_date and
+              ^session.rating_period_start_date <= w.start_date and
+              ^session.rating_period_end_date >= w.end_date and
               not exists(conflicting_selected_vacation_query(employee.employee_id)),
           order_by: [desc: w.start_date]
       )

@@ -17,8 +17,8 @@ defmodule Draft.EmployeeVacationQuota do
           dated_quota: integer(),
           restricted_week_quota: integer(),
           available_after_date: Date.t() | nil,
-          available_after_dated_quota: integer(),
-          available_after_weekly_quota: integer(),
+          available_after_dated_quota: integer() | nil,
+          available_after_weekly_quota: integer() | nil,
           maximum_minutes: integer()
         }
 
@@ -76,11 +76,14 @@ defmodule Draft.EmployeeVacationQuota do
           Date.t(),
           Date.t()
         ) :: t()
-  defp quota_covering_interval(
-         employee_id,
-         start_date,
-         end_date
-       ) do
+  @doc """
+  Get an employee's vacation quota covering the entire date range given.
+  """
+  def quota_covering_interval(
+        employee_id,
+        start_date,
+        end_date
+      ) do
     Draft.Repo.one!(
       from q in __MODULE__,
         where:

@@ -71,22 +71,21 @@ defmodule Draft.BidSession do
     }
   end
 
-  @spec vacation_interval(%{
+  @spec vacation_session(%{
           :round_id => String.t(),
           :process_id => String.t(),
           optional(atom()) => any()
-        }) :: Draft.IntervalType.t() | nil
+        }) :: t()
   @doc """
-  Get the type of vacation allowed for the one vacation session in the given round.
+  Get the vacation session associated with the given round.
   """
-  def vacation_interval(%{round_id: round_id, process_id: process_id}) do
-    Draft.Repo.one(
+  def vacation_session(%{round_id: round_id, process_id: process_id}) do
+    Draft.Repo.one!(
       from s in Draft.BidSession,
         where:
           s.round_id == ^round_id and
             s.process_id == ^process_id and
-            s.type == :vacation,
-        select: s.type_allowed
+            s.type == :vacation
     )
   end
 

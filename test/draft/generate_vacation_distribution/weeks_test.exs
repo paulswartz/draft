@@ -49,23 +49,23 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     )
 
     {:ok,
-     round: Repo.one!(from(r in Draft.BidRound)),
+     session: Repo.one!(from(r in Draft.BidSession)),
      employee_ranking: Repo.one!(from(e in Draft.EmployeeRanking))}
   end
 
   describe "distribute/4" do
     test "Operator whose anniversary date has passed can take full amount of vacation time available",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          2,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 2 * 40 * 60,
             anniversary_date: ~D[2021-03-01],
-            anniversary_weeks: 2,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 2 * 40 * 60
           }
         )
 
@@ -86,14 +86,18 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator who has no anniversary date can take full amount of vacation time available",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          2,
-          nil
+          session,
+          %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 2 * 40 * 60,
+            anniversary_date: nil,
+            minutes_only_available_as_of_anniversary: nil
+          }
         )
 
       assert [
@@ -113,17 +117,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date on start date of rating period can take full amount of vacation ",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          2,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 2 * 40 * 60,
             anniversary_date: ~D[2021-04-01],
-            anniversary_weeks: 1,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 1 * 40 * 60
           }
         )
 
@@ -144,17 +148,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date in the middle of rating period only assigned vacation earned prior to anniversary",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          2,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 2 * 40 * 60,
             anniversary_date: ~D[2021-04-15],
-            anniversary_weeks: 1,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 1 * 40 * 60
           }
         )
 
@@ -169,17 +173,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with anniversary date after rating period only assigned vacation available before anniversary date",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          2,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 2 * 40 * 60,
             anniversary_date: ~D[2021-06-01],
-            anniversary_weeks: 1,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 1 * 40 * 60
           }
         )
 
@@ -194,17 +198,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with no vacation weeks remaining and anniversary that has passed is not distributed any time",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          0,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 0,
             anniversary_date: ~D[2021-03-01],
-            anniversary_weeks: 1,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 1 * 40 * 60
           }
         )
 
@@ -212,17 +216,17 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     end
 
     test "Operator with no vacation weeks remaining and anniversary that is upcoming is not distributed any time",
-         %{round: round, employee_ranking: employee_ranking} do
+         %{session: session, employee_ranking: employee_ranking} do
       vacation_assignments =
         GenerateVacationDistribution.Weeks.generate(
           1,
-          round,
-          employee_ranking,
-          0,
+          session,
           %{
+            employee_id: employee_ranking.employee_id,
+            job_class: employee_ranking.job_class,
+            total_available_minutes: 0,
             anniversary_date: ~D[2021-06-01],
-            anniversary_weeks: 1,
-            anniversary_days: 0
+            minutes_only_available_as_of_anniversary: 1 * 40 * 60
           }
         )
 
@@ -231,10 +235,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is assigned preferred week when it is still available",
-       %{round: round, employee_ranking: employee_ranking} do
+       %{session: session, employee_ranking: employee_ranking} do
     insert_vacation_preferences(
-      round.round_id,
-      round.process_id,
+      session.round_id,
+      session.process_id,
       %{"00001" => [~D[2021-04-08]]},
       :week
     )
@@ -242,10 +246,14 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        round,
-        employee_ranking,
-        1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [
@@ -258,10 +266,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is assigned only one week if only one preference is still available",
-       %{round: round, employee_ranking: employee_ranking} do
+       %{session: session, employee_ranking: employee_ranking} do
     insert_vacation_preferences(
-      round.round_id,
-      round.process_id,
+      session.round_id,
+      session.process_id,
       %{"00001" => [~D[2021-04-22], ~D[2021-04-08]]},
       :week
     )
@@ -269,37 +277,14 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        round,
-        employee_ranking,
-        1,
-        nil
-      )
-
-    assert [
-             %VacationDistribution{
-               start_date: ~D[2021-04-08],
-               end_date: ~D[2021-04-14],
-               employee_id: "00001"
-             }
-           ] = vacation_assignments
-  end
-
-  test "Operator with more vacation preferences than their quota is only assigned as many weeks as is allowed by their quota",
-       %{round: round, employee_ranking: employee_ranking} do
-    insert_vacation_preferences(
-      round.round_id,
-      round.process_id,
-      %{"00001" => [~D[2021-04-08], ~D[2021-04-01]]},
-      :week
-    )
-
-    vacation_assignments =
-      GenerateVacationDistribution.Weeks.generate(
-        1,
-        round,
-        employee_ranking,
-        1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [
@@ -312,10 +297,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator with vacation week preferences is not assigned their preferred week when it is not available",
-       %{round: round, employee_ranking: employee_ranking} do
+       %{session: session, employee_ranking: employee_ranking} do
     insert_vacation_preferences(
-      round.round_id,
-      round.process_id,
+      session.round_id,
+      session.process_id,
       %{"00001" => [~D[2021-04-22]]},
       :week
     )
@@ -323,23 +308,27 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         1,
-        round,
-        employee_ranking,
-        1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [] = vacation_assignments
   end
 
   test "Operator with vacation week preferences is not assigned that week when it has been taken by someone earlier in the same run",
-       %{round: round, employee_ranking: employee_ranking} do
+       %{session: session, employee_ranking: employee_ranking} do
     group_number = 1234
 
     run_id =
       Draft.VacationDistributionRun.insert(%Draft.BidGroup{
-        process_id: round.process_id,
-        round_id: round.round_id,
+        process_id: session.process_id,
+        round_id: session.round_id,
         group_number: group_number
       })
 
@@ -353,8 +342,8 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     ])
 
     insert_vacation_preferences(
-      round.round_id,
-      round.process_id,
+      session.round_id,
+      session.process_id,
       %{"00001" => [~D[2021-04-08]]},
       :week
     )
@@ -362,17 +351,21 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         run_id,
-        round,
-        employee_ranking,
-        1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [] = vacation_assignments
   end
 
   test "Operator is not assigned vacation week they've already selected", %{
-    round: round,
+    session: session,
     employee_ranking: employee_ranking
   } do
     insert!(:employee_vacation_selection, %{
@@ -384,11 +377,15 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
 
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
-        1234,
-        round,
-        employee_ranking,
         1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [
@@ -401,15 +398,15 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
   end
 
   test "Operator can be re-assigned vacation week that has been previously cancelled", %{
-    round: round,
+    session: session,
     employee_ranking: employee_ranking
   } do
     group_number = 1234
 
     run_id =
       Draft.VacationDistributionRun.insert(%Draft.BidGroup{
-        process_id: round.process_id,
-        round_id: round.round_id,
+        process_id: session.process_id,
+        round_id: session.round_id,
         group_number: group_number
       })
 
@@ -423,10 +420,14 @@ defmodule Draft.GenerateVacationDistribution.Weeks.Test do
     vacation_assignments =
       GenerateVacationDistribution.Weeks.generate(
         run_id,
-        round,
-        employee_ranking,
-        1,
-        nil
+        session,
+        %{
+          employee_id: employee_ranking.employee_id,
+          job_class: employee_ranking.job_class,
+          total_available_minutes: 1 * 60 * 40,
+          anniversary_date: nil,
+          minutes_only_available_as_of_anniversary: nil
+        }
       )
 
     assert [

@@ -4,7 +4,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   ensuring that it will be possible to force all remaining employees to take vacation as well.
   """
   import Ecto.Query
-  alias Draft.DivisionQuotaRanked
+  alias Draft.DivisionQuota
   alias Draft.Repo
   alias Draft.VacationDistribution
   require Logger
@@ -155,7 +155,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
       nil
     else
       :ets.insert(memo, {hashed_key})
-      possible_assignments = all_vacation_available_to_employee(first_employee, counts)
+      possible_assignments = all_vacation_available_with_employee_rank(first_employee, counts)
 
       possible_assignment_permutations =
         permutations_take(
@@ -229,11 +229,12 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
     max_weeks = min(div(max_minutes, 60 * num_hours_per_week), balance.weekly_quota)
 
+    session = Draft.BidSession.vacation_session(round)
+
     available_quota =
-      DivisionQuotaRanked.available_to_employee(
-        round,
-        employee,
-        interval_type
+      DivisionQuota.available_with_employee_rank(
+        session,
+        employee
       )
 
     %{
@@ -258,8 +259,8 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     }
   end
 
-  @compile {:inline, all_vacation_available_to_employee: 2}
-  @spec all_vacation_available_to_employee(
+  @compile {:inline, all_vacation_available_with_employee_rank: 2}
+  @spec all_vacation_available_with_employee_rank(
           calculated_employee_quota(),
           %{
             gregorian_date() => integer()
@@ -270,7 +271,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # and vacations they have previously selected. The returned list of vacation distributions
   # Will be ordered from most preferrable to least preferrable.
   # (the latest possible vacation will be first in the list)
-  defp all_vacation_available_to_employee(
+  defp all_vacation_available_with_employee_rank(
          employee,
          distributions_not_reflected_in_quota
        ) do

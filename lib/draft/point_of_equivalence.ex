@@ -39,31 +39,6 @@ defmodule Draft.PointOfEquivalence do
     calculate(quota_to_force, employees_desc, start_date, end_date)
   end
 
-  @spec calculate_during_distribution(
-          Draft.BidSession.t(),
-          [Draft.EmployeeRanking.t()],
-          integer()
-        ) :: t()
-  @doc """
-  Calculate the point of equivalence for the given list of employees, taking into consideration
-  The amount of vacation that has already been distributed but is not accounted for in the
-  division quotas. The returned `employees_to_force` will be in order of rank ascending, with the
-  most senior operator listed first.
-  """
-  def calculate_during_distribution(
-        session,
-        employees_to_force,
-        already_distributed_vacation_count
-      ) do
-    employees_desc = Enum.sort_by(employees_to_force, &{&1.group_number, &1.rank}, :desc)
-
-    quota_to_force =
-      Draft.DivisionVacationWeekQuota.remaining_quota(session) -
-        already_distributed_vacation_count
-
-    calculate(quota_to_force, employees_desc, session.start_date, session.end_date)
-  end
-
   defp calculate(quota_to_force, employees_desc, start_date, end_date) do
     {employees_to_force, _acc_employee_quota} =
       Enum.reduce_while(employees_desc, {[], 0}, fn %{employee_id: employee_id} = employee_ranking,
@@ -87,7 +62,7 @@ defmodule Draft.PointOfEquivalence do
         end
       end)
 
-    %{
+    %__MODULE__{
       amount_to_force: quota_to_force,
       has_poe_been_reached: length(employees_to_force) == length(employees_desc),
       employees_to_force: employees_to_force
