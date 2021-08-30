@@ -6,6 +6,7 @@ defmodule Draft.EmployeeVacationQuota do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
@@ -68,6 +69,42 @@ defmodule Draft.EmployeeVacationQuota do
       available_after_dated_quota: ParsingHelpers.to_int(available_after_dated_quota),
       maximum_minutes: ParsingHelpers.to_minutes(maximum_minutes)
     }
+  end
+
+  @spec quota_covering_interval(
+          String.t(),
+          Date.t(),
+          Date.t()
+        ) :: t()
+  defp quota_covering_interval(
+         employee_id,
+         start_date,
+         end_date
+       ) do
+    Draft.Repo.one!(
+      from q in __MODULE__,
+        where:
+          q.employee_id == ^employee_id and
+            (q.interval_start_date <= ^start_date and
+               q.interval_end_date >= ^end_date)
+    )
+  end
+
+  @spec week_quota(Draft.EmployeeRanking.t(), Date.t(), Date.t()) ::
+          integer()
+  @doc """
+  Get the week quota available to an employee during the given date range
+  """
+  def week_quota(employee, start_date, end_date) do
+    quota = quota_covering_interval(employee.employee_id, start_date, end_date)
+
+    max_minutes_in_weeks =
+      div(
+        quota.maximum_minutes,
+        60 * Draft.JobClassHelpers.num_hours_per_week(employee.job_class)
+      )
+
+    min(max_minutes_in_weeks, quota.weekly_quota)
   end
 
   @spec get_anniversary_quota(t()) ::

@@ -5,6 +5,7 @@ defmodule Draft.VacationDistributionRun do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.Repo
 
   @type t :: %__MODULE__{
@@ -13,7 +14,7 @@ defmodule Draft.VacationDistributionRun do
           round_id: String.t(),
           group_number: integer(),
           start_time: DateTime.t(),
-          end_time: DateTime.t(),
+          end_time: DateTime.t() | nil,
           vacation_distributions: [Draft.VacationDistribution.t()]
         }
 
@@ -63,6 +64,23 @@ defmodule Draft.VacationDistributionRun do
             },
           :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any}
         ) :: Ecto.Changeset.t()
+
+  @spec last_distributed_group(String.t(), String.t()) :: pos_integer() | nil
+  @doc """
+  Get the group number of the last group that was successfully distributed to as part of the given round. Returns nil if no group has been distributed to yet.
+  """
+  def last_distributed_group(round_id, process_id) do
+    Draft.Repo.one(
+      from dr in Draft.VacationDistributionRun,
+        where:
+          dr.round_id == ^round_id and dr.process_id == ^process_id and
+            not is_nil(dr.end_time),
+        order_by: [desc: dr.group_number],
+        select: dr.group_number,
+        limit: 1
+    )
+  end
+
   @doc false
   def changeset(vacation_distribution_run, attrs) do
     vacation_distribution_run

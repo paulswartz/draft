@@ -15,6 +15,7 @@ defmodule Draft.DivisionVacationWeekQuota do
   @type t :: %__MODULE__{
           division_id: String.t(),
           employee_selection_set: String.t(),
+          job_class_category: Draft.JobClassCategory.t(),
           start_date: Date.t(),
           end_date: Date.t(),
           quota: integer(),
@@ -25,6 +26,7 @@ defmodule Draft.DivisionVacationWeekQuota do
   schema "division_vacation_week_quotas" do
     field :division_id, :string, primary_key: true
     field :employee_selection_set, :string, primary_key: true
+    field :job_class_category, Draft.JobClassCategory
     field :start_date, :date, primary_key: true
     field :end_date, :date
     field :quota, :integer
@@ -49,11 +51,32 @@ defmodule Draft.DivisionVacationWeekQuota do
     %__MODULE__{
       division_id: division_id,
       employee_selection_set: employee_selection_set,
+      job_class_category:
+        Draft.JobClassCategory.from_hastus_division_quota(employee_selection_set),
       start_date: ParsingHelpers.to_date(start_date),
       end_date: ParsingHelpers.to_date(end_date),
       quota: ParsingHelpers.to_int(remaining_quota),
       is_restricted_week: is_restricted_week == "1"
     }
+  end
+
+  @spec remaining_quota(Draft.BidSession.t()) :: integer()
+  @doc """
+  Get the total remaining quota for the vacation week session. This does **not** reflect any quota
+  that may be blocked-off from picking as a result of any cancelled vacations
+  """
+  def remaining_quota(session) do
+    job_class_category = Draft.JobClassHelpers.category_from_round_id(session.round_id)
+
+    Draft.Repo.one!(
+      from d in Draft.DivisionVacationWeekQuota,
+        where:
+          d.start_date >= ^session.rating_period_start_date and
+            d.end_date <= ^session.rating_period_end_date and
+            d.division_id == ^session.division_id and
+            d.job_class_category == ^job_class_category,
+        select: sum(d.quota)
+    )
   end
 
   @doc false
@@ -92,14 +115,14 @@ defmodule Draft.DivisionVacationWeekQuota do
         from r in Draft.BidRound, where: r.round_id == ^round_id and r.process_id == ^process_id
       )
 
-    selection_set = Draft.JobClassHelpers.get_selection_set(job_class)
+    job_class_category = Draft.JobClassHelpers.job_category_for_class(job_class)
 
     Repo.all(
       from w in Draft.DivisionVacationWeekQuota,
         where:
           w.division_id == ^division_id and w.quota > 0 and
             w.start_date <= ^rating_period_end_date and w.end_date >= ^rating_period_start_date and
-            w.employee_selection_set == ^selection_set,
+            w.job_class_category == ^job_class_category,
         order_by: [asc: w.start_date]
     )
   end
@@ -115,14 +138,14 @@ defmodule Draft.DivisionVacationWeekQuota do
   and their previously selected vacation time. Available weeks are returned in descending order by start date (latest available date will be listed first)
   """
   def available_quota(round, employee) do
-    selection_set = Draft.JobClassHelpers.get_selection_set(employee.job_class)
+    job_class_category = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
 
     Repo.all(
       from w in Draft.DivisionVacationWeekQuota,
         as: :division_week_quota,
         where:
           w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
-            w.employee_selection_set == ^selection_set and
+            w.job_class_category == ^job_class_category and
             ^round.rating_period_start_date <= w.start_date and
             ^round.rating_period_end_date >= w.end_date and
             not exists(conflicting_selected_vacation_query(employee.employee_id)),

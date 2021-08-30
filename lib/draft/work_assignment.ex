@@ -93,7 +93,10 @@ defmodule Draft.WorkAssignment do
          duty_internal_id: nil,
          job_class: job_class
        }) do
-    hours_worked_pending_assignment(assignment, Draft.JobClassHelpers.pt_or_ft(job_class))
+    hours_worked_pending_assignment(
+      assignment,
+      Draft.JobClassHelpers.job_category_for_class(job_class)
+    )
   end
 
   defp hours_worked(%Draft.WorkAssignment{

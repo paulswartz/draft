@@ -21,7 +21,7 @@ defmodule DraftWeb.VacationAvailabilityControllerTest do
 
     insert!(:division_vacation_week_quota, %{
       division_id: "101",
-      employee_selection_set: "FTVacQuota",
+      job_class_category: :ft,
       start_date: ~D[2021-02-01],
       end_date: ~D[2021-02-07],
       quota: 1
@@ -29,7 +29,7 @@ defmodule DraftWeb.VacationAvailabilityControllerTest do
 
     insert!(:division_vacation_day_quota, %{
       division_id: "101",
-      employee_selection_set: "FTVacQuota",
+      job_class_category: :ft,
       date: ~D[2021-02-01],
       quota: 1
     })

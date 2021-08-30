@@ -41,7 +41,7 @@ defmodule Draft.VacationQuotaSetupTest do
         Repo.get_by(DivisionVacationWeekQuota,
           start_date: ~D[2021-01-03],
           division_id: "112",
-          employee_selection_set: "FTVacQuota"
+          job_class_category: :ft
         )
 
       assert 1 = date_quota.quota

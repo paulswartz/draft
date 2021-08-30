@@ -20,7 +20,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       assert %DivisionVacationWeekQuota{
                division_id: "125",
-               employee_selection_set: "FTVacQuota",
+               job_class_category: :ft,
                start_date: ~D[2021-02-11],
                end_date: ~D[2021-02-17],
                quota: 4,
@@ -48,7 +48,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-07],
         quota: 1
@@ -56,7 +56,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-08],
         end_date: ~D[2021-02-15],
         quota: 0
@@ -64,7 +64,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-01-01],
         end_date: ~D[2021-01-07],
         quota: 2
@@ -98,7 +98,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-07],
         quota: 1
@@ -106,7 +106,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "102",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-08],
         end_date: ~D[2021-02-15],
         quota: 1
@@ -140,7 +140,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-07],
         quota: 1
@@ -148,7 +148,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "PTVacQuota",
+        job_class_category: :pt,
         start_date: ~D[2021-02-08],
         end_date: ~D[2021-02-15],
         quota: 1
@@ -187,7 +187,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-07],
         quota: 1
@@ -195,7 +195,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-08],
         end_date: ~D[2021-02-14],
         quota: 1
@@ -203,7 +203,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-15],
         end_date: ~D[2021-02-21],
         quota: 0
@@ -236,7 +236,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-01],
         end_date: ~D[2021-02-07],
         quota: 1
@@ -244,7 +244,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-08],
         end_date: ~D[2021-02-14],
         quota: 1
@@ -252,7 +252,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
-        employee_selection_set: "FTVacQuota",
+        job_class_category: :ft,
         start_date: ~D[2021-02-15],
         end_date: ~D[2021-02-21],
         quota: 1
@@ -268,6 +268,132 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
                %{start_date: ~D[2021-02-08], end_date: ~D[2021-02-14]},
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
              ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+    end
+  end
+
+  describe "remaining_quota/1" do
+    test "only contains quota within rating period" do
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
+        )
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-01],
+        end_date: ~D[2021-08-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-08],
+        end_date: ~D[2021-08-14],
+        quota: 2
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-29],
+        end_date: ~D[2021-09-04],
+        quota: 2
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-07-25],
+        end_date: ~D[2021-07-31],
+        quota: 2
+      })
+
+      assert 3 = DivisionVacationWeekQuota.remaining_quota(session)
+    end
+
+    test "only contains quota for division" do
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
+        )
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-01],
+        end_date: ~D[2021-08-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "114",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-08],
+        end_date: ~D[2021-08-14],
+        quota: 2
+      })
+
+      assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
+    end
+
+    test "only contains quota for job class category" do
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
+        )
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-01],
+        end_date: ~D[2021-08-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :pt,
+        start_date: ~D[2021-08-08],
+        end_date: ~D[2021-08-14],
+        quota: 2
+      })
+
+      assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
     end
   end
 end
