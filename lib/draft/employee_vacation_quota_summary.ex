@@ -44,8 +44,11 @@ defmodule Draft.EmployeeVacationQuotaSummary do
       job_class: employee_ranking.job_class,
       interval_type: interval_type,
       total_available_minutes:
-        total_interval_quota *
-          default_minutes_per_interval(employee_ranking.job_class, interval_type),
+        min(
+          total_interval_quota *
+            default_minutes_per_interval(employee_ranking.job_class, interval_type),
+          quota.maximum_minutes
+        ),
       anniversary_date: quota.available_after_date,
       minutes_only_available_as_of_anniversary:
         anniversary_quota *
