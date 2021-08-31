@@ -558,5 +558,43 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
 
       assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
     end
+
+    test "Does not include cancelled vacation" do
+      insert!(
+        :round,
+        %{division_id: "112", round_id: "vac_FT"}
+      )
+
+      session =
+        insert!(
+          :session,
+          %{
+            division_id: "112",
+            round_id: "vac_FT",
+            rating_period_start_date: ~D[2021-08-01],
+            rating_period_end_date: ~D[2021-08-28]
+          }
+        )
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "112",
+        job_class_category: :ft,
+        start_date: ~D[2021-08-01],
+        end_date: ~D[2021-08-07],
+        quota: 2
+      })
+
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        division_id: "112",
+        vacation_interval_type: :week,
+        job_class: "000100",
+        start_date: ~D[2021-08-01],
+        end_date: ~D[2021-08-07],
+        status: :cancelled
+      })
+
+      assert 1 = DivisionVacationWeekQuota.remaining_quota(session)
+    end
   end
 end

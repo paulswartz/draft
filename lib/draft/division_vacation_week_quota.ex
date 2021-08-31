@@ -63,21 +63,24 @@ defmodule Draft.DivisionVacationWeekQuota do
 
   @spec remaining_quota(Draft.BidSession.t()) :: integer()
   @doc """
-  Get the total remaining quota for the vacation week session. This does **not** reflect any quota
-  that may be blocked-off from picking as a result of any cancelled vacations
+  Get the total remaining quota for the vacation week session.
   """
   def remaining_quota(session) do
     job_class_category = Draft.JobClassHelpers.category_from_round_id(session.round_id)
 
-    Draft.Repo.one!(
-      from d in Draft.DivisionVacationWeekQuota,
-        where:
-          d.start_date >= ^session.rating_period_start_date and
-            d.end_date <= ^session.rating_period_end_date and
-            d.division_id == ^session.division_id and
-            d.job_class_category == ^job_class_category,
-        select: sum(d.quota)
-    )
+    quotas =
+      Draft.Repo.all(
+        from d in Draft.DivisionVacationWeekQuota,
+          where:
+            d.start_date >= ^session.rating_period_start_date and
+              d.end_date <= ^session.rating_period_end_date and
+              d.division_id == ^session.division_id and
+              d.job_class_category == ^job_class_category
+      )
+
+    quotas
+    |> filter_cancelled_quotas(job_class_category)
+    |> Enum.reduce(0, fn q, acc -> q.quota + acc end)
   end
 
   @doc false
