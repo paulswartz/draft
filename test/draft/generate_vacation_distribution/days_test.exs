@@ -24,7 +24,7 @@ defmodule Draft.GenerateVacationDistribution.Days.Test do
 
     insert!(:division_vacation_day_quota, %{
       date: ~D[2021-04-03],
-      quota: 1
+      quota: 2
     })
 
     insert!(:division_vacation_day_quota, %{

@@ -140,17 +140,20 @@ defmodule Draft.DivisionVacationWeekQuota do
   def available_quota(round, employee) do
     job_class_category = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
 
-    Repo.all(
-      from w in Draft.DivisionVacationWeekQuota,
-        as: :division_week_quota,
-        where:
-          w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
-            w.job_class_category == ^job_class_category and
-            ^round.rating_period_start_date <= w.start_date and
-            ^round.rating_period_end_date >= w.end_date and
-            not exists(conflicting_selected_vacation_query(employee.employee_id)),
-        order_by: [desc: w.start_date]
-    )
+    quotas =
+      Repo.all(
+        from w in Draft.DivisionVacationWeekQuota,
+          as: :division_week_quota,
+          where:
+            w.division_id == ^round.division_id and w.quota > 0 and w.is_restricted_week == false and
+              w.job_class_category == ^job_class_category and
+              ^round.rating_period_start_date <= w.start_date and
+              ^round.rating_period_end_date >= w.end_date and
+              not exists(conflicting_selected_vacation_query(employee.employee_id)),
+          order_by: [desc: w.start_date]
+      )
+
+    filter_cancelled_quotas(quotas, job_class_category)
   end
 
   defp conflicting_selected_vacation_query(employee_id) do
@@ -160,5 +163,39 @@ defmodule Draft.DivisionVacationWeekQuota do
           s.end_date >= parent_as(:division_week_quota).start_date and
           s.employee_id == ^employee_id and
           s.status == :assigned
+  end
+
+  @spec filter_cancelled_quotas([t()], Draft.JobClassCategory.t()) :: [t()]
+  defp filter_cancelled_quotas([], _job_class_category) do
+    []
+  end
+
+  defp filter_cancelled_quotas(quotas, job_class_category) do
+    [d | _] = quotas
+    %{start_date: start_date} = Enum.min_by(quotas, &Date.to_erl(&1.start_date))
+    %{end_date: end_date} = Enum.max_by(quotas, &Date.to_erl(&1.end_date))
+
+    cancelled_dates =
+      Repo.all(
+        from s in Draft.EmployeeVacationSelection,
+          where:
+            s.start_date >= ^start_date and s.end_date <= ^end_date and
+              s.division_id == ^d.division_id and
+              s.job_class in ^Draft.JobClassHelpers.job_classes_in_category(job_class_category) and
+              s.vacation_interval_type == :week and
+              s.status == :cancelled,
+          select: [:start_date, :end_date]
+      )
+
+    cancelled_date_counts =
+      cancelled_dates
+      |> Enum.map(fn s -> {s.start_date, s.end_date} end)
+      |> Enum.frequencies()
+
+    for quota <- quotas,
+        cancelled_count = Map.get(cancelled_date_counts, {quota.start_date, quota.end_date}, 0),
+        quota.quota > cancelled_count do
+      %{quota | quota: quota.quota - cancelled_count}
+    end
   end
 end

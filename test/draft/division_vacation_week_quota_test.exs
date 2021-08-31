@@ -269,6 +269,169 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
              ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
     end
+
+    test "Doesn't include days that were refunded to another employee" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 2,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+
+      employee_ranking =
+        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00002"))
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        start_date: ~D[2021-02-08],
+        end_date: ~D[2021-02-14],
+        quota: 1
+      })
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        start_date: ~D[2021-02-15],
+        end_date: ~D[2021-02-21],
+        quota: 2
+      })
+
+      insert!(:employee_vacation_selection, %{
+        division_id: "101",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        employee_id: "00001",
+        status: :cancelled
+      })
+
+      insert!(:employee_vacation_selection, %{
+        division_id: "101",
+        start_date: ~D[2021-02-15],
+        end_date: ~D[2021-02-21],
+        vacation_interval_type: :week,
+        employee_id: "00001",
+        status: :cancelled
+      })
+
+      # different division, should be ignored
+      insert!(:employee_vacation_selection, %{
+        division_id: "102",
+        start_date: ~D[2021-02-08],
+        end_date: ~D[2021-02-14],
+        vacation_interval_type: :week,
+        employee_id: "00003",
+        status: :cancelled
+      })
+
+      assert [%{start_date: ~D[2021-02-15], quota: 1}, %{start_date: ~D[2021-02-08]}] =
+               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+    end
+
+    test "does not treat day intervals as a week for purposes of the quota" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 2,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+
+      employee_ranking =
+        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00002"))
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        quota: 1
+      })
+
+      insert!(:employee_vacation_selection, %{
+        division_id: "102",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :day,
+        employee_id: "00001",
+        status: :cancelled
+      })
+
+      assert [%{start_date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+    end
+
+    test "does not count cancellations from a different job class" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      round = Repo.one!(from(r in Draft.BidRound))
+
+      employee_ranking =
+        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00001"))
+
+      insert!(:division_vacation_week_quota, %{
+        division_id: "101",
+        employee_selection_set: "FTVacQuota",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        quota: 1
+      })
+
+      # PT, not full-time
+      insert!(:employee_vacation_selection, %{
+        division_id: "101",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        employee_id: "00002",
+        job_class: "000900",
+        status: :cancelled
+      })
+
+      assert [%{start_date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+    end
   end
 
   describe "remaining_quota/1" do
