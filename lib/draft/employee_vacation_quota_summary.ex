@@ -6,6 +6,8 @@ defmodule Draft.EmployeeVacationQuotaSummary do
   defstruct [
     :employee_id,
     :job_class,
+    :group_number,
+    :rank,
     :interval_type,
     :total_available_minutes,
     :anniversary_date,
@@ -15,6 +17,8 @@ defmodule Draft.EmployeeVacationQuotaSummary do
   @type t :: %__MODULE__{
           employee_id: String.t(),
           job_class: String.t(),
+          group_number: integer(),
+          rank: integer(),
           interval_type: Draft.IntervalType.t(),
           total_available_minutes: integer(),
           anniversary_date: Date.t() | nil,
@@ -42,6 +46,8 @@ defmodule Draft.EmployeeVacationQuotaSummary do
     %__MODULE__{
       employee_id: employee_ranking.employee_id,
       job_class: employee_ranking.job_class,
+      group_number: employee_ranking.group_number,
+      rank: employee_ranking.rank,
       interval_type: interval_type,
       total_available_minutes:
         min(

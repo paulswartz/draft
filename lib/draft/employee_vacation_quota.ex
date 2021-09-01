@@ -93,23 +93,6 @@ defmodule Draft.EmployeeVacationQuota do
     )
   end
 
-  @spec week_quota(Draft.EmployeeRanking.t(), Date.t(), Date.t()) ::
-          integer()
-  @doc """
-  Get the week quota available to an employee during the given date range
-  """
-  def week_quota(employee, start_date, end_date) do
-    quota = quota_covering_interval(employee.employee_id, start_date, end_date)
-
-    max_minutes_in_weeks =
-      div(
-        quota.maximum_minutes,
-        60 * Draft.JobClassHelpers.num_hours_per_week(employee.job_class)
-      )
-
-    min(max_minutes_in_weeks, quota.weekly_quota)
-  end
-
   @spec get_anniversary_quota(t()) ::
           nil
           | %{

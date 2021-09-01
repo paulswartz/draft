@@ -34,22 +34,47 @@ defmodule Draft.PointOfEquivalence do
 
     quota_to_force = Draft.DivisionVacationWeekQuota.remaining_quota(session)
 
-    employees_desc = Draft.EmployeeRanking.all_remaining_employees(session, :desc)
-
-    calculate(quota_to_force, employees_desc, start_date, end_date)
+    session
+    |> Draft.EmployeeRanking.all_remaining_employees(:desc)
+    |> Enum.map(&Draft.EmployeeVacationQuotaSummary.get(&1, start_date, end_date, :week))
+    |> Enum.map(
+      &{&1.employee_id,
+       Draft.JobClassHelpers.weeks_from_minutes(&1.total_available_minutes, &1.job_class)}
+    )
+    |> calculate_helper(quota_to_force)
   end
 
-  defp calculate(quota_to_force, employees_desc, start_date, end_date) do
-    {employees_to_force, _acc_employee_quota} =
-      Enum.reduce_while(employees_desc, {[], 0}, fn %{employee_id: employee_id} = employee_ranking,
-                                                    {acc_employees_to_force, acc_quota} ->
-        employee_quota =
-          Draft.EmployeeVacationQuota.week_quota(
-            employee_ranking,
-            start_date,
-            end_date
-          )
+  @spec calculate([Draft.EmployeeVacationQuotaSummary.t()], non_neg_integer()) :: t()
+  @doc """
+  Return whether or not the point of equivalence has been hit yet among the given list
+  of employees, and which operators would be forced in order to fill the given amount of quota to
+  force assuming that no remaining operators want to voluntarily take vacation.
+  The returned `employees_to_force` will be in order of rank ascending, with the
+  most senior operator listed first.
+  """
+  def calculate(_employees, 0) do
+    %__MODULE__{
+      amount_to_force: 0,
+      has_poe_been_reached: false,
+      employees_to_force: []
+    }
+  end
 
+  def calculate(employees, quota_to_force) do
+    employees
+    |> Enum.sort_by(&{&1.group_number, &1.rank}, :desc)
+    |> Enum.map(
+      &{&1.employee_id,
+       Draft.JobClassHelpers.weeks_from_minutes(&1.total_available_minutes, &1.job_class)}
+    )
+    |> calculate_helper(quota_to_force)
+  end
+
+  @spec calculate_helper([{String.t(), non_neg_integer()}], non_neg_integer()) :: t()
+  defp calculate_helper(employees_desc, quota_to_force) do
+    {employees_to_force, _acc_employee_quota} =
+      Enum.reduce_while(employees_desc, {[], 0}, fn {employee_id, employee_quota},
+                                                    {acc_employees_to_force, acc_quota} ->
         if employee_quota + acc_quota < quota_to_force do
           {:cont,
            {[{employee_id, employee_quota} | acc_employees_to_force], acc_quota + employee_quota}}

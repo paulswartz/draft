@@ -3,7 +3,7 @@ defmodule Draft.DivisionQuotaTest do
   use Draft.DataCase
   import Draft.Factory
 
-  describe "available_with_employee_rank/2" do
+  describe "all_available_quota_ranked/2" do
     test "Returns weeks in descending order when no preferences" do
       round =
         insert_round_with_employees_and_vacation(
@@ -20,13 +20,6 @@ defmodule Draft.DivisionQuotaTest do
         )
 
       session = Draft.BidSession.single_session_for_round(round)
-
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
 
       assert [
                %{
@@ -47,7 +40,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
 
     test "Returns weeks with preference present before weeks w/out preference" do
@@ -68,13 +61,6 @@ defmodule Draft.DivisionQuotaTest do
 
       session = Draft.BidSession.single_session_for_round(round)
 
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
-
       assert [
                %{
                  start_date: ~D[2021-08-01],
@@ -94,7 +80,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
 
     test "Week Preferences are returned sorted in ascending order" do
@@ -115,13 +101,6 @@ defmodule Draft.DivisionQuotaTest do
 
       session = Draft.BidSession.single_session_for_round(round)
 
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
-
       assert [
                %{
                  start_date: ~D[2021-08-01],
@@ -141,7 +120,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
 
     test "Returns days in descending order when no preferences" do
@@ -160,13 +139,6 @@ defmodule Draft.DivisionQuotaTest do
         )
 
       session = Draft.BidSession.single_session_for_round(round)
-
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
 
       assert [
                %{
@@ -187,7 +159,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
 
     test "Returns day with preference present before day w/out preference" do
@@ -208,13 +180,6 @@ defmodule Draft.DivisionQuotaTest do
 
       session = Draft.BidSession.single_session_for_round(round)
 
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
-
       assert [
                %{
                  start_date: ~D[2021-08-01],
@@ -234,7 +199,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
 
     test "Day preferences are returned sorted in ascending order" do
@@ -255,13 +220,6 @@ defmodule Draft.DivisionQuotaTest do
 
       session = Draft.BidSession.single_session_for_round(round)
 
-      emp =
-        Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round.round_id,
-          process_id: round.process_id,
-          employee_id: "00001"
-        )
-
       assert [
                %{
                  start_date: ~D[2021-08-01],
@@ -281,7 +239,7 @@ defmodule Draft.DivisionQuotaTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
+             ] = Draft.DivisionQuota.all_available_quota_ranked(session, "00001")
     end
   end
 end

@@ -41,6 +41,7 @@ defmodule Draft.Factory do
       round_id: "Vacation",
       session_id: "Vacation_FT",
       booking_id: "BUS22021",
+      job_class_category: :ft,
       type: :vacation,
       type_allowed: :week,
       division_id: "122",

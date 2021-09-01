@@ -30,8 +30,13 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
-      assert [%VacationDistribution{start_date: ~D[2021-03-28], end_date: ~D[2021-04-03]}] =
-               vacation_assignments
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-03-28],
+                 end_date: ~D[2021-04-03],
+                 is_forced: false
+               }
+             ] = vacation_assignments
     end
 
     test "Distribution runner saves to DB" do
@@ -60,8 +65,13 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
 
       {:ok, vacation_assignments} = BasicVacationDistributionRunner.run_all_rounds()
 
-      assert [%VacationDistribution{start_date: ~D[2021-03-22], end_date: ~D[2021-03-22]}] =
-               vacation_assignments
+      assert [
+               %VacationDistribution{
+                 start_date: ~D[2021-03-22],
+                 end_date: ~D[2021-03-22],
+                 is_forced: false
+               }
+             ] = vacation_assignments
     end
 
     test "Operator with no vacation time is not assigned vacation" do
@@ -93,12 +103,14 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-28],
                  end_date: ~D[2021-04-03],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                },
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-27],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = vacation_assignments
     end
@@ -118,12 +130,14 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-22],
                  end_date: ~D[2021-03-22],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                },
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-21],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = vacation_assignments
     end
@@ -143,7 +157,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-21],
-                 employee_id: "00002"
+                 employee_id: "00002",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00002")
     end
@@ -163,7 +178,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-27],
-                 employee_id: "00002"
+                 employee_id: "00002",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00002")
     end
@@ -183,7 +199,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-27],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
@@ -209,7 +226,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-27],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
@@ -229,7 +247,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-21],
                  end_date: ~D[2021-03-21],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
@@ -255,7 +274,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-03-20],
                  end_date: ~D[2021-03-20],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = get_assignments_for_employee(vacation_assignments, "00001")
     end
@@ -275,12 +295,14 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-04-11],
                  end_date: ~D[2021-04-17],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                },
                %VacationDistribution{
                  start_date: ~D[2021-04-04],
                  end_date: ~D[2021-04-10],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = vacation_assignments
     end
@@ -300,7 +322,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-04-18],
                  end_date: ~D[2021-04-24],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = vacation_assignments
     end
@@ -320,7 +343,8 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                %VacationDistribution{
                  start_date: ~D[2021-04-18],
                  end_date: ~D[2021-04-24],
-                 employee_id: "00001"
+                 employee_id: "00001",
+                 is_forced: false
                }
              ] = vacation_assignments
     end
@@ -351,9 +375,37 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                 %VacationDistribution{
                   start_date: ~D[2021-04-04],
                   end_date: ~D[2021-04-10],
-                  employee_id: "00001"
+                  employee_id: "00001",
+                  is_forced: false
                 }
               ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group)
+    end
+
+    test "When forcing starts mid-group, operator not assigned a week that was assigned earlier operator" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 1, ~D[2021-03-28] => 1},
+          %{"00001" => 2, "00002" => 1, "00003" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
+
+      assert {:ok,
+              [
+                %VacationDistribution{
+                  start_date: ~D[2021-03-28],
+                  end_date: ~D[2021-04-03],
+                  employee_id: "00003",
+                  is_forced: true
+                },
+                %VacationDistribution{
+                  start_date: ~D[2021-04-04],
+                  end_date: ~D[2021-04-10],
+                  employee_id: "00001",
+                  is_forced: false
+                }
+              ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group, 100)
     end
   end
 

@@ -45,4 +45,88 @@ defmodule Draft.PointOfEquivalenceTest do
         Draft.PointOfEquivalence.calculate(session)
     end
   end
+
+  describe "calculate/2" do
+    test "No employees to force when quota to force is 0" do
+      assert %Draft.PointOfEquivalence{
+               has_poe_been_reached: false,
+               employees_to_force: [],
+               amount_to_force: 0
+             } =
+               Draft.PointOfEquivalence.calculate(
+                 [
+                   %{
+                     employee_id: "00001",
+                     job_class: "000100",
+                     total_available_minutes: 2400,
+                     anniversary_date: nil,
+                     minutes_only_available_as_of_anniversary: 0
+                   }
+                 ],
+                 0
+               )
+    end
+
+    test "Only least senior operator is forced" do
+      assert %Draft.PointOfEquivalence{
+               has_poe_been_reached: false,
+               employees_to_force: [{"00002", 1}],
+               amount_to_force: 1
+             } =
+               Draft.PointOfEquivalence.calculate(
+                 [
+                   %{
+                     employee_id: "00001",
+                     job_class: "000100",
+                     total_available_minutes: 2400,
+                     anniversary_date: nil,
+                     minutes_only_available_as_of_anniversary: 0,
+                     rank: 1,
+                     group_number: 1
+                   },
+                   %{
+                     employee_id: "00002",
+                     job_class: "000100",
+                     total_available_minutes: 2400,
+                     anniversary_date: nil,
+                     minutes_only_available_as_of_anniversary: 0,
+                     rank: 2,
+                     group_number: 1
+                   }
+                 ],
+                 1
+               )
+    end
+
+    test "Operator can be forced part of their balance" do
+      assert %Draft.PointOfEquivalence{
+               has_poe_been_reached: true,
+               employees_to_force: [{"00001", 1}, {"00002", 1}],
+               amount_to_force: 2
+             } =
+               Draft.PointOfEquivalence.calculate(
+                 [
+                   %{
+                     employee_id: "00001",
+                     job_class: "000100",
+                     total_available_minutes: 4800,
+                     anniversary_date: nil,
+                     minutes_only_available_as_of_anniversary: 0,
+                     rank: 1,
+                     group_number: 1
+                   },
+                   %{
+                     employee_id: "00002",
+                     job_class: "000100",
+                     total_available_minutes: 2400,
+                     anniversary_date: nil,
+                     minutes_only_available_as_of_anniversary: 0,
+                     rank: 2,
+                     group_number: 1
+                   }
+                 ],
+                 2
+               )
+    end
+  end
 end

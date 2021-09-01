@@ -61,13 +61,32 @@ defmodule Draft.DivisionVacationWeekQuota do
     }
   end
 
-  @spec remaining_quota(Draft.BidSession.t()) :: integer()
+  @spec remaining_quota(Draft.BidSession.t(), 0..100) :: non_neg_integer()
   @doc """
-  Get the total remaining quota for the vacation week session.
+  Get a percent of the amount of remaining quota in the given session. Round up to the nearest integer. Ex: If 10 weeks remaining and given 15%, would return 2 weeks.
+  """
+  def remaining_quota(session, 100) do
+    remaining_quota(session)
+  end
+
+  def remaining_quota(_session, 0) do
+    0
+  end
+
+  def remaining_quota(session, percent) when 0 <= percent and percent <= 100 do
+    session
+    |> remaining_quota()
+    |> (&(&1 * percent)).()
+    |> Decimal.div(100)
+    |> Decimal.round(0, :up)
+    |> Decimal.to_integer()
+  end
+
+  @spec remaining_quota(Draft.BidSession.t()) :: non_neg_integer()
+  @doc """
+  Get the amount of remaining quota in the given session.
   """
   def remaining_quota(session) do
-    job_class_category = Draft.JobClassHelpers.category_from_round_id(session.round_id)
-
     quotas =
       Draft.Repo.all(
         from d in Draft.DivisionVacationWeekQuota,
@@ -75,11 +94,11 @@ defmodule Draft.DivisionVacationWeekQuota do
             d.start_date >= ^session.rating_period_start_date and
               d.end_date <= ^session.rating_period_end_date and
               d.division_id == ^session.division_id and
-              d.job_class_category == ^job_class_category
+              d.job_class_category == ^session.job_class_category
       )
 
     quotas
-    |> filter_cancelled_quotas(job_class_category)
+    |> filter_cancelled_quotas(session.job_class_category)
     |> Enum.reduce(0, fn q, acc -> q.quota + acc end)
   end
 
@@ -133,20 +152,14 @@ defmodule Draft.DivisionVacationWeekQuota do
 
   @spec available_quota(
           Draft.BidSession.t(),
-          %{
-            required(:employee_id) => String.t(),
-            required(:job_class) => String.t(),
-            optional(atom()) => any()
-          }
+          String.t()
         ) ::
           [t()]
   @doc """
-  Get all vacation weeks that are available for the given employee, based on their job class, the available quota for their division,
+  Get all vacation weeks that are available for the given employee, based on the available quota for the division & job class category,
   and their previously selected vacation time. Available weeks are returned in descending order by start date (latest available date will be listed first)
   """
-  def available_quota(session, employee) do
-    job_class_category = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
-
+  def available_quota(session, employee_id) do
     quotas =
       Repo.all(
         from w in Draft.DivisionVacationWeekQuota,
@@ -154,14 +167,14 @@ defmodule Draft.DivisionVacationWeekQuota do
           where:
             w.division_id == ^session.division_id and w.quota > 0 and
               w.is_restricted_week == false and
-              w.job_class_category == ^job_class_category and
+              w.job_class_category == ^session.job_class_category and
               ^session.rating_period_start_date <= w.start_date and
               ^session.rating_period_end_date >= w.end_date and
-              not exists(conflicting_selected_vacation_query(employee.employee_id)),
+              not exists(conflicting_selected_vacation_query(employee_id)),
           order_by: [desc: w.start_date]
       )
 
-    filter_cancelled_quotas(quotas, job_class_category)
+    filter_cancelled_quotas(quotas, session.job_class_category)
   end
 
   defp conflicting_selected_vacation_query(employee_id) do

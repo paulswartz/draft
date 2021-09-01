@@ -75,6 +75,68 @@ defmodule Draft.EmployeeRanking do
     )
   end
 
+  @spec all_operators_in_group(Draft.BidGroup.t()) :: [t()]
+  @doc """
+  Get all employees that are part of the given group
+  with the most senior operator returned first.
+  """
+  def all_operators_in_group(%{
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number
+      }) do
+    Draft.Repo.all(
+      from e in Draft.EmployeeRanking,
+        where:
+          e.round_id == ^round_id and e.process_id == ^process_id and
+            e.group_number == ^group_number,
+        order_by: [asc: [e.group_number, e.rank]]
+    )
+  end
+
+  @spec operator_by_rank(%{
+          round_id: String.t(),
+          process_id: String.t(),
+          group_number: pos_integer(),
+          rank: pos_integer()
+        }) :: t()
+  @doc """
+  Get the operator that has the given rank in the given group.
+  """
+  def operator_by_rank(%{
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number,
+        rank: rank
+      }) do
+    Draft.Repo.one!(
+      from e in Draft.EmployeeRanking,
+        where:
+          e.round_id == ^round_id and e.process_id == ^process_id and
+            e.group_number == ^group_number and e.rank == ^rank,
+        order_by: [asc: [e.group_number, e.rank]]
+    )
+  end
+
+  @spec all_operators_in_and_after_group(Draft.BidGroup.t()) :: [t()]
+  @doc """
+  Get all employees that are part of the given group & all subsequent groups,
+  with the most senior operator returned first.
+  """
+  def all_operators_in_and_after_group(%{
+        round_id: round_id,
+        process_id: process_id,
+        group_number: group_number
+      }) do
+    Draft.Repo.all(
+      from e in Draft.EmployeeRanking,
+        where:
+          e.round_id == ^round_id and e.process_id == ^process_id and
+            e.group_number >= ^group_number,
+        order_by: [asc: [e.group_number, e.rank]]
+    )
+  end
+
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_ranking, attrs \\ %{}) do

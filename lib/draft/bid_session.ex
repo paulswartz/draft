@@ -14,6 +14,7 @@ defmodule Draft.BidSession do
           round_id: String.t(),
           session_id: String.t(),
           booking_id: String.t(),
+          job_class_category: Draft.JobClassCategory.t(),
           type: Draft.BidType.t(),
           type_allowed: Draft.IntervalType.t() | nil,
           service_context: String.t() | nil,
@@ -29,6 +30,7 @@ defmodule Draft.BidSession do
     field :round_id, :string, primary_key: true
     field :session_id, :string, primary_key: true
     field :booking_id, :string
+    field :job_class_category, Draft.JobClassCategory
     field :type, Draft.BidType
     field :type_allowed, Draft.IntervalType
     field :service_context, :string
@@ -56,11 +58,18 @@ defmodule Draft.BidSession do
       rating_period_end_date
     ] = row
 
+    job_class_category =
+      %{round_id: round_id, process_id: process_id, group_number: 1, rank: 1}
+      |> Draft.EmployeeRanking.operator_by_rank()
+      |> Map.get(:job_class)
+      |> Draft.JobClassHelpers.job_category_for_class()
+
     %__MODULE__{
       process_id: process_id,
       round_id: round_id,
       session_id: session_id,
       booking_id: booking_id,
+      job_class_category: job_class_category,
       type: Draft.BidType.from_hastus(type),
       type_allowed: Draft.IntervalType.from_hastus_session_allowed(type_allowed),
       service_context: service_context,
