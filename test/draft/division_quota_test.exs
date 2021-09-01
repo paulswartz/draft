@@ -1,11 +1,11 @@
-defmodule Draft.DivisionQuotaRankedTest do
+defmodule Draft.DivisionQuotaTest do
   @moduledoc false
   use Draft.DataCase
   import Draft.Factory
 
-  describe "available_to_employee/2" do
+  describe "available_with_employee_rank/2" do
     test "Returns weeks in descending order when no preferences" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -19,12 +19,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -47,11 +47,11 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
 
     test "Returns weeks with preference present before weeks w/out preference" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -66,12 +66,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{"00001" => [~D[2021-08-01]]}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -94,11 +94,11 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
 
     test "Week Preferences are returned sorted in ascending order" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -113,12 +113,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{"00001" => [~D[2021-08-01], ~D[2021-08-15]]}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -141,11 +141,11 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :week)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
 
     test "Returns days in descending order when no preferences" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :day,
           %{
@@ -159,12 +159,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -187,11 +187,11 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
 
     test "Returns day with preference present before day w/out preference" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :day,
           %{
@@ -206,12 +206,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{"00001" => [~D[2021-08-01]]}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -234,11 +234,11 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
 
     test "Day preferences are returned sorted in ascending order" do
-      %{round_id: round_id, process_id: process_id} =
+      round =
         insert_round_with_employees_and_vacation(
           :day,
           %{
@@ -253,12 +253,12 @@ defmodule Draft.DivisionQuotaRankedTest do
           %{"00001" => [~D[2021-08-01], ~D[2021-08-15]]}
         )
 
-      round = Draft.Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+      session = Draft.BidSession.single_session_for_round(round)
 
       emp =
         Draft.Repo.get_by!(Draft.EmployeeRanking,
-          round_id: round_id,
-          process_id: process_id,
+          round_id: round.round_id,
+          process_id: round.process_id,
           employee_id: "00001"
         )
 
@@ -281,7 +281,7 @@ defmodule Draft.DivisionQuotaRankedTest do
                  preference_rank: nil,
                  quota: 1
                }
-             ] = Draft.DivisionQuotaRanked.available_to_employee(round, emp, :day)
+             ] = Draft.DivisionQuota.available_with_employee_rank(session, emp)
     end
   end
 end

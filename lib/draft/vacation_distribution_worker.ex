@@ -31,13 +31,7 @@ defmodule Draft.VacationDistributionWorker do
   defp process_group(group, bid_type)
 
   defp process_group(group, :vacation) do
-    case Draft.BidSession.vacation_interval(group) do
-      nil ->
-        {:error, "Vacation interval not defined on session"}
-
-      vacation_interval ->
-        BasicVacationDistributionRunner.distribute_vacation_to_group(group, vacation_interval)
-    end
+    BasicVacationDistributionRunner.distribute_vacation_to_group(group)
   end
 
   defp process_group(_group, nil) do

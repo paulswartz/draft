@@ -71,22 +71,21 @@ defmodule Draft.BidSession do
     }
   end
 
-  @spec vacation_interval(%{
+  @spec vacation_session(%{
           :round_id => String.t(),
           :process_id => String.t(),
           optional(atom()) => any()
-        }) :: Draft.IntervalType.t() | nil
+        }) :: t()
   @doc """
-  Get the type of vacation allowed for the one vacation session in the given round.
+  Get the vacation session associated with the given round.
   """
-  def vacation_interval(%{round_id: round_id, process_id: process_id}) do
-    Draft.Repo.one(
+  def vacation_session(%{round_id: round_id, process_id: process_id}) do
+    Draft.Repo.one!(
       from s in Draft.BidSession,
         where:
           s.round_id == ^round_id and
             s.process_id == ^process_id and
-            s.type == :vacation,
-        select: s.type_allowed
+            s.type == :vacation
     )
   end
 
@@ -134,63 +133,5 @@ defmodule Draft.BidSession do
       :rating_period_start_date,
       :rating_period_end_date
     ])
-  end
-
-  @spec calculate_point_of_equivalence(t()) :: %{
-          amount_to_force: integer(),
-          employees_to_force: [{String, t(), integer()}],
-          has_poe_been_reached: boolean()
-        }
-  @doc """
-  Return whether or not the point of equivalence has been hit yet in the given vacation week
-  session, and which operators would be forced in order to fill the desired amount of quota to
-  force assuming that no remaining operators want to voluntarily take vacation.
-  """
-  def calculate_point_of_equivalence(
-        %{
-          type: :vacation,
-          type_allowed: :week,
-          rating_period_start_date: start_date,
-          rating_period_end_date: end_date
-        } = session
-      ) do
-    # Temporarily forcing all remaining quota -- in the future, Draft will
-    # Get the amount to force as input.
-
-    quota_to_force = Draft.DivisionVacationWeekQuota.remaining_quota(session)
-
-    employees_desc = Draft.EmployeeRanking.all_remaining_employees(session, :desc)
-
-    calculate_point_of_equivalence(quota_to_force, employees_desc, start_date, end_date)
-  end
-
-  defp calculate_point_of_equivalence(quota_to_force, employees_desc, start_date, end_date) do
-    {employees_to_force, _acc_employee_quota} =
-      Enum.reduce_while(employees_desc, {[], 0}, fn %{employee_id: employee_id} = employee_ranking,
-                                                    {acc_employees_to_force, acc_quota} ->
-        employee_quota =
-          Draft.EmployeeVacationQuota.week_quota(
-            employee_ranking,
-            start_date,
-            end_date
-          )
-
-        if employee_quota + acc_quota < quota_to_force do
-          {:cont,
-           {[{employee_id, employee_quota} | acc_employees_to_force], acc_quota + employee_quota}}
-        else
-          emp_quota_to_force = quota_to_force - acc_quota
-
-          {:halt,
-           {[{employee_id, emp_quota_to_force} | acc_employees_to_force],
-            acc_quota + emp_quota_to_force}}
-        end
-      end)
-
-    %{
-      amount_to_force: quota_to_force,
-      has_poe_been_reached: length(employees_to_force) == length(employees_desc),
-      employees_to_force: employees_to_force
-    }
   end
 end

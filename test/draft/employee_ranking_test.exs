@@ -76,10 +76,16 @@ defmodule Draft.EmployeeRankingTest do
           }
         )
 
-      Draft.BasicVacationDistributionRunner.distribute_vacation_to_group(
-        %{round_id: "round_id", process_id: "process_id", group_number: 1},
-        :week
-      )
+      group =
+        build(:group, %{
+          round_id: "round_id",
+          process_id: "process_id",
+          group_number: 1
+        })
+
+      run_id = Draft.VacationDistributionRun.insert(group)
+
+      Draft.VacationDistributionRun.mark_complete(run_id)
 
       assert [%{employee_id: "00002"}, %{employee_id: "00003"}] =
                EmployeeRanking.all_remaining_employees(round, :asc)

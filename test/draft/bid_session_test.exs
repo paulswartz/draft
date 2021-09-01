@@ -103,8 +103,8 @@ defmodule Draft.BidSessionTest do
     end
   end
 
-  describe "vacation_interval/1" do
-    test "Returns day for vacation day session" do
+  describe "vacation_session/1" do
+    test "Returns vacation day session" do
       insert!(:session, %{
         round_id: "round_1",
         process_id: "process_1",
@@ -112,8 +112,13 @@ defmodule Draft.BidSessionTest do
         type_allowed: :day
       })
 
-      assert :day =
-               Draft.BidSession.vacation_interval(%{
+      assert %Draft.BidSession{
+               round_id: "round_1",
+               process_id: "process_1",
+               type: :vacation,
+               type_allowed: :day
+             } =
+               Draft.BidSession.vacation_session(%{
                  round_id: "round_1",
                  process_id: "process_1"
                })
@@ -127,14 +132,19 @@ defmodule Draft.BidSessionTest do
         type_allowed: :week
       })
 
-      assert :week =
-               Draft.BidSession.vacation_interval(%{
+      assert %Draft.BidSession{
+               round_id: "round_1",
+               process_id: "process_1",
+               type: :vacation,
+               type_allowed: :week
+             } =
+               Draft.BidSession.vacation_session(%{
                  round_id: "round_1",
                  process_id: "process_1"
                })
     end
 
-    test "Returns nil if passed work session" do
+    test "Raises error if passed work session" do
       insert!(:session, %{
         round_id: "round_1",
         process_id: "process_1",
@@ -142,55 +152,12 @@ defmodule Draft.BidSessionTest do
         type_allowed: nil
       })
 
-      assert nil ==
-               Draft.BidSession.vacation_interval(%{
-                 round_id: "round_1",
-                 process_id: "process_1"
-               })
-    end
-  end
-
-  describe "calculate_point_of_equivalence/1" do
-    test "All operators need to be forced" do
-      session =
-        :week
-        |> insert_round_with_employees_and_vacation(
-          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
-          %{"00001" => 1, "00002" => 1},
-          %{}
-        )
-        |> Draft.BidSession.single_session_for_round()
-
-      %{has_poe_been_reached: true, employees_to_force: [{"00001", 1}, {"00002", 1}]} =
-        Draft.BidSession.calculate_point_of_equivalence(session)
-    end
-
-    test "Only the lowest ranking operator would need to be forced" do
-      session =
-        :week
-        |> insert_round_with_employees_and_vacation(
-          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
-          %{"00001" => 1, "00002" => 2},
-          %{}
-        )
-        |> Draft.BidSession.single_session_for_round()
-
-      %{amount_to_force: 2, has_poe_been_reached: false, employees_to_force: [{"00002", 2}]} =
-        Draft.BidSession.calculate_point_of_equivalence(session)
-    end
-
-    test "An operator would be forced only as much of their balance as is necessary" do
-      session =
-        :week
-        |> insert_round_with_employees_and_vacation(
-          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
-          %{"00001" => 5},
-          %{}
-        )
-        |> Draft.BidSession.single_session_for_round()
-
-      %{amount_to_force: 2, has_poe_been_reached: true, employees_to_force: [{"00001", 2}]} =
-        Draft.BidSession.calculate_point_of_equivalence(session)
+      assert_raise Ecto.NoResultsError, fn ->
+        Draft.BidSession.vacation_session(%{
+          round_id: "round_1",
+          process_id: "process_1"
+        })
+      end
     end
   end
 end

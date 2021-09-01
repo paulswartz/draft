@@ -329,14 +329,11 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
   describe "distribute_vacation_to_group/1" do
     test "Returns error if group is not found" do
       assert {:error, _error} =
-               BasicVacationDistributionRunner.distribute_vacation_to_group(
-                 %{
-                   round_id: "missing_round",
-                   group_number: 1,
-                   process_id: "missing_process"
-                 },
-                 :week
-               )
+               BasicVacationDistributionRunner.distribute_vacation_to_group(%{
+                 round_id: "missing_round",
+                 group_number: 1,
+                 process_id: "missing_process"
+               })
     end
 
     test "Returns successfully if group is found" do
@@ -356,11 +353,7 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                   end_date: ~D[2021-04-10],
                   employee_id: "00001"
                 }
-              ]} =
-               BasicVacationDistributionRunner.distribute_vacation_to_group(
-                 group,
-                 :week
-               )
+              ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group)
     end
   end
 

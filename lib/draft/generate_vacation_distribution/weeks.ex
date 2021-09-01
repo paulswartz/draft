@@ -17,86 +17,34 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   @impl Voluntary
   def generate(
         distribution_run_id,
-        round,
-        employee,
-        max_weeks,
-        anniversary_vacation
+        session,
+        employee_vacation_quota_summary
+      ) do
+    max_weeks =
+      employee_vacation_quota_summary
+      |> Draft.EmployeeVacationQuotaSummary.minutes_available_as_of_date(
+        session.rating_period_start_date
+      )
+      |> div(
+        Draft.JobClassHelpers.num_hours_per_week(employee_vacation_quota_summary.job_class) * 60
       )
 
-  def generate(distribution_run_id, round, employee, max_weeks, nil) do
-    generate_from_available(
-      distribution_run_id,
-      round,
-      employee,
-      max_weeks
-    )
-  end
-
-  def generate(distribution_run_id, round, employee, week_quota_including_anniversary_weeks, %{
-        anniversary_date: anniversary_date,
-        anniversary_weeks: anniversary_weeks
-      }) do
-    case Draft.Utils.compare_date_to_range(
-           anniversary_date,
-           round.rating_period_start_date,
-           round.rating_period_end_date
-         ) do
-      :before_range ->
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
-          week_quota_including_anniversary_weeks
-        )
-
-      :in_range ->
-        # If it should be possible to assign an operator their anniversary vacation that is earned
-        # within a rating period, update case to do so. Currently does not assign any anniversary weeks.
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
-          Draft.EmployeeVacationQuota.adjust_quota(
-            week_quota_including_anniversary_weeks,
-            anniversary_weeks
-          )
-        )
-
-      :after_range ->
-        generate_from_available(
-          distribution_run_id,
-          round,
-          employee,
-          Draft.EmployeeVacationQuota.adjust_quota(
-            week_quota_including_anniversary_weeks,
-            anniversary_weeks
-          )
-        )
-    end
-  end
-
-  defp generate_from_available(
-         distribution_run_id,
-         round,
-         employee,
-         max_weeks
-       ) do
     distribution_run_id
-    |> preferred_available_weeks(round, employee)
+    |> preferred_available_weeks(session, employee_vacation_quota_summary)
     |> Enum.take(max_weeks)
-    |> Enum.map(&to_distribution(&1, employee))
+    |> Enum.map(&to_distribution(&1, employee_vacation_quota_summary.employee_id))
   end
 
   defp preferred_available_weeks(
          distribution_run_id,
-         round,
-         employee
+         session,
+         employee_vacation_quota_summary
        ) do
     quota_already_distributed_in_run =
       Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
 
-    round
-    |> Draft.DivisionQuotaRanked.available_to_employee(employee, :week)
+    session
+    |> Draft.DivisionQuota.available_with_employee_rank(employee_vacation_quota_summary)
     |> Enum.map(fn original_quota ->
       %{
         original_quota
@@ -109,11 +57,11 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
     |> Enum.filter(& &1.preference_rank)
   end
 
-  defp to_distribution(assigned_week, employee) do
+  defp to_distribution(assigned_week, employee_id) do
     Logger.info("assigned week - #{assigned_week.start_date} - #{assigned_week.end_date}")
 
     %VacationDistribution{
-      employee_id: employee.employee_id,
+      employee_id: employee_id,
       interval_type: :week,
       start_date: assigned_week.start_date,
       end_date: assigned_week.end_date,
