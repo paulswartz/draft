@@ -46,7 +46,12 @@ defmodule Draft.Importer.S3ScanWorker do
         ExAws.S3.list_objects(bucket, prefix: prefix_with_delimiter, delimiter: "/")
       )
 
-    for %{prefix: folder} <- common_prefixes do
+    folders =
+      common_prefixes
+      |> Enum.map(&Map.get(&1, :prefix))
+      |> Enum.sort()
+
+    for folder <- folders do
       S3ImportWorker.new(%{bucket: bucket, prefix: folder})
     end
   end
