@@ -23,10 +23,16 @@ config :ueberauth, Ueberauth.Strategy.Cognito,
 
 if bucket = System.get_env("IMPORTER_S3_BUCKET") do
   prefix = System.get_env("IMPORTER_S3_PREFIX") || ""
-  schedule = System.get_env("IMPORTER_S3_SCHEDULE") || "* * * * *"
+  schedule = System.get_env("IMPORTER_SCHEDULE") || "* * * * *"
+
+  queue_size =
+    case System.get_env("IMPORTER_QUEUE_SIZE") do
+      bin when is_binary(bin) -> String.to_integer(bin)
+      _default -> 1
+    end
 
   config :draft, Oban,
-    queues: [importer: 10],
+    queues: [importer: queue_size],
     plugins: [
       {Oban.Plugins.Cron,
        crontab: [
