@@ -9,7 +9,8 @@ use Mix.Config
 
 config :draft,
   ecto_repos: [Draft.Repo],
-  redirect_http?: true
+  redirect_http?: true,
+  exporter: Draft.Exporter.TempDir
 
 config :draft, Draft.Repo,
   show_sensitive_data_on_connection_error: true,

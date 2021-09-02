@@ -71,5 +71,36 @@ defmodule Draft.VacationDistributionWorkerTest do
                  }
                })
     end
+
+    test "exports the given distributions" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 1},
+          %{"00001" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
+
+      VacationDistributionWorker.perform(%Oban.Job{
+        args: %{
+          "round_id" => group.round_id,
+          "process_id" => group.process_id,
+          "group_number" => group.group_number
+        }
+      })
+
+      assert_received {Draft.Exporter.Send, filename, iodata}
+
+      assert String.contains?(filename, "vacation_distribution")
+      assert String.contains?(filename, group.round_id)
+      assert String.contains?(filename, group.process_id)
+      assert String.contains?(filename, Integer.to_string(group.group_number))
+
+      body = IO.iodata_to_binary(iodata)
+      lines = String.split(body, "\n")
+      # actual contents of the pipe-separated file are tested in Draft.VacationDistribution
+      assert ["vacation|" <> _, ""] = lines
+    end
   end
 end

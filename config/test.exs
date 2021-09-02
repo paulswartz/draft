@@ -1,5 +1,9 @@
 use Mix.Config
 
+# configure exportter
+config :draft,
+  exporter: Draft.Exporter.Send
+
 # Configure your database
 config :draft, Draft.Repo,
   show_sensitive_data_on_connection_error: true,
