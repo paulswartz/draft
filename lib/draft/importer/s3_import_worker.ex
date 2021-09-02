@@ -28,8 +28,8 @@ defmodule Draft.Importer.S3ImportWorker do
         "files found when scanning s3://#{bucket}/#{prefix} files=#{inspect(filenames)}"
       )
 
-    bid_process_setup(bucket, filenames, ex_aws)
     vacation_quota_setup(bucket, filenames, ex_aws)
+    bid_process_setup(bucket, filenames, ex_aws)
   end
 
   defp bid_process_setup(bucket, filenames, ex_aws) do
