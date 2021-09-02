@@ -86,42 +86,36 @@ defmodule Draft.DivisionVacationDayQuota do
 
   @spec available_quota(
           Draft.BidSession.t(),
-          %{
-            required(:employee_id) => String.t(),
-            required(:job_class) => String.t(),
-            optional(atom()) => any()
-          }
+          String.t()
         ) :: [t()]
   @doc """
-  Get all vacation days that are available for the given employee, based on their job class, the available quota for their division,
+  Get all vacation days that are available for the given employee, the available quota for their division and job class category,
   and their previously selected vacation time. Available days are returned in descending order by start date (latest available date will be listed first)
   """
-  def available_quota(session, employee) do
-    job_class_category = Draft.JobClassHelpers.job_category_for_class(employee.job_class)
-
+  def available_quota(session, employee_id) do
     quotas =
       Repo.all(
         from d in Draft.DivisionVacationDayQuota,
           as: :division_day_quota,
           where:
             d.division_id == ^session.division_id and d.quota > 0 and
-              d.job_class_category == ^job_class_category and
+              d.job_class_category == ^session.job_class_category and
               d.date >= ^session.rating_period_start_date and
               d.date <= ^session.rating_period_end_date and
-              not exists(conflicting_selected_dates_for_employee(employee)),
+              not exists(conflicting_selected_dates_for_employee(employee_id)),
           order_by: [desc: d.date]
       )
 
-    filter_cancelled_quotas(quotas, job_class_category)
+    filter_cancelled_quotas(quotas, session.job_class_category)
   end
 
-  @spec conflicting_selected_dates_for_employee(Draft.EmployeeRanking.t()) :: Ecto.Queryable.t()
-  defp conflicting_selected_dates_for_employee(employee) do
+  @spec conflicting_selected_dates_for_employee(String.t()) :: Ecto.Queryable.t()
+  defp conflicting_selected_dates_for_employee(employee_id) do
     from s in Draft.EmployeeVacationSelection,
       where:
         s.start_date <= parent_as(:division_day_quota).date and
           s.end_date >= parent_as(:division_day_quota).date and
-          s.employee_id == ^employee.employee_id and
+          s.employee_id == ^employee_id and
           s.status == :assigned
   end
 

@@ -20,47 +20,80 @@ defmodule Draft.DivisionQuota do
   preference will be returned sorted by descending start date (latest date first)
   """
 
-  @spec available_with_employee_rank(
+  @spec all_available_quota_ranked(
           Draft.BidSession.t(),
-          %{:employee_id => String.t(), :job_class => String.t(), optional(atom()) => any()}
+          String.t()
         ) :: [employee_ranked_quota()]
-  def available_with_employee_rank(session, employee) do
-    available_quota = available_quota(session, employee)
+  def all_available_quota_ranked(session, employee_id) do
+    available_quota = available_quota(session, employee_id)
 
     employee_preferences =
       Draft.EmployeeVacationPreferenceSet.latest_preferences(
         session.process_id,
         session.round_id,
-        employee.employee_id,
+        employee_id,
         session.type_allowed
       )
 
-    rank_vacations(employee.employee_id, available_quota, employee_preferences)
+    rank_vacations(employee_id, available_quota, employee_preferences)
   end
 
-  defp available_quota(%{type_allowed: :week} = session, employee) do
+  @spec only_ranked_available_quota(
+          Draft.BidSession.t(),
+          String.t(),
+          %{Date.t() => pos_integer()}
+        ) :: [employee_ranked_quota()]
+  @doc """
+  Get only the quota that the employee has ranked & is still available, based on the remaining
+  division quotas & the given accumulated distribution counts that are not reflected in the
+  division quotas.
+  """
+  def only_ranked_available_quota(session, employee_id, acc_distribution_counts) do
     session
-    |> Draft.DivisionVacationWeekQuota.available_quota(employee)
+    |> Draft.DivisionQuota.all_available_quota_ranked(employee_id)
+    |> Enum.filter(& &1.preference_rank)
+    |> Enum.map(fn original_quota ->
+      %{
+        original_quota
+        | quota:
+            original_quota.quota -
+              Map.get(acc_distribution_counts, original_quota.start_date, 0)
+      }
+    end)
+    |> Enum.filter(fn q -> q.quota > 0 end)
+  end
+
+  @spec remaining_quota(Draft.BidSession.t()) :: non_neg_integer()
+  @doc """
+  Get the number of remaining open quota spots for the given session
+  """
+  def remaining_quota(%{type_allowed: :week} = session) do
+    Draft.DivisionVacationWeekQuota.remaining_quota(session)
+  end
+
+  defp available_quota(%{type_allowed: :week} = session, employee_id) do
+    session
+    |> Draft.DivisionVacationWeekQuota.available_quota(employee_id)
     |> Enum.map(
       &%{
         start_date: &1.start_date,
         end_date: &1.end_date,
         quota: &1.quota,
-        employee_id: employee.employee_id,
+        employee_id: employee_id,
         interval_type: session.type_allowed
       }
     )
   end
 
-  defp available_quota(%{type_allowed: :day} = session, employee) do
+  defp available_quota(%{type_allowed: :day} = session, employee_id) do
     session
-    |> Draft.DivisionVacationDayQuota.available_quota(employee)
+    |> Draft.DivisionVacationDayQuota.available_quota(employee_id)
     |> Enum.map(
       &%{
         start_date: &1.date,
         end_date: &1.date,
         quota: &1.quota,
-        employee_id: employee.employee_id,
+        employee_id: employee_id,
         interval_type: session.type_allowed
       }
     )

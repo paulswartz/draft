@@ -25,12 +25,10 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
       |> Draft.EmployeeVacationQuotaSummary.minutes_available_as_of_date(
         session.rating_period_start_date
       )
-      |> div(
-        Draft.JobClassHelpers.num_hours_per_week(employee_vacation_quota_summary.job_class) * 60
-      )
+      |> Draft.JobClassHelpers.weeks_from_minutes(employee_vacation_quota_summary.job_class)
 
     distribution_run_id
-    |> preferred_available_weeks(session, employee_vacation_quota_summary)
+    |> preferred_available_weeks(session, employee_vacation_quota_summary.employee_id)
     |> Enum.take(max_weeks)
     |> Enum.map(&to_distribution(&1, employee_vacation_quota_summary.employee_id))
   end
@@ -38,23 +36,16 @@ defmodule Draft.GenerateVacationDistribution.Weeks do
   defp preferred_available_weeks(
          distribution_run_id,
          session,
-         employee_vacation_quota_summary
+         employee_id
        ) do
     quota_already_distributed_in_run =
       Draft.VacationDistribution.count_unsynced_assignments_by_date(distribution_run_id, :week)
 
-    session
-    |> Draft.DivisionQuota.available_with_employee_rank(employee_vacation_quota_summary)
-    |> Enum.map(fn original_quota ->
-      %{
-        original_quota
-        | quota:
-            original_quota.quota -
-              Map.get(quota_already_distributed_in_run, original_quota.start_date, 0)
-      }
-    end)
-    |> Enum.filter(fn q -> q.quota > 0 end)
-    |> Enum.filter(& &1.preference_rank)
+    Draft.DivisionQuota.only_ranked_available_quota(
+      session,
+      employee_id,
+      quota_already_distributed_in_run
+    )
   end
 
   defp to_distribution(assigned_week, employee_id) do

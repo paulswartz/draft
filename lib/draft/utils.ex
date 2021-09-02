@@ -20,4 +20,31 @@ defmodule Draft.Utils do
         :before_range
     end
   end
+
+  @spec percent_round_up(number(), 0..100) :: integer()
+  @doc """
+  Take a percentage of the given value, rounded up to the nearest integer.
+
+  iex> Draft.Utils.percent_round_up(10, 41)
+  5
+  iex> Draft.Utils.percent_round_up(10, 100)
+  10
+  iex> Draft.Utils.percent_round_up(10, 0)
+  0
+  """
+  def percent_round_up(_value, 0) do
+    0
+  end
+
+  def percent_round_up(value, 100) do
+    value
+  end
+
+  def percent_round_up(value, percent) do
+    value
+    |> (&(&1 * percent)).()
+    |> Decimal.div(100)
+    |> Decimal.round(0, :up)
+    |> Decimal.to_integer()
+  end
 end

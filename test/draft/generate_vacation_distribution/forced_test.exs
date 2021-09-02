@@ -42,24 +42,25 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     end
   end
 
-  describe "distribute_to_group/4" do
+  describe "distribute_to_employees/2" do
     test "One operator being forced gets the latest available weeks" do
-      insert_round_with_employees(
-        %{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        },
-        %{type: :vacation, type_allowed: :week}
-      )
+      round =
+        insert_round_with_employees(
+          %{
+            round_id: "vacation_1",
+            process_id: "process_1",
+            rank: 1,
+            round_opening_date: ~D[2021-02-01],
+            round_closing_date: ~D[2021-03-01],
+            rating_period_start_date: ~D[2021-04-01],
+            rating_period_end_date: ~D[2021-05-01]
+          },
+          %{
+            employee_count: 1,
+            group_size: 10
+          },
+          %{type: :vacation, type_allowed: :week}
+        )
 
       insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-15],
@@ -79,25 +80,14 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         quota: 1
       })
 
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
+      session = Draft.BidSession.single_session_for_round(round)
 
       vacation_distributions =
-        GenerateVacationDistribution.Forced.generate_for_group(%{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          group_number: 1
-        })
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          [{"00001", 2}],
+          []
+        )
 
       assert {:ok,
               [
@@ -117,21 +107,22 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     end
 
     test "Two operators being forced can take the same day when quota is 2" do
-      insert_round_with_employees(
-        %{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 2,
-          group_size: 10
-        }
-      )
+      round =
+        insert_round_with_employees(
+          %{
+            round_id: "vacation_1",
+            process_id: "process_1",
+            rank: 1,
+            round_opening_date: ~D[2021-02-01],
+            round_closing_date: ~D[2021-03-01],
+            rating_period_start_date: ~D[2021-04-01],
+            rating_period_end_date: ~D[2021-05-01]
+          },
+          %{
+            employee_count: 2,
+            group_size: 10
+          }
+        )
 
       insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-15],
@@ -151,39 +142,14 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         quota: 1
       })
 
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
-      insert!(
-        :employee_vacation_quota,
-        %{
-          employee_id: "00002",
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
+      session = Draft.BidSession.single_session_for_round(round)
 
       vacation_distributions =
-        GenerateVacationDistribution.Forced.generate_for_group(%{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          group_number: 1
-        })
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          [{"00001", 2}, {"00002", 2}],
+          []
+        )
 
       assert {:ok,
               [
@@ -215,21 +181,22 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
     end
 
     test "Assigns first operator the second best week in order to ensure valid forcing" do
-      insert_round_with_employees(
-        %{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 2,
-          group_size: 10
-        }
-      )
+      round =
+        insert_round_with_employees(
+          %{
+            round_id: "vacation_1",
+            process_id: "process_1",
+            rank: 1,
+            round_opening_date: ~D[2021-02-01],
+            round_closing_date: ~D[2021-03-01],
+            rating_period_start_date: ~D[2021-04-01],
+            rating_period_end_date: ~D[2021-05-01]
+          },
+          %{
+            employee_count: 2,
+            group_size: 10
+          }
+        )
 
       insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-15],
@@ -243,39 +210,14 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         quota: 2
       })
 
-      insert!(
-        :employee_vacation_quota,
-        %{
-          weekly_quota: 1,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
-
-      insert!(
-        :employee_vacation_quota,
-        %{
-          employee_id: "00002",
-          weekly_quota: 2,
-          dated_quota: 0,
-          restricted_week_quota: 0,
-          available_after_date: nil,
-          available_after_weekly_quota: nil,
-          available_after_dated_quota: 0,
-          maximum_minutes: 4800
-        }
-      )
+      session = Draft.BidSession.single_session_for_round(round)
 
       vacation_distributions =
-        GenerateVacationDistribution.Forced.generate_for_group(%{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          group_number: 1
-        })
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          [{"00001", 1}, {"00002", 2}],
+          []
+        )
 
       assert {:ok,
               [
@@ -322,7 +264,13 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       # we return an empty list. However, now it would be possible to assign
       # employee C 8/22, so this schedule could be valid.
 
-      group =
+      employees_quota_to_force = %{
+        "00001" => 1,
+        "00002" => 3,
+        "00003" => 1
+      }
+
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -331,18 +279,21 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
             ~D[2021-08-15] => 2,
             ~D[2021-08-22] => 1
           },
-          %{
-            "00001" => 1,
-            "00002" => 3,
-            "00003" => 1
-          },
+          employees_quota_to_force,
           %{
             "00002" => [~D[2021-08-22]],
             "00003" => [~D[2021-08-01], ~D[2021-08-08], ~D[2021-08-15]]
           }
         )
 
-      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      session = Draft.BidSession.single_session_for_round(round)
+
+      {:ok, vacation_distributions} =
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          employees_quota_to_force,
+          []
+        )
 
       assert [
                %{employee_id: "00002", start_date: ~D[2021-08-01]},
@@ -350,11 +301,11 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
                %{employee_id: "00001", start_date: ~D[2021-08-15]},
                %{employee_id: "00002", start_date: ~D[2021-08-15]},
                %{employee_id: "00003", start_date: ~D[2021-08-22]}
-             ] = vacation_assignments
+             ] = vacation_distributions
     end
 
     test "internal dates are also taken into account" do
-      group =
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -372,7 +323,14 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           }
         )
 
-      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      session = Draft.BidSession.single_session_for_round(round)
+
+      {:ok, vacation_distributions} =
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          [{"00001", 1}, {"00002", 3}, {"00003", 1}],
+          []
+        )
 
       assert [
                %{employee_id: "00002", start_date: ~D[2021-08-01]},
@@ -380,12 +338,40 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
                %{employee_id: "00002", start_date: ~D[2021-08-08]},
                %{employee_id: "00002", start_date: ~D[2021-08-15]},
                %{employee_id: "00003", start_date: ~D[2021-08-15]}
-             ] = vacation_assignments
+             ] = vacation_distributions
     end
 
     test "with many employees, completes in a reasonable amount of time" do
       # worse case scenario: last employee must be forced into last (most-preferred) date
-      group =
+
+      employees_quota_to_force = %{
+        "00001" => 1,
+        "00002" => 1,
+        "00003" => 1,
+        "00004" => 1,
+        "00005" => 1,
+        "00006" => 1,
+        "00007" => 1,
+        "00008" => 1,
+        "00009" => 1,
+        "00010" => 1,
+        "00011" => 1,
+        "00012" => 1,
+        "00013" => 1,
+        "00014" => 1,
+        "00015" => 1,
+        "00016" => 1,
+        "00017" => 1,
+        "00018" => 1,
+        "00019" => 1,
+        "00020" => 1,
+        "00021" => 1,
+        "00022" => 1,
+        "00023" => 1,
+        "00024" => 1
+      }
+
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -402,32 +388,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
             ~D[2021-10-07] => 2,
             ~D[2021-10-14] => 2
           },
-          %{
-            "00001" => 1,
-            "00002" => 1,
-            "00003" => 1,
-            "00004" => 1,
-            "00005" => 1,
-            "00006" => 1,
-            "00007" => 1,
-            "00008" => 1,
-            "00009" => 1,
-            "00010" => 1,
-            "00011" => 1,
-            "00012" => 1,
-            "00013" => 1,
-            "00014" => 1,
-            "00015" => 1,
-            "00016" => 1,
-            "00017" => 1,
-            "00018" => 1,
-            "00019" => 1,
-            "00020" => 1,
-            "00021" => 1,
-            "00022" => 1,
-            "00023" => 1,
-            "00024" => 1
-          },
+          employees_quota_to_force,
           %{
             "00024" => [
               ~D[2021-08-01],
@@ -445,15 +406,29 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           }
         )
 
-      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      session = Draft.BidSession.single_session_for_round(round)
 
-      last_assignment = Enum.at(vacation_assignments, -1)
+      {:ok, vacation_distributions} =
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          employees_quota_to_force,
+          []
+        )
+
+      last_assignment = Enum.at(vacation_distributions, -1)
       assert %{employee_id: "00024", start_date: ~D[2021-10-14]} = last_assignment
     end
 
     test "with few employees and larger quotas, completes in a reasonable amount of time" do
       # worse case scenario: last employee must be forced into last (most-preferred) date
-      group =
+      employees_quota_to_force = %{
+        "00001" => 6,
+        "00002" => 6,
+        "00003" => 6,
+        "00004" => 5
+      }
+
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
@@ -470,12 +445,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
             ~D[2021-10-07] => 2,
             ~D[2021-10-14] => 1
           },
-          %{
-            "00001" => 6,
-            "00002" => 6,
-            "00003" => 6,
-            "00004" => 5
-          },
+          employees_quota_to_force,
           %{
             "00004" => [
               ~D[2021-08-01],
@@ -489,28 +459,36 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           }
         )
 
-      {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+      session = Draft.BidSession.single_session_for_round(round)
 
-      assignments = Enum.filter(vacation_assignments, &(&1.employee_id == "00004"))
-      assert [_, _, _, _, %{start_date: ~D[2021-10-14]}] = assignments
+      {:ok, vacation_distributions} =
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          employees_quota_to_force,
+          []
+        )
+
+      distributions = Enum.filter(vacation_distributions, &(&1.employee_id == "00004"))
+      assert [_, _, _, _, %{start_date: ~D[2021-10-14]}] = distributions
     end
 
     test "Returns an error if no possible forcing solution found" do
-      insert_round_with_employees(
-        %{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          rank: 1,
-          round_opening_date: ~D[2021-02-01],
-          round_closing_date: ~D[2021-03-01],
-          rating_period_start_date: ~D[2021-04-01],
-          rating_period_end_date: ~D[2021-05-01]
-        },
-        %{
-          employee_count: 1,
-          group_size: 10
-        }
-      )
+      round =
+        insert_round_with_employees(
+          %{
+            round_id: "vacation_1",
+            process_id: "process_1",
+            rank: 1,
+            round_opening_date: ~D[2021-02-01],
+            round_closing_date: ~D[2021-03-01],
+            rating_period_start_date: ~D[2021-04-01],
+            rating_period_end_date: ~D[2021-05-01]
+          },
+          %{
+            employee_count: 1,
+            group_size: 10
+          }
+        )
 
       insert!(:division_vacation_week_quota, %{
         start_date: ~D[2021-04-15],
@@ -531,34 +509,36 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         }
       )
 
-      vacation_assignments =
-        GenerateVacationDistribution.Forced.generate_for_group(%{
-          round_id: "vacation_1",
-          process_id: "process_1",
-          group_number: 1
-        })
+      session = Draft.BidSession.single_session_for_round(round)
 
-      assert vacation_assignments == :error
+      assert :error =
+               GenerateVacationDistribution.Forced.generate_for_employees(
+                 session,
+                 [{"00001", 2}],
+                 []
+               )
     end
 
     test "Assigns employee their top preference when possible" do
-      group =
+      employees_quota_to_force = %{
+        "00001" => 1,
+        "00002" => 1
+      }
+
+      round =
         insert_round_with_employees_and_vacation(
           :week,
           %{
             ~D[2021-08-01] => 1,
             ~D[2021-08-08] => 1
           },
-          %{
-            "00001" => 1,
-            "00002" => 1
-          },
+          employees_quota_to_force,
           %{}
         )
 
       first_preference_set = %Draft.EmployeeVacationPreferenceSet{
-        process_id: group.process_id,
-        round_id: group.round_id,
+        process_id: round.process_id,
+        round_id: round.round_id,
         employee_id: "00001",
         vacation_preferences: [
           %Draft.EmployeeVacationPreference{
@@ -572,18 +552,19 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
 
       Draft.Repo.insert!(first_preference_set)
 
-      vacation_assignments =
-        GenerateVacationDistribution.Forced.generate_for_group(%{
-          round_id: group.round_id,
-          process_id: group.process_id,
-          group_number: group.group_number
-        })
+      session = Draft.BidSession.single_session_for_round(round)
 
-      assert {:ok,
-              [
-                %{employee_id: "00001", start_date: ~D[2021-08-01], preference_rank: 1},
-                %{employee_id: "00002", start_date: ~D[2021-08-08], preference_rank: nil}
-              ]} = vacation_assignments
+      {:ok, vacation_distributions} =
+        GenerateVacationDistribution.Forced.generate_for_employees(
+          session,
+          employees_quota_to_force,
+          []
+        )
+
+      assert [
+               %{employee_id: "00001", start_date: ~D[2021-08-01], preference_rank: 1},
+               %{employee_id: "00002", start_date: ~D[2021-08-08], preference_rank: nil}
+             ] = vacation_distributions
     end
   end
 
@@ -599,7 +580,25 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       ~D[2021-08-29] => :week_5
     }
 
-    group =
+    employees_quota_to_force = %{
+      "00001" => 0,
+      "00002" => 1,
+      "00003" => 1,
+      "00004" => 1,
+      "00005" => 2,
+      "00006" => 2,
+      "00007" => 2,
+      "00008" => 2,
+      "00009" => 2,
+      "00010" => 2,
+      "00011" => 2,
+      "00012" => 2,
+      "00013" => 2,
+      "00014" => 2,
+      "00015" => 2
+    }
+
+    round =
       insert_round_with_employees_and_vacation(
         :week,
         %{
@@ -614,23 +613,7 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
           # week 5
           ~D[2021-08-29] => 2
         },
-        %{
-          "00001" => 0,
-          "00002" => 1,
-          "00003" => 1,
-          "00004" => 1,
-          "00005" => 2,
-          "00006" => 2,
-          "00007" => 2,
-          "00008" => 2,
-          "00009" => 2,
-          "00010" => 2,
-          "00011" => 2,
-          "00012" => 2,
-          "00013" => 2,
-          "00014" => 2,
-          "00015" => 2
-        },
+        employees_quota_to_force,
         %{},
         %{
           "00001" => [~D[2021-08-29], ~D[2021-08-15]],
@@ -651,12 +634,19 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
         }
       )
 
-    {:ok, vacation_assignments} = GenerateVacationDistribution.Forced.generate_for_group(group)
+    session = Draft.BidSession.single_session_for_round(round)
 
-    vacation_assignments_formatted =
-      Enum.group_by(vacation_assignments, & &1.employee_id, &Map.get(week_desc, &1.start_date))
+    {:ok, vacation_distributions} =
+      GenerateVacationDistribution.Forced.generate_for_employees(
+        session,
+        employees_quota_to_force,
+        []
+      )
 
-    expected_assignments = %{
+    vacation_distributions_formatted =
+      Enum.group_by(vacation_distributions, & &1.employee_id, &Map.get(week_desc, &1.start_date))
+
+    expected_distributions = %{
       "00002" => [:week_4],
       "00003" => [:week_5],
       "00004" => [:week_5],
@@ -673,6 +663,6 @@ defmodule Draft.GenerateVacationDistribution.Forced.Test do
       "00015" => [:week_1, :week_2]
     }
 
-    assert ^expected_assignments = vacation_assignments_formatted
+    assert ^expected_distributions = vacation_distributions_formatted
   end
 end

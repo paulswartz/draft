@@ -182,8 +182,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         }
       )
 
-      round = Repo.one!(from(r in Draft.BidRound))
-      employee_ranking = Repo.one!(from(e in Draft.EmployeeRanking))
+      session = Repo.one!(from(s in Draft.BidSession))
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
@@ -212,7 +211,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       assert [
                %{start_date: ~D[2021-02-08], end_date: ~D[2021-02-14]},
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
-             ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+             ] = Draft.DivisionVacationWeekQuota.available_quota(session, "00001")
     end
 
     test "Doesn't include week that conflicts with previously selected vacation" do
@@ -231,8 +230,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         }
       )
 
-      round = Repo.one!(from(r in Draft.BidRound))
-      employee_ranking = Repo.one!(from(e in Draft.EmployeeRanking))
+      session = Repo.one!(from(s in Draft.BidSession))
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
@@ -267,7 +265,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       assert [
                %{start_date: ~D[2021-02-08], end_date: ~D[2021-02-14]},
                %{start_date: ~D[2021-02-01], end_date: ~D[2021-02-07]}
-             ] = Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+             ] = Draft.DivisionVacationWeekQuota.available_quota(session, "00001")
     end
 
     test "Doesn't include days that were refunded to another employee" do
@@ -286,10 +284,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         }
       )
 
-      round = Repo.one!(from(r in Draft.BidRound))
-
-      employee_ranking =
-        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00002"))
+      session = Repo.one!(from(s in Draft.BidSession))
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
@@ -344,7 +339,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       })
 
       assert [%{start_date: ~D[2021-02-15], quota: 1}, %{start_date: ~D[2021-02-08]}] =
-               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+               Draft.DivisionVacationWeekQuota.available_quota(session, "00002")
     end
 
     test "does not treat day intervals as a week for purposes of the quota" do
@@ -363,10 +358,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         }
       )
 
-      round = Repo.one!(from(r in Draft.BidRound))
-
-      employee_ranking =
-        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00002"))
+      session = Repo.one!(from(s in Draft.BidSession))
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
@@ -386,7 +378,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       })
 
       assert [%{start_date: ~D[2021-02-01]}] =
-               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+               Draft.DivisionVacationWeekQuota.available_quota(session, "00002")
     end
 
     test "does not count cancellations from a different job class" do
@@ -405,10 +397,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
         }
       )
 
-      round = Repo.one!(from(r in Draft.BidRound))
-
-      employee_ranking =
-        Repo.one!(from(e in Draft.EmployeeRanking, where: e.employee_id == "00001"))
+      session = Repo.one!(from(s in Draft.BidSession))
 
       insert!(:division_vacation_week_quota, %{
         division_id: "101",
@@ -430,7 +419,7 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
       })
 
       assert [%{start_date: ~D[2021-02-01]}] =
-               Draft.DivisionVacationWeekQuota.available_quota(round, employee_ranking)
+               Draft.DivisionVacationWeekQuota.available_quota(session, "00001")
     end
   end
 

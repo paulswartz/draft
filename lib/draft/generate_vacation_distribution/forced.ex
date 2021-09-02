@@ -3,9 +3,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   Generate a list of vacation weeks that can be assigned to all employees in the given group,
   ensuring that it will be possible to force all remaining employees to take vacation as well.
   """
-  import Ecto.Query
   alias Draft.DivisionQuota
-  alias Draft.Repo
   alias Draft.VacationDistribution
   require Logger
 
@@ -15,85 +13,49 @@ defmodule Draft.GenerateVacationDistribution.Forced do
           {%{gregorian_date() => pos_integer()}, [VacationDistribution.t()]}
 
   @type calculated_employee_quota() :: %{
-          remaining_quota: integer(),
+          amount_to_force: integer(),
           available_quota: [available_quota()],
           employee_id: String.t()
         }
 
-  @spec generate_for_group(%{
-          round_id: String.t(),
-          process_id: String.t(),
-          group_number: integer()
-        }) :: {:ok, [VacationDistribution.t()]} | :error
+  @spec generate_for_employees(Draft.BidSession.t(), [{String.t(), pos_integer()}], [
+          VacationDistribution.t()
+        ]) ::
+          {:ok, [VacationDistribution.t()]} | :error
   @doc """
   Generate vacation assignments that force all employees in the given group (and all remaining
   groups after them) to use all of their remaining full vacation weeks. Assignments are made in
   seniority order, so the most senior operator is awarded vacation as long as it is possible
   force all remaining operators to use all their vacation time.
   """
-  def generate_for_group(%{
-        round_id: round_id,
-        process_id: process_id,
-        group_number: group_number
-      }) do
-    Logger.info("Starting Distribution generation: #{inspect(DateTime.utc_now())}")
+  def generate_for_employees(
+        session,
+        employees_to_force,
+        previous_distributions
+      ) do
+    Logger.info("Starting vacation forcing for round
+        #{session.round_id}-#{session.process_id}: #{inspect(DateTime.utc_now())}")
 
-    group =
-      Repo.get_by(Draft.BidGroup,
-        round_id: round_id,
-        process_id: process_id,
-        group_number: group_number
-      )
+    employees = Enum.map(employees_to_force, &calculated_quota(session, &1))
 
-    if group do
-      round = Repo.get_by!(Draft.BidRound, round_id: round_id, process_id: process_id)
+    acc =
+      previous_distributions
+      |> Enum.frequencies_by(&Date.to_gregorian_days(&1.start_date))
+      |> (&{&1, previous_distributions}).()
 
-      # The use of `get_all_operators_in_or_after_group` here is a temporary simplification;
-      # We ultimately won't need to force all operators in the specified group & all following.
-      # We will only need to generate distributions for the curent group, ensuring that the subset
-      # of the least senior operators who will need to be forced can still be forced in a valid
-      # way.
-      employee_quotas =
-        group
-        |> get_all_operators_in_or_after_group()
-        |> Enum.map(&calculated_quota(round, &1, :week))
+    memo = :ets.new(:memo, [:bag, :private])
+    result = generate_distributions(employees, acc, memo)
 
-      acc = {%{}, []}
-      memo = :ets.new(:memo, [:bag, :private])
-      result = generate_distributions(employee_quotas, acc, memo)
+    Logger.info("Finishing vacation forcing for round
+        #{session.round_id}-#{session.process_id}:#{inspect(DateTime.utc_now())}")
+    # ensure we clean up the ETS table
+    :ets.delete(memo)
 
-      Logger.info("Finishing Distribution generation: #{inspect(DateTime.utc_now())}")
-      # ensure we clean up the ETS table
-      :ets.delete(memo)
-
-      if result do
-        {:ok, result}
-      else
-        :error
-      end
+    if result do
+      {:ok, result}
     else
-      Logger.error(
-        "No group found with round_id: #{round_id}, process_id: #{process_id}, group_number: #{
-          group_number
-        }"
-      )
-
       :error
     end
-  end
-
-  defp get_all_operators_in_or_after_group(%{
-         round_id: round_id,
-         process_id: process_id,
-         group_number: group_number
-       }) do
-    Repo.all(
-      from e in Draft.EmployeeRanking,
-        where:
-          e.round_id == ^round_id and e.process_id == ^process_id and
-            e.group_number >= ^group_number,
-        order_by: [asc: [e.group_number, e.rank]]
-    )
   end
 
   # Generate vacation distributions for all specified employees. For each
@@ -122,7 +84,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # Base case: nothing to distribute to first employee (empty quota), recurse
   # on all remaining employees
   defp generate_distributions(
-         [%{remaining_quota: 0} | remaining_employees],
+         [%{amount_to_force: 0} | remaining_employees],
          acc_vacation_to_distribute,
          memo
        ) do
@@ -144,7 +106,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
          acc_vacation_to_distribute,
          memo
        ) do
-    %{employee_id: employee_id, remaining_quota: remaining_quota} = first_employee
+    %{employee_id: employee_id, amount_to_force: amount_to_force} = first_employee
     counts = count_by_start_date(acc_vacation_to_distribute)
     # Check if we've already calculated a version of these possible
     # assignments, along with the counts of assignments made to days. If we
@@ -155,12 +117,12 @@ defmodule Draft.GenerateVacationDistribution.Forced do
       nil
     else
       :ets.insert(memo, {hashed_key})
-      possible_assignments = all_vacation_available_with_employee_rank(first_employee, counts)
+      possible_assignments = all_vacation_all_available_quota_ranked(first_employee, counts)
 
       possible_assignment_permutations =
         permutations_take(
           possible_assignments,
-          remaining_quota,
+          amount_to_force,
           acc_vacation_to_distribute,
           &add_distribution_to_acc/2
         )
@@ -202,53 +164,28 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   end
 
   @spec calculated_quota(
-          Draft.BidRound.t(),
-          Draft.EmployeeRanking.t(),
-          Draft.IntervalType.t()
+          Draft.BidSession.t(),
+          {String.t(), pos_integer()}
         ) :: calculated_employee_quota()
-  # Get the given employee's vacation quota for the specified interval type.
-  # The list of available vacation quota to this employee is sorted according to their latest
-  # vacation preferences, or descending by start_date when no preference found (latest date first)
-  # This currently only returns information about their whole-unit quota (no partial).
-  # In the future it could return information about their minimum quota and maximum desired quota
-  # (a preference that is user-set).
-  defp calculated_quota(round, employee, :week = interval_type) do
-    balance =
-      Repo.one!(
-        from q in Draft.EmployeeVacationQuota,
-          where:
-            q.employee_id == ^employee.employee_id and
-              (q.interval_start_date <= ^round.rating_period_start_date and
-                 q.interval_end_date >= ^round.rating_period_end_date)
-      )
-
-    max_minutes = balance.maximum_minutes
-
-    num_hours_per_week = Draft.JobClassHelpers.num_hours_per_week(employee.job_class)
-
-    # Cap weeks by the maximum number of paid vacation minutes an operator has remaining
-    max_weeks = min(div(max_minutes, 60 * num_hours_per_week), balance.weekly_quota)
-
-    session = Draft.BidSession.vacation_session(round)
-
+  # Get the employee with all possible vacation distributions they could be awarded.
+  defp calculated_quota(session, {employee_id, amount_to_force}) do
     available_quota =
-      DivisionQuota.available_with_employee_rank(
+      DivisionQuota.all_available_quota_ranked(
         session,
-        employee
+        employee_id
       )
 
     %{
-      employee_id: employee.employee_id,
-      # job_class: employee.job_class,
-      remaining_quota: max_weeks,
+      employee_id: employee_id,
+      amount_to_force: amount_to_force,
       available_quota:
         Enum.map(available_quota, fn q ->
           {
             Date.to_gregorian_days(q.start_date),
             q.quota,
             %VacationDistribution{
-              employee_id: employee.employee_id,
-              interval_type: interval_type,
+              employee_id: employee_id,
+              interval_type: session.type_allowed,
               start_date: q.start_date,
               end_date: q.end_date,
               is_forced: true,
@@ -259,8 +196,8 @@ defmodule Draft.GenerateVacationDistribution.Forced do
     }
   end
 
-  @compile {:inline, all_vacation_available_with_employee_rank: 2}
-  @spec all_vacation_available_with_employee_rank(
+  @compile {:inline, all_vacation_all_available_quota_ranked: 2}
+  @spec all_vacation_all_available_quota_ranked(
           calculated_employee_quota(),
           %{
             gregorian_date() => integer()
@@ -271,7 +208,7 @@ defmodule Draft.GenerateVacationDistribution.Forced do
   # and vacations they have previously selected. The returned list of vacation distributions
   # Will be ordered from most preferrable to least preferrable.
   # (the latest possible vacation will be first in the list)
-  defp all_vacation_available_with_employee_rank(
+  defp all_vacation_all_available_quota_ranked(
          employee,
          distributions_not_reflected_in_quota
        ) do

@@ -2,6 +2,7 @@ defmodule Draft.JobClassHelpersTest do
   @moduledoc false
   use ExUnit.Case
   alias Draft.JobClassHelpers
+  doctest JobClassHelpers
 
   describe "num_hours_per_day/2" do
     test "8 for full time position w/ 5/2" do
@@ -41,16 +42,6 @@ defmodule Draft.JobClassHelpersTest do
                "000900",
                "001100"
              ]
-    end
-  end
-
-  describe "category_from_round_id/1" do
-    test "Interprets PT correctly" do
-      :pt = JobClassHelpers.category_from_round_id("RoundForPT")
-    end
-
-    test "Interprets FT correctly" do
-      :ft = JobClassHelpers.category_from_round_id("RoundForFT")
     end
   end
 end

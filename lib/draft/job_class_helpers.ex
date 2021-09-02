@@ -30,19 +30,6 @@ defmodule Draft.JobClassHelpers do
     end
   end
 
-  @spec category_from_round_id(String.t()) :: Draft.JobClassCategory.t()
-  @doc """
-  Get the job class category from a round id, with the convention that a
-  trailing "PT" means it is a part-time round.
-  """
-  def category_from_round_id(round_id) do
-    if String.ends_with?(round_id, "PT") do
-      :pt
-    else
-      :ft
-    end
-  end
-
   @spec num_hours_per_day(String.t(), Draft.WorkOffRatio.t()) :: integer()
   @doc """
   The number of hours that are worked in a day.
@@ -64,5 +51,20 @@ defmodule Draft.JobClassHelpers do
       :pt -> 30
       :ft -> 40
     end
+  end
+
+  @spec weeks_from_minutes(non_neg_integer(), String.t()) :: non_neg_integer()
+  @doc """
+  The number of weeks that is equivalent to the number of minutes given for a job class, rounded down to the nearest whole week.
+
+  iex> Draft.JobClassHelpers.weeks_from_minutes(7200, "000100")
+  3
+  iex> Draft.JobClassHelpers.weeks_from_minutes(7300, "000100")
+  3
+  iex> Draft.JobClassHelpers.weeks_from_minutes(7200, "001100")
+  4
+  """
+  def weeks_from_minutes(minutes, job_class) do
+    div(minutes, num_hours_per_week(job_class) * 60)
   end
 end
