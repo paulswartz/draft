@@ -44,3 +44,14 @@ if bucket = System.get_env("IMPORTER_S3_BUCKET") do
        ]}
     ]
 end
+
+if bucket = System.get_env("EXPORTER_S3_BUCKET") do
+  prefix = System.get_env("EXPORTER_S3_PREFIX") || ""
+
+  config :draft,
+    exporter: Draft.Exporter.S3
+
+  config :draft, Draft.Exporter.S3,
+    bucket: bucket,
+    prefix: prefix
+end
