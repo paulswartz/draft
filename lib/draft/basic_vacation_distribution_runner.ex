@@ -37,7 +37,7 @@ defmodule Draft.BasicVacationDistributionRunner do
             round_id: String.t()
           },
           0..100
-        ) :: {:ok, VacationDistribution.t()} | {:error, any()}
+        ) :: distribution_result()
   @doc """
   Distribute vacation to all employees in the given group in seniority order.
   """
@@ -162,22 +162,33 @@ defmodule Draft.BasicVacationDistributionRunner do
         )
       )
 
-    count_to_force = Draft.DivisionQuota.remaining_quota(session, percent_to_force)
+    count_to_force =
+      session
+      |> Draft.DivisionQuota.remaining_quota()
+      |> Draft.Utils.percent_round_up(percent_to_force)
 
-    vacation_distributions =
-      distribute_vacation(
-        distribution_run_id,
-        session,
-        count_to_force,
-        group.group_number,
-        all_remaining_employees,
-        []
-      )
-
-    _completed_vacation_run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
-    vacation_distributions
+    with {:ok, distributions} <-
+           distribute_vacation(
+             distribution_run_id,
+             session,
+             count_to_force,
+             group.group_number,
+             all_remaining_employees,
+             []
+           ) do
+      _run = Draft.VacationDistributionRun.mark_complete(distribution_run_id)
+      {:ok, distributions}
+    end
   end
 
+  @spec distribute_vacation(
+          Draft.VacationDistributionRun.id(),
+          Draft.BidSession.t(),
+          non_neg_integer(),
+          pos_integer(),
+          [Draft.EmployeeVacationQuotaSummary.t()],
+          [Draft.VacationDistribution.t()]
+        ) :: distribution_result()
   defp distribute_vacation(
          _run_id,
          _session,
@@ -212,7 +223,7 @@ defmodule Draft.BasicVacationDistributionRunner do
        ) do
     poe = Draft.PointOfEquivalence.calculate(all_remaining_employees, count_to_force)
 
-    if poe.has_poe_been_reached do
+    if poe.reached? do
       employee_to_group =
         Map.new(
           all_remaining_employees,
@@ -228,16 +239,17 @@ defmodule Draft.BasicVacationDistributionRunner do
         acc_distributions
       )
     else
-      {:ok, first_emp_distributions} = distribute_voluntary_vacation(run_id, session, first_emp)
-
-      distribute_vacation(
-        run_id,
-        session,
-        max(count_to_force - length(first_emp_distributions), 0),
-        group_number,
-        remaining_emps,
-        acc_distributions ++ first_emp_distributions
-      )
+      with {:ok, first_emp_distributions} <-
+             distribute_voluntary_vacation(run_id, session, first_emp) do
+        distribute_vacation(
+          run_id,
+          session,
+          max(count_to_force - length(first_emp_distributions), 0),
+          group_number,
+          remaining_emps,
+          acc_distributions ++ first_emp_distributions
+        )
+      end
     end
   end
 
@@ -287,17 +299,20 @@ defmodule Draft.BasicVacationDistributionRunner do
 
     # Only save the forced distributions for the group -- any voluntary distributions
     # would have been previously saved.
-    {:ok, _result} =
-      Draft.VacationDistribution.add_distributions_to_run(run_id, forced_distributions_for_group)
+    with {:ok, _result} <-
+           Draft.VacationDistribution.add_distributions_to_run(
+             run_id,
+             forced_distributions_for_group
+           ) do
+      all_group_distributions =
+        Enum.filter(
+          distributions,
+          &(!&1.is_forced ||
+              Map.get(employee_to_group_number, &1.employee_id) == group_number)
+        )
 
-    # return all distributions for the given group, whether voluntary or forced
-    all_group_distributions =
-      Enum.filter(
-        distributions,
-        &(!&1.is_forced || Map.get(employee_to_group_number, &1.employee_id) == group_number)
-      )
-
-    {:ok, all_group_distributions}
+      {:ok, all_group_distributions}
+    end
   end
 
   @spec distribute_voluntary_vacation(

@@ -423,50 +423,6 @@ defmodule Draft.DivisionVacationWeekQuotaTest do
     end
   end
 
-  describe "remaining_quota/2" do
-    test "Returns 0 if 0%" do
-      round =
-        insert_round_with_employees_and_vacation(
-          :week,
-          %{~D[2021-08-01] => 1, ~D[2021-08-08] => 2},
-          %{"00001" => 1},
-          %{}
-        )
-
-      session = Draft.BidSession.single_session_for_round(round)
-
-      assert 0 = DivisionVacationWeekQuota.remaining_quota(session, 0)
-    end
-
-    test "Returns full quota if 100%" do
-      round =
-        insert_round_with_employees_and_vacation(
-          :week,
-          %{~D[2021-08-01] => 1, ~D[2021-08-08] => 2},
-          %{"00001" => 1},
-          %{}
-        )
-
-      session = Draft.BidSession.single_session_for_round(round)
-
-      assert 3 = DivisionVacationWeekQuota.remaining_quota(session, 100)
-    end
-
-    test "Rounds up quota to nearest int" do
-      round =
-        insert_round_with_employees_and_vacation(
-          :week,
-          %{~D[2021-08-01] => 5, ~D[2021-08-08] => 5},
-          %{"00001" => 1},
-          %{}
-        )
-
-      session = Draft.BidSession.single_session_for_round(round)
-
-      assert 8 = DivisionVacationWeekQuota.remaining_quota(session, 72)
-    end
-  end
-
   describe "remaining_quota/1" do
     test "only contains quota within rating period" do
       insert!(

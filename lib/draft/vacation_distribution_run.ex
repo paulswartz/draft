@@ -46,14 +46,14 @@ defmodule Draft.VacationDistributionRun do
     }).id
   end
 
-  @spec mark_complete(number) :: {:ok, t(), :error, Ecto.Changeset.t()}
+  @spec mark_complete(number) :: t()
   @doc """
   Mark the given distribution run as complete
   """
   def mark_complete(run_id) do
     run_id
     |> mark_complete_changeset(%{end_time: DateTime.utc_now()})
-    |> Repo.update()
+    |> Repo.update!()
   end
 
   @spec changeset(

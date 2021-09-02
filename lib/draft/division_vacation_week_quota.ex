@@ -61,27 +61,6 @@ defmodule Draft.DivisionVacationWeekQuota do
     }
   end
 
-  @spec remaining_quota(Draft.BidSession.t(), 0..100) :: non_neg_integer()
-  @doc """
-  Get a percent of the amount of remaining quota in the given session. Round up to the nearest integer. Ex: If 10 weeks remaining and given 15%, would return 2 weeks.
-  """
-  def remaining_quota(session, 100) do
-    remaining_quota(session)
-  end
-
-  def remaining_quota(_session, 0) do
-    0
-  end
-
-  def remaining_quota(session, percent) when 0 <= percent and percent <= 100 do
-    session
-    |> remaining_quota()
-    |> (&(&1 * percent)).()
-    |> Decimal.div(100)
-    |> Decimal.round(0, :up)
-    |> Decimal.to_integer()
-  end
-
   @spec remaining_quota(Draft.BidSession.t()) :: non_neg_integer()
   @doc """
   Get the amount of remaining quota in the given session.

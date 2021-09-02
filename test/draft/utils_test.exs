@@ -2,6 +2,8 @@ defmodule Draft.Utils.Test do
   use ExUnit.Case
   alias Draft.Utils
 
+  doctest Utils
+
   describe "compare_date_to_range/3" do
     test "date < start date" do
       assert :before_range ==

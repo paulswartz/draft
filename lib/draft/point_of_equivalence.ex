@@ -5,12 +5,12 @@ defmodule Draft.PointOfEquivalence do
   Forcing will begin
   """
 
-  defstruct [:amount_to_force, :employees_to_force, :has_poe_been_reached]
+  defstruct [:amount_to_force, :employees_to_force, :reached?]
 
   @type t :: %__MODULE__{
           amount_to_force: integer(),
           employees_to_force: [{String.t(), integer()}],
-          has_poe_been_reached: boolean()
+          reached?: boolean()
         }
 
   @spec calculate(Draft.BidSession.t()) :: t()
@@ -55,7 +55,7 @@ defmodule Draft.PointOfEquivalence do
   def calculate(_employees, 0) do
     %__MODULE__{
       amount_to_force: 0,
-      has_poe_been_reached: false,
+      reached?: false,
       employees_to_force: []
     }
   end
@@ -89,7 +89,7 @@ defmodule Draft.PointOfEquivalence do
 
     %__MODULE__{
       amount_to_force: quota_to_force,
-      has_poe_been_reached: length(employees_to_force) == length(employees_desc),
+      reached?: length(employees_to_force) == length(employees_desc),
       employees_to_force: employees_to_force
     }
   end

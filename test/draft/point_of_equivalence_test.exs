@@ -13,7 +13,7 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.single_session_for_round()
 
-      %{has_poe_been_reached: true, employees_to_force: [{"00001", 1}, {"00002", 1}]} =
+      %{reached?: true, employees_to_force: [{"00001", 1}, {"00002", 1}]} =
         Draft.PointOfEquivalence.calculate(session)
     end
 
@@ -27,7 +27,7 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.single_session_for_round()
 
-      %{amount_to_force: 2, has_poe_been_reached: false, employees_to_force: [{"00002", 2}]} =
+      %{amount_to_force: 2, reached?: false, employees_to_force: [{"00002", 2}]} =
         Draft.PointOfEquivalence.calculate(session)
     end
 
@@ -41,7 +41,7 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.single_session_for_round()
 
-      %{amount_to_force: 2, has_poe_been_reached: true, employees_to_force: [{"00001", 2}]} =
+      %{amount_to_force: 2, reached?: true, employees_to_force: [{"00001", 2}]} =
         Draft.PointOfEquivalence.calculate(session)
     end
   end
@@ -49,7 +49,7 @@ defmodule Draft.PointOfEquivalenceTest do
   describe "calculate/2" do
     test "No employees to force when quota to force is 0" do
       assert %Draft.PointOfEquivalence{
-               has_poe_been_reached: false,
+               reached?: false,
                employees_to_force: [],
                amount_to_force: 0
              } =
@@ -69,7 +69,7 @@ defmodule Draft.PointOfEquivalenceTest do
 
     test "Only least senior operator is forced" do
       assert %Draft.PointOfEquivalence{
-               has_poe_been_reached: false,
+               reached?: false,
                employees_to_force: [{"00002", 1}],
                amount_to_force: 1
              } =
@@ -100,7 +100,7 @@ defmodule Draft.PointOfEquivalenceTest do
 
     test "Operator can be forced part of their balance" do
       assert %Draft.PointOfEquivalence{
-               has_poe_been_reached: true,
+               reached?: true,
                employees_to_force: [{"00001", 1}, {"00002", 1}],
                amount_to_force: 2
              } =

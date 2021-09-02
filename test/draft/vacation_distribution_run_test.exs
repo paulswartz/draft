@@ -43,7 +43,7 @@ defmodule Draft.VacationDistributionRunTest do
         })
 
       assert is_nil(original_run_1.end_time)
-      {:ok, updated_run_1} = VacationDistributionRun.mark_complete(run_id_1)
+      updated_run_1 = VacationDistributionRun.mark_complete(run_id_1)
       assert !is_nil(updated_run_1.end_time)
 
       assert is_nil(

@@ -90,7 +90,7 @@ defmodule Draft.EmployeeRanking do
         where:
           e.round_id == ^round_id and e.process_id == ^process_id and
             e.group_number == ^group_number,
-        order_by: [asc: [e.group_number, e.rank]]
+        order_by: [asc: [e.rank]]
     )
   end
 
@@ -113,8 +113,7 @@ defmodule Draft.EmployeeRanking do
       from e in Draft.EmployeeRanking,
         where:
           e.round_id == ^round_id and e.process_id == ^process_id and
-            e.group_number == ^group_number and e.rank == ^rank,
-        order_by: [asc: [e.group_number, e.rank]]
+            e.group_number == ^group_number and e.rank == ^rank
     )
   end
 

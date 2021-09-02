@@ -51,6 +51,7 @@ defmodule Draft.DivisionQuota do
   def only_ranked_available_quota(session, employee_id, acc_distribution_counts) do
     session
     |> Draft.DivisionQuota.all_available_quota_ranked(employee_id)
+    |> Enum.filter(& &1.preference_rank)
     |> Enum.map(fn original_quota ->
       %{
         original_quota
@@ -60,16 +61,14 @@ defmodule Draft.DivisionQuota do
       }
     end)
     |> Enum.filter(fn q -> q.quota > 0 end)
-    |> Enum.filter(& &1.preference_rank)
   end
 
-  @spec remaining_quota(Draft.BidSession.t(), 1..100) :: non_neg_integer()
+  @spec remaining_quota(Draft.BidSession.t()) :: non_neg_integer()
   @doc """
-  Get a percent of the amount of remaining quota in the given session.
-  Round up to the nearest integer. Ex: If 10 weeks remaining and given 15%, would return 2 weeks.
+  Get the number of remaining open quota spots for the given session
   """
-  def remaining_quota(%{type_allowed: :week} = session, percent_to_force \\ 100) do
-    Draft.DivisionVacationWeekQuota.remaining_quota(session, percent_to_force)
+  def remaining_quota(%{type_allowed: :week} = session) do
+    Draft.DivisionVacationWeekQuota.remaining_quota(session)
   end
 
   defp available_quota(%{type_allowed: :week} = session, employee_id) do
