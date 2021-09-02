@@ -39,7 +39,6 @@ defmodule Draft.VacationDistribution do
   def to_csv_row(distribution) do
     vacation_interval_type = if distribution.interval_type == :week, do: "1", else: "0"
     {:ok, status} = Draft.VacationStatusEnum.dump(distribution.status)
-    require Logger
     # For now, assume always quarterly pick
     pick_period = 1
 
