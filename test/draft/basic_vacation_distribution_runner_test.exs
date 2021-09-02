@@ -407,6 +407,101 @@ defmodule Draft.BasicVacationDistributionRunnerTest do
                 }
               ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group, 100)
     end
+
+    test "When forcing to 50 percent, if early operators voluntarily take vacation, last operator isn't forced" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 1, ~D[2021-03-28] => 1},
+          %{"00001" => 2, "00002" => 1, "00003" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
+
+      assert {:ok,
+              [
+                %VacationDistribution{
+                  start_date: ~D[2021-04-04],
+                  end_date: ~D[2021-04-10],
+                  employee_id: "00001",
+                  is_forced: false
+                }
+              ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group, 50)
+    end
+
+    test "When forcing to 0 percent, if no preferences, no distributions" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 1, ~D[2021-03-28] => 1},
+          %{"00001" => 2, "00002" => 1, "00003" => 1},
+          %{},
+          %{}
+        )
+
+      assert {:ok, []} = BasicVacationDistributionRunner.distribute_vacation_to_group(group, 0)
+    end
+
+    test "If not possible to force, returns error" do
+      group =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 2},
+          %{"00001" => 2},
+          %{},
+          %{"00001" => [~D[2021-04-04], ~D[2021-03-28]]}
+        )
+
+      assert {:error, "No valid way to force the remaining employees"} =
+               BasicVacationDistributionRunner.distribute_vacation_to_group(group, 100)
+    end
+
+    test "Only returns distributions for the current group" do
+      group_1 =
+        insert_round_with_employees_and_vacation(
+          :week,
+          %{~D[2021-04-04] => 2, ~D[2021-03-28] => 2},
+          %{"00001" => 2, "00002" => 1, "00003" => 1},
+          %{},
+          %{"00001" => [~D[2021-04-04]]}
+        )
+
+      insert!(:group, %{
+        group_number: 2,
+        round_id: group_1.round_id,
+        process_id: group_1.process_id
+      })
+
+      insert!(:employee_ranking, %{
+        group_number: 2,
+        round_id: group_1.round_id,
+        process_id: group_1.process_id,
+        employee_id: "00004"
+      })
+
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00004",
+        weekly_quota: 2,
+        maximum_minutes: 4800
+      })
+
+      assert {:ok,
+              [
+                # Operator 3 has to take 3/28 so that Operator 4 can be forced their two weeks
+                %VacationDistribution{
+                  start_date: ~D[2021-03-28],
+                  end_date: ~D[2021-04-03],
+                  employee_id: "00003",
+                  is_forced: true
+                },
+                %VacationDistribution{
+                  start_date: ~D[2021-04-04],
+                  end_date: ~D[2021-04-10],
+                  employee_id: "00001",
+                  is_forced: false
+                }
+              ]} = BasicVacationDistributionRunner.distribute_vacation_to_group(group_1, 100)
+    end
   end
 
   defp get_assignments_for_employee(assignments, employee_id) do

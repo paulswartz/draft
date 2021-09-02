@@ -282,7 +282,7 @@ defmodule Draft.BasicVacationDistributionRunner do
     forced_distributions_for_group =
       Enum.filter(
         distributions,
-        &(Map.get(employee_to_group_number, &1.employee_id) == group_number || &1.is_forced)
+        &(Map.get(employee_to_group_number, &1.employee_id) == group_number && &1.is_forced)
       )
 
     # Only save the forced distributions for the group -- any voluntary distributions
@@ -290,7 +290,14 @@ defmodule Draft.BasicVacationDistributionRunner do
     {:ok, _result} =
       Draft.VacationDistribution.add_distributions_to_run(run_id, forced_distributions_for_group)
 
-    {:ok, distributions}
+    # return all distributions for the given group, whether voluntary or forced
+    all_group_distributions =
+      Enum.filter(
+        distributions,
+        &(!&1.is_forced || Map.get(employee_to_group_number, &1.employee_id) == group_number)
+      )
+
+    {:ok, all_group_distributions}
   end
 
   @spec distribute_voluntary_vacation(
