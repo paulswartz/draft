@@ -10,6 +10,9 @@ defmodule Draft.Application do
     children = [
       # Start the Ecto repository
       Draft.Repo,
+      # Start the migrator
+      {Draft.Repo.Migrator,
+       run_migrations_at_startup?: Application.get_env(:draft, :run_migrations_at_startup?)},
       # Start the Telemetry supervisor
       DraftWeb.Telemetry,
       # Start the PubSub system

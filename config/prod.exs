@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :draft,
+  run_migrations_at_startup?: true
+
 config :draft, Draft.Repo,
   aws_rds_mod: ExAws.RDS,
   show_sensitive_data_on_connection_error: false,

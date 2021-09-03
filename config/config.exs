@@ -10,6 +10,7 @@ use Mix.Config
 config :draft,
   ecto_repos: [Draft.Repo],
   redirect_http?: true,
+  run_migrations_at_startup?: false,
   exporter: Draft.Exporter.TempDir
 
 config :draft, Draft.Repo,
