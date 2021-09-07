@@ -37,11 +37,24 @@ defmodule Draft.EmployeeVacationQuotaSummary do
         end_date
       )
 
+    minutes_per_interval = default_minutes_per_interval(employee_ranking.job_class, interval_type)
+
     {total_interval_quota, anniversary_quota} =
       case interval_type do
         :week -> {quota.weekly_quota, quota.available_after_weekly_quota || 0}
         :day -> {quota.dated_quota, quota.available_after_dated_quota || 0}
       end
+
+    existing_vacation =
+      Draft.EmployeeVacationSelection.assigned_vacation_count(
+        employee_ranking.employee_id,
+        start_date,
+        end_date,
+        interval_type
+      )
+
+    total_interval_quota_reduced =
+      Draft.EmployeeVacationQuota.adjust_quota(total_interval_quota, existing_vacation)
 
     %__MODULE__{
       employee_id: employee_ranking.employee_id,
@@ -51,14 +64,11 @@ defmodule Draft.EmployeeVacationQuotaSummary do
       interval_type: interval_type,
       total_available_minutes:
         min(
-          total_interval_quota *
-            default_minutes_per_interval(employee_ranking.job_class, interval_type),
+          total_interval_quota_reduced * minutes_per_interval,
           quota.maximum_minutes
         ),
       anniversary_date: quota.available_after_date,
-      minutes_only_available_as_of_anniversary:
-        anniversary_quota *
-          default_minutes_per_interval(employee_ranking.job_class, interval_type)
+      minutes_only_available_as_of_anniversary: anniversary_quota * minutes_per_interval
     }
   end
 

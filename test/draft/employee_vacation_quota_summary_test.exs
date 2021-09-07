@@ -89,6 +89,32 @@ defmodule Draft.EmployeeVacationQuotaSummaryTest do
                  :day
                )
     end
+
+    test "reduces available minutes by already selected vacation", %{
+      employee_ranking: employee_ranking
+    } do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        maximum_minutes: 4800
+      })
+
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        status: :assigned
+      })
+
+      assert %{total_available_minutes: 2400} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-01-01],
+                 ~D[2021-03-01],
+                 :week
+               )
+    end
   end
 
   describe "minutes_available_as_of_date/2" do
