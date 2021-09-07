@@ -76,16 +76,28 @@ defmodule Draft.EmployeeVacationSelection do
   @spec assigned_vacation_count(String.t(), Date.t(), Date.t(), Draft.IntervalType.t()) ::
           non_neg_integer()
   def assigned_vacation_count(employee_id, start_date, end_date, interval_type) do
-    Draft.Repo.one!(
-      from s in __MODULE__,
-        where:
-          s.employee_id == ^employee_id and
-            s.start_date >= ^start_date and
-            s.end_date <= ^end_date and
-            s.vacation_interval_type == ^interval_type and
-            s.status == :assigned,
-        select: count(s.start_date)
-    )
+    # potential future improvement: use SQL COUNT for the :week case
+    result =
+      Draft.Repo.all(
+        from s in __MODULE__,
+          where:
+            s.employee_id == ^employee_id and
+              s.start_date >= ^start_date and
+              s.end_date <= ^end_date and
+              s.vacation_interval_type == ^interval_type and
+              s.status == :assigned,
+          select: [:start_date, :end_date]
+      )
+
+    case interval_type do
+      :week ->
+        length(result)
+
+      :day ->
+        result
+        |> Enum.flat_map(fn r -> Date.range(r.start_date, r.end_date) end)
+        |> length
+    end
   end
 
   @doc false

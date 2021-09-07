@@ -206,5 +206,23 @@ defmodule Draft.EmployeeVacationSelectionTest do
                :week
              ) == 0
     end
+
+    test "day records which span multiple days are counted as multiple days" do
+      employee_id = "00001"
+
+      insert!(:employee_vacation_selection, %{
+        employee_id: employee_id,
+        start_date: ~D[2021-01-01],
+        end_date: ~D[2021-01-02],
+        vacation_interval_type: :day
+      })
+
+      assert EmployeeVacationSelection.assigned_vacation_count(
+               employee_id,
+               ~D[2021-01-01],
+               ~D[2021-01-06],
+               :day
+             ) == 2
+    end
   end
 end
