@@ -5,6 +5,7 @@ defmodule Draft.EmployeeVacationSelection do
   @behaviour Draft.Parsable
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Draft.ParsingHelpers
 
   @type t :: %__MODULE__{
@@ -65,6 +66,26 @@ defmodule Draft.EmployeeVacationSelection do
       division_id: division_id,
       job_class: job_class
     }
+  end
+
+  @doc """
+  Returns the count of selections an employee has already made in the given time range (inclusive).
+
+  Cancelled vacations are not included in this count.
+  """
+  @spec assigned_vacation_count(String.t(), Date.t(), Date.t(), Draft.IntervalType.t()) ::
+          non_neg_integer()
+  def assigned_vacation_count(employee_id, start_date, end_date, interval_type) do
+    Draft.Repo.one!(
+      from s in __MODULE__,
+        where:
+          s.employee_id == ^employee_id and
+            s.start_date >= ^start_date and
+            s.end_date <= ^end_date and
+            s.vacation_interval_type == ^interval_type and
+            s.status == :assigned,
+        select: count(s.start_date)
+    )
   end
 
   @doc false
