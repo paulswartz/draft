@@ -22,7 +22,18 @@ defmodule Draft.VacationDistributionWorker do
           select: r.bid_type
       )
 
-    process_group(group, bid_type)
+    case process_group(group, bid_type) do
+      {:ok, distributions} ->
+        {:ok, distributions}
+
+      {:error, e} ->
+        _ignored =
+          Logger.error(
+            "unable to distribute group=#{inspect(group)} bid_type=#{bid_type} error=#{inspect(e)}"
+          )
+
+        {:error, e}
+    end
   end
 
   @spec process_group(
@@ -36,15 +47,17 @@ defmodule Draft.VacationDistributionWorker do
            BasicVacationDistributionRunner.distribute_vacation_to_group(group),
          :ok <- export_distributions(group, distributions) do
       {:ok, distributions}
-    else
-      {:error, e} ->
-        _ignored =
-          Logger.error(
-            "unable to distribute vacation group=#{inspect(group)} error=#{inspect(e)}"
-          )
-
-        {:error, e}
     end
+  end
+
+  defp process_group(_group, :work) do
+    # not currently processing work rounds
+    {:ok, []}
+  end
+
+  defp process_group(_group, :vacation_replacement) do
+    # not currently processing VR rounds
+    {:ok, []}
   end
 
   defp process_group(_group, nil) do

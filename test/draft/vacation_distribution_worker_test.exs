@@ -61,6 +61,7 @@ defmodule Draft.VacationDistributionWorkerTest do
                })
     end
 
+    @tag :capture_log
     test "Returns error when unsuccessful distribution" do
       assert {:error, _errors} =
                VacationDistributionWorker.perform(%Oban.Job{
