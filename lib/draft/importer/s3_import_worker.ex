@@ -104,6 +104,8 @@ defmodule Draft.Importer.S3ImportWorker do
   "Div_Quota_Dated.csv"
   iex> best_file(filenames, ["Emp", "Quota"])
   "Emp_Quota.csv"
+  iex> best_file(filenames, ["work"])
+  nil
   """
   @spec best_file([String.t(), ...], [String.t(), ...]) :: String.t() | nil
   def best_file(filenames, substrings)
@@ -111,10 +113,18 @@ defmodule Draft.Importer.S3ImportWorker do
   def best_file(_filenames, []), do: nil
 
   def best_file(filenames, substrings) do
-    Enum.max_by(filenames, fn filename ->
-      substrings
-      |> Enum.filter(fn substring -> String.contains?(filename, substring) end)
-      |> length()
+    filenames
+    |> Enum.reduce({0, nil}, fn filename, best ->
+      {best_count, _best_filename} = best
+
+      case Enum.count(substrings, &String.contains?(filename, &1)) do
+        count when count > best_count ->
+          {count, filename}
+
+        _not_best ->
+          best
+      end
     end)
+    |> elem(1)
   end
 end
