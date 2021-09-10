@@ -92,13 +92,7 @@ defmodule Draft.BasicVacationDistributionRunner do
           distribution_result()
   defp assign_vacation_for_round(round, percent_to_force) do
     Logger.info(
-      "===================================================================================================\nSTARTING NEW ROUND: #{
-        round.rank
-      } - #{round.division_id} - #{round.division_description}(#{round.round_id}) (picking between #{
-        round.round_opening_date
-      } and #{round.round_closing_date} for the rating period #{round.rating_period_start_date} - #{
-        round.rating_period_end_date
-      })\n"
+      "===================================================================================================\nSTARTING NEW ROUND: #{round.rank} - #{round.division_id} - #{round.division_description}(#{round.round_id}) (picking between #{round.round_opening_date} and #{round.round_closing_date} for the rating period #{round.rating_period_start_date} - #{round.rating_period_end_date})\n"
     )
 
     bid_groups =
@@ -121,9 +115,7 @@ defmodule Draft.BasicVacationDistributionRunner do
 
   defp assign_vacation_for_group(session, group, 0) do
     Logger.info(
-      "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
-        group.group_number
-      } (cutoff time #{group.cutoff_datetime})\n"
+      "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{group.group_number} (cutoff time #{group.cutoff_datetime})\n"
     )
 
     distribution_run_id = Draft.VacationDistributionRun.insert(group)
@@ -143,9 +135,7 @@ defmodule Draft.BasicVacationDistributionRunner do
 
   defp assign_vacation_for_group(session, group, percent_to_force) do
     Logger.info(
-      "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{
-        group.group_number
-      } (cutoff time #{group.cutoff_datetime})\n"
+      "-------------------------------------------------------------------------------------------------\nSTARTING NEW GROUP: #{group.group_number} (cutoff time #{group.cutoff_datetime})\n"
     )
 
     distribution_run_id = Draft.VacationDistributionRun.insert(group)

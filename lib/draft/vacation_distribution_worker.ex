@@ -59,9 +59,7 @@ defmodule Draft.VacationDistributionWorker do
     now = DateTime.utc_now()
 
     filename =
-      "#{DateTime.to_iso8601(now)}_vacation_distribution_#{group.process_id}_#{group.round_id}_#{
-        group.group_number
-      }.psv"
+      "#{DateTime.to_iso8601(now)}_vacation_distribution_#{group.process_id}_#{group.round_id}_#{group.group_number}.psv"
 
     iodata = Enum.map(distributions, &Draft.VacationDistribution.to_csv_row/1)
 
