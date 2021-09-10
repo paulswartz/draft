@@ -68,7 +68,9 @@ defmodule Draft.VacationDistributionWorker do
           %{round_id: String.t(), process_id: String.t(), group_number: integer()},
           [Draft.VacationDistribution.t()]
         ) :: :ok | {:error, any()}
-  def export_distributions(group, distributions) do
+  def export_distributions(group, distributions)
+
+  def export_distributions(group, [_ | _] = distributions) do
     now = DateTime.utc_now()
 
     filename =
@@ -77,5 +79,9 @@ defmodule Draft.VacationDistributionWorker do
     iodata = Enum.map(distributions, &Draft.VacationDistribution.to_csv_row/1)
 
     Draft.Exporter.export(filename, iodata)
+  end
+
+  def export_distributions(_group, []) do
+    :ok
   end
 end
