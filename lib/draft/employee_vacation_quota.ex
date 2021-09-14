@@ -119,18 +119,6 @@ defmodule Draft.EmployeeVacationQuota do
     }
   end
 
-  @spec adjust_quota(integer(), integer()) :: non_neg_integer()
-  @doc """
-  The vacation quotas given by HASTUS (weekly_quota, dated_quota) include any weeks / days that are only available on and after an anniversary date.
-  This function returns the initial quota less the quota given to subtract. The lowest possible quota returned is zero; quota cannot be negative.
-  """
-  def adjust_quota(
-        initial_quota,
-        quota_to_subtract
-      ) do
-    max(initial_quota - quota_to_subtract, 0)
-  end
-
   @doc false
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(employee_vacation_quota, attrs \\ %{}) do

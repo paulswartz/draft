@@ -69,18 +69,4 @@ defmodule Draft.EmployeeVacationQuotaTest do
                })
     end
   end
-
-  describe "adjust_quota/4" do
-    test "Initial quota > quota to subtract" do
-      assert 5 == EmployeeVacationQuota.adjust_quota(6, 1)
-    end
-
-    test "Initial quota < quota to subtract" do
-      assert 0 == EmployeeVacationQuota.adjust_quota(0, 1)
-    end
-
-    test "Initial quota = quota to subtract" do
-      assert 0 == EmployeeVacationQuota.adjust_quota(5, 5)
-    end
-  end
 end

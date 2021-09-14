@@ -3,6 +3,8 @@ defmodule Draft.EmployeeVacationQuotaSummaryTest do
   import Draft.Factory
   alias Draft.EmployeeVacationQuotaSummary
 
+  doctest EmployeeVacationQuotaSummary
+
   setup do
     insert_round_with_employees(1)
     employee_ranking = Draft.Repo.one!(from(e in Draft.EmployeeRanking))

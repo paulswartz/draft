@@ -53,8 +53,7 @@ defmodule Draft.EmployeeVacationQuotaSummary do
         interval_type
       )
 
-    total_interval_quota_reduced =
-      Draft.EmployeeVacationQuota.adjust_quota(total_interval_quota, existing_vacation)
+    total_interval_quota_reduced = subtract_quota(total_interval_quota, existing_vacation)
 
     %__MODULE__{
       employee_id: employee_ranking.employee_id,
@@ -101,5 +100,25 @@ defmodule Draft.EmployeeVacationQuotaSummary do
 
   defp default_minutes_per_interval(job_class, :day) do
     Draft.JobClassHelpers.num_hours_per_day(job_class, :five_two) * 60
+  end
+
+  @spec subtract_quota(integer(), integer()) :: non_neg_integer()
+  @doc """
+  Subtracts a given amount from a quota, without going below 0.
+
+  The vacation quotas given by HASTUS (weekly_quota, dated_quota) include any weeks / days that are only available on and after an anniversary date.
+  This function returns the initial quota less the quota given to subtract. The lowest possible quota returned is zero; quota cannot be negative.
+
+  iex> EmployeeVacationQuotaSummary.subtract_quota(6, 1)
+  5
+
+  iex> EmployeeVacationQuotaSummary.subtract_quota(0, 1)
+  0
+
+  iex> EmployeeVacationQuotaSummary.subtract_quota(5, 5)
+  0
+  """
+  def subtract_quota(initial_quota, quota_to_subtract) do
+    max(initial_quota - quota_to_subtract, 0)
   end
 end
