@@ -4,19 +4,16 @@ defmodule DraftWeb.API.VacationPreferenceController do
 
   @spec show_latest(Plug.Conn.t(), map) :: Plug.Conn.t()
   @doc """
-  Return the latest vacation preferences of the latest pick session the employee is participating in.
+  Return the latest vacation preferences for the given round the employee is participating in.
   """
-  def show_latest(conn, _params) do
-    pick_overview =
-      conn
-      |> get_session(:user_id)
-      |> Draft.EmployeePickOverview.get_latest()
+  def show_latest(conn, %{"round_id" => round_id, "process_id" => process_id}) do
+    employee_id = get_session(conn, :user_id)
 
     latest_preferences =
       case EmployeeVacationPreferenceSet.latest_preference_set(
-             pick_overview.process_id,
-             pick_overview.round_id,
-             pick_overview.employee_id
+             process_id,
+             round_id,
+             employee_id
            ) do
         nil -> %{id: nil, vacation_preferences: []}
         prefs -> prefs
@@ -29,20 +26,24 @@ defmodule DraftWeb.API.VacationPreferenceController do
   @doc """
   Insert a new preference set
   """
-  def create(conn, %{"preferences" => preferences}) do
-    pick_overview =
-      conn
-      |> get_session(:user_id)
-      |> Draft.EmployeePickOverview.get_latest()
+  def create(conn, %{
+        "round_id" => round_id,
+        "process_id" => process_id,
+        "preferences" => preferences
+      }) do
+    employee_id = get_session(conn, :user_id)
+
+    interval_type =
+      Draft.BidSession.vacation_session(%{round_id: round_id, process_id: process_id}).type_allowed
 
     preference_set_creation_result =
       %{}
-      |> Map.put(:round_id, pick_overview.round_id)
-      |> Map.put(:process_id, pick_overview.process_id)
-      |> Map.put(:employee_id, pick_overview.employee_id)
+      |> Map.put(:round_id, round_id)
+      |> Map.put(:process_id, process_id)
+      |> Map.put(:employee_id, employee_id)
       |> Map.put(
         :vacation_preferences,
-        to_vacation_preferences(pick_overview.interval_type, preferences)
+        to_vacation_preferences(interval_type, preferences)
       )
       |> EmployeeVacationPreferenceSet.create()
 
@@ -54,23 +55,25 @@ defmodule DraftWeb.API.VacationPreferenceController do
   Update a preference set -- inserts a new preference set with a reference to the previous one.
   """
   def update(conn, %{
+        "round_id" => round_id,
+        "process_id" => process_id,
         "previous_preference_set_id" => previous_preference_set_id,
         "preferences" => preferences
       }) do
-    pick_overview =
-      conn
-      |> get_session(:user_id)
-      |> Draft.EmployeePickOverview.get_latest()
+    employee_id = get_session(conn, :user_id)
+
+    interval_type =
+      Draft.BidSession.vacation_session(%{round_id: round_id, process_id: process_id}).type_allowed
 
     preference_set_update_result =
       %{}
-      |> Map.put(:round_id, pick_overview.round_id)
-      |> Map.put(:process_id, pick_overview.process_id)
-      |> Map.put(:employee_id, pick_overview.employee_id)
+      |> Map.put(:round_id, round_id)
+      |> Map.put(:process_id, process_id)
+      |> Map.put(:employee_id, employee_id)
       |> Map.put(:previous_preference_set_id, previous_preference_set_id)
       |> Map.put(
         :vacation_preferences,
-        to_vacation_preferences(pick_overview.interval_type, preferences)
+        to_vacation_preferences(interval_type, preferences)
       )
       |> EmployeeVacationPreferenceSet.update()
 

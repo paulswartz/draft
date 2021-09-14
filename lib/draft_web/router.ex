@@ -62,7 +62,6 @@ defmodule DraftWeb.Router do
 
   scope "/api", DraftWeb.API do
     pipe_through [:redirect_http, :browser, :auth, :ensure_auth, :api]
-
     get "/vacation_availability", VacationAvailabilityController, :index
 
     resources "/vacation/preferences", VacationPreferenceController,

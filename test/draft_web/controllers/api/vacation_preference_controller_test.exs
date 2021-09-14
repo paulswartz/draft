@@ -48,7 +48,10 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
       conn =
         conn
         |> put_session(:user_id, "00001")
-        |> get("/api/vacation/preferences/latest")
+        |> get("/api/vacation/preferences/latest", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1"
+        })
 
       assert %{
                "preferences" => [
@@ -84,7 +87,10 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
       conn =
         conn
         |> put_session(:user_id, "00001")
-        |> get("/api/vacation/preferences/latest")
+        |> get("/api/vacation/preferences/latest", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1"
+        })
 
       assert %{
                "preferences" => [],
@@ -120,6 +126,8 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         conn
         |> put_session(:user_id, "00001")
         |> post("/api/vacation/preferences", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1",
           "preferences" => [
             %{
               "start_date" => "2021-02-01",
@@ -167,6 +175,8 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         conn
         |> put_session(:user_id, "00001")
         |> post("/api/vacation/preferences", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1",
           "preferences" => [
             %{
               "start_date" => "2021-02-01",
@@ -230,6 +240,8 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         conn
         |> put_session(:user_id, "00001")
         |> put("/api/vacation/preferences/#{previous_id}", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1",
           "preferences" => [
             %{
               "start_date" => "2021-02-01",
@@ -290,6 +302,8 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
         conn
         |> put_session(:user_id, "00001")
         |> put("/api/vacation/preferences/#{previous_id_different_employee}", %{
+          "round_id" => "vacation_1",
+          "process_id" => "process_1",
           "preferences" => [
             %{
               "start_date" => "2021-02-01",
@@ -305,12 +319,12 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
     end
 
     test "when not authed is redirected to login", %{conn: conn} do
-      insert_round_with_employees(1)
+      round = insert_round_with_employees(2)
 
       {:ok, %EmployeeVacationPreferenceSet{id: previous_id_different_employee}} =
         EmployeeVacationPreferenceSet.create(%{
-          process_id: "process_1",
-          round_id: "vacation_1",
+          process_id: round.process_id,
+          round_id: round.round_id,
           employee_id: "00002",
           vacation_preferences: [
             %{
@@ -324,6 +338,8 @@ defmodule DraftWeb.VacationPreferenceControllerTest do
 
       conn =
         put(conn, "/api/vacation/preferences/#{previous_id_different_employee}", %{
+          "process_id" => round.process_id,
+          "round_id" => round.round_id,
           "preferences" => []
         })
 
