@@ -1,31 +1,22 @@
 import { useEffect, useState } from "react";
 import { fetchDivisionAvailableVacationQuota, OK, Result } from "../api";
-import { DivisionAvailableVacationQuota } from "../divisionVacationQuota";
-import {
-  DivisionAvailableVacationQuotaData,
-  divisionVacationQuotaFromData,
-} from "../models/divisionVacationQuotaData";
+import { DivisionAvailableVacationQuota } from "../models/divisionVacationQuota";
+import { VacationPickRound } from "../models/vacationPickRound";
 
-const useDivisionAvailableVacationQuotas = (): Result<
-  DivisionAvailableVacationQuota,
-  string
-> => {
+const useDivisionAvailableVacationQuotas = (
+  pickOverview: VacationPickRound
+): Result<DivisionAvailableVacationQuota[], string> => {
   const [divisionVacationQuotaResult, setDivisionAvailableVacationQuotaResult] =
-    useState<Result<DivisionAvailableVacationQuotaData, string>>({
+    useState<Result<DivisionAvailableVacationQuota[], string>>({
       status: OK,
-      value: { weeks: [], days: [] },
+      value: [],
     });
   useEffect(() => {
-    fetchDivisionAvailableVacationQuota().then(
+    fetchDivisionAvailableVacationQuota(pickOverview).then(
       setDivisionAvailableVacationQuotaResult
     );
   }, []);
-  return divisionVacationQuotaResult.status == OK
-    ? {
-        status: OK,
-        value: divisionVacationQuotaFromData(divisionVacationQuotaResult.value),
-      }
-    : divisionVacationQuotaResult;
+  return divisionVacationQuotaResult;
 };
 
 export default useDivisionAvailableVacationQuotas;

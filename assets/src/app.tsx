@@ -7,7 +7,7 @@ require("../css/app.scss");
 
 import "phoenix_html";
 import * as React from "react";
-import VacationPreferenceForm from "./components/vacationPreferenceForm";
+import VacationPick from "./components/vacationPick";
 import ReactDOM from "react-dom";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 
@@ -18,7 +18,7 @@ const App = (): JSX.Element => {
         <Route
           exact={true}
           path="/admin/spoof/operator"
-          component={VacationPreferenceForm}
+          component={VacationPick}
         />
       </Switch>
     </BrowserRouter>

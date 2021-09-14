@@ -1,11 +1,34 @@
+import {
+  VacationPreferenceData,
+  VacationPreferenceSetData,
+} from "../vacationPreferenceSet";
+
 export interface VacationPreference {
-  start_date: string;
-  end_date: string;
+  startDate: string;
+  endDate: string;
   rank: number;
 }
 
 export interface VacationPreferenceSet {
-  days: VacationPreference[];
-  weeks: VacationPreference[];
+  preferences: VacationPreference[];
   id: number | null;
 }
+
+export const preferenceSetFromData = (
+  preferenceSet: VacationPreferenceSetData
+): VacationPreferenceSet => ({
+  id: preferenceSet.id,
+  preferences: preferenceSet.preferences.map((pref) => ({
+    startDate: pref.start_date,
+    endDate: pref.end_date,
+    rank: pref.rank,
+  })),
+});
+
+export const preferenceToData = (
+  preference: VacationPreference
+): VacationPreferenceData => ({
+  start_date: preference.startDate,
+  end_date: preference.endDate,
+  rank: preference.rank,
+});
