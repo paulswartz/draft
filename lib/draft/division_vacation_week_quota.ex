@@ -103,32 +103,6 @@ defmodule Draft.DivisionVacationWeekQuota do
     ])
   end
 
-  @spec all_available_weeks(String.t(), String.t(), String.t()) :: [Draft.DivisionWeekQuota]
-  @doc """
-  Get all vacation weeks that are available for an employee of the given job class in the specified round
-  """
-  def all_available_weeks(job_class, process_id, round_id) do
-    %Draft.BidRound{
-      rating_period_start_date: rating_period_start_date,
-      rating_period_end_date: rating_period_end_date,
-      division_id: division_id
-    } =
-      Repo.one!(
-        from r in Draft.BidRound, where: r.round_id == ^round_id and r.process_id == ^process_id
-      )
-
-    job_class_category = Draft.JobClassHelpers.job_category_for_class(job_class)
-
-    Repo.all(
-      from w in Draft.DivisionVacationWeekQuota,
-        where:
-          w.division_id == ^division_id and w.quota > 0 and
-            w.start_date <= ^rating_period_end_date and w.end_date >= ^rating_period_start_date and
-            w.job_class_category == ^job_class_category,
-        order_by: [asc: w.start_date]
-    )
-  end
-
   @spec available_quota(
           Draft.BidSession.t(),
           String.t()

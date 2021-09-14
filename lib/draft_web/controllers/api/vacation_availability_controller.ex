@@ -3,25 +3,14 @@ defmodule DraftWeb.API.VacationAvailabilityController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    pick_overview =
-      conn
-      |> get_session(:user_id)
-      |> Draft.EmployeePickOverview.get_latest()
+    user_id = get_session(conn, :user_id)
 
-    all_available_vacation = %{
-      days:
-        Draft.DivisionVacationDayQuota.all_available_days(
-          pick_overview.job_class,
-          pick_overview.process_id,
-          pick_overview.round_id
-        ),
-      weeks:
-        Draft.DivisionVacationWeekQuota.all_available_weeks(
-          pick_overview.job_class,
-          pick_overview.process_id,
-          pick_overview.round_id
-        )
-    }
+    all_available_vacation =
+      user_id
+      |> Draft.EmployeePickOverview.get_latest()
+      |> Draft.BidSession.single_session_for_round()
+      |> Draft.DivisionQuota.all_available_quota_ranked(user_id)
+      |> Enum.map(&Map.take(&1, [:start_date, :end_date, :quota, :preference_rank]))
 
     json(conn, %{data: all_available_vacation})
   end
