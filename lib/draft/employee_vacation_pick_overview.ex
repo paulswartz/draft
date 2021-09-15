@@ -1,4 +1,4 @@
-defmodule Draft.EmployeePickOverview do
+defmodule Draft.EmployeeVacationPickOverview do
   @moduledoc """
   An overview of an employee's standing in a particular pick round.
   """
@@ -30,11 +30,17 @@ defmodule Draft.EmployeePickOverview do
     :interval_type
   ]
 
-  @spec get_latest(String.t()) :: Draft.EmployeePickOverview.t() | nil
+  @spec open_round(String.t()) :: Draft.EmployeeVacationPickOverview.t() | nil
   @doc """
-  Get the pick overview from the latest pick that the employee with the given badge number is a part of.
+  Get an overview of an employee's standing in a currently active vacation pick, if
+  any is ongoing.
   """
-  def get_latest(badge_number) do
+  def open_round(badge_number) do
+    current_est_date =
+      DateTime.utc_now()
+      |> DateTime.shift_zone!("America/New_York")
+      |> DateTime.to_date()
+
     overview =
       Repo.one(
         from e in Draft.EmployeeRanking,
@@ -44,9 +50,11 @@ defmodule Draft.EmployeePickOverview do
               g.round_id == e.round_id,
           join: r in Draft.BidRound,
           on: g.round_id == r.round_id and g.process_id == r.process_id,
-          where: e.employee_id == ^badge_number,
+          where:
+            e.employee_id == ^badge_number and r.round_opening_date <= ^current_est_date and
+              r.round_closing_date >= ^current_est_date,
           order_by: [desc: g.cutoff_datetime],
-          select: %Draft.EmployeePickOverview{
+          select: %Draft.EmployeeVacationPickOverview{
             cutoff_time: g.cutoff_datetime,
             employee_id: e.employee_id,
             rank: e.rank,
@@ -54,8 +62,7 @@ defmodule Draft.EmployeePickOverview do
             job_class: e.job_class,
             round_id: r.round_id,
             process_id: r.process_id
-          },
-          limit: 1
+          }
       )
 
     if overview do

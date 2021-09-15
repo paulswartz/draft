@@ -7,6 +7,8 @@
 # General application configuration
 use Mix.Config
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 config :draft,
   ecto_repos: [Draft.Repo],
   redirect_http?: true,
