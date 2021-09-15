@@ -93,4 +93,25 @@ defmodule Draft.PointOfEquivalence do
       employees_to_force: employees_to_force
     }
   end
+
+  @spec amount_to_force_employee(Draft.BidSession.t(), String.t()) :: non_neg_integer() | nil
+  @doc """
+  How much vacation the given operator will be forced, if it is known (poe has been reached)
+  For days sessions, always returns nil, since POE is not calculated for vacation days.
+  """
+  def amount_to_force_employee(%{type: :vacation, type_allowed: :day}, _employee_id) do
+    nil
+  end
+
+  def amount_to_force_employee(%{type: :vacation, type_allowed: :week} = session, employee_id) do
+    poe = calculate(session)
+
+    if poe.reached? do
+      poe.employees_to_force
+      |> Map.new()
+      |> Map.get(employee_id)
+    else
+      nil
+    end
+  end
 end

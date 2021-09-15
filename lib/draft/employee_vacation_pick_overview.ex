@@ -13,11 +13,20 @@ defmodule Draft.EmployeeVacationPickOverview do
           rank: integer(),
           process_id: String.t(),
           round_id: String.t(),
-          interval_type: Draft.IntervalType.t()
+          interval_type: Draft.IntervalType.t(),
+          amount_to_force: non_neg_integer() | nil
         }
 
   @derive {Jason.Encoder,
-           only: [:process_id, :round_id, :interval_type, :cutoff_time, :rank, :employee_id]}
+           only: [
+             :process_id,
+             :round_id,
+             :interval_type,
+             :cutoff_time,
+             :rank,
+             :employee_id,
+             :amount_to_force
+           ]}
 
   defstruct [
     :division_id,
@@ -27,7 +36,8 @@ defmodule Draft.EmployeeVacationPickOverview do
     :rank,
     :process_id,
     :round_id,
-    :interval_type
+    :interval_type,
+    :amount_to_force
   ]
 
   @spec open_round(String.t()) :: Draft.EmployeeVacationPickOverview.t() | nil
@@ -67,9 +77,12 @@ defmodule Draft.EmployeeVacationPickOverview do
       )
 
     if overview do
+      session = Draft.BidSession.vacation_session(overview)
+
       %{
         overview
-        | interval_type: Draft.BidSession.single_session_for_round(overview).type_allowed
+        | interval_type: session.type_allowed,
+          amount_to_force: Draft.PointOfEquivalence.amount_to_force_employee(session, employee_id)
       }
     end
   end

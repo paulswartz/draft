@@ -129,4 +129,58 @@ defmodule Draft.PointOfEquivalenceTest do
                )
     end
   end
+
+  describe "amount_to_force_employee/2" do
+    test "returns nil for day session" do
+      session =
+        :day
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1},
+          %{"00001" => 1},
+          %{}
+        )
+        |> Draft.BidSession.vacation_session()
+
+      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+    end
+
+    test "returns nil if poe has not been reached" do
+      session =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1},
+          %{"00001" => 1, "00002" => 1},
+          %{}
+        )
+        |> Draft.BidSession.vacation_session()
+
+      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+    end
+
+    test "returns value if poe has been reached and given employee would be forced" do
+      session =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
+          %{"00001" => 1, "00002" => 1},
+          %{}
+        )
+        |> Draft.BidSession.vacation_session()
+
+      1 = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+    end
+
+    test "returns nil if poe has been reached and given employee would not be forced" do
+      session =
+        :week
+        |> insert_round_with_employees_and_vacation(
+          %{~D[2021-03-28] => 1, ~D[2021-03-21] => 1},
+          %{"00001" => 1, "00002" => 1},
+          %{}
+        )
+        |> Draft.BidSession.vacation_session()
+
+      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00000")
+    end
+  end
 end
