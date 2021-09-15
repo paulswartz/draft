@@ -21,7 +21,12 @@ const VacationPick = (): JSX.Element => {
       {pickOverviewResult == null ? (
         <p>Loading</p>
       ) : pickOverviewResult.status == OK ? (
-        <VacationPreferenceForm pickOverview={pickOverviewResult.value} />
+        <div>
+          <p>Badge number: {pickOverviewResult.value.employeeId}</p>
+          <p>Rank in group: {pickOverviewResult.value.rank}</p>
+          <p>Cutoff time: {pickOverviewResult.value.cutoffTime}</p>
+          <VacationPreferenceForm pickOverview={pickOverviewResult.value} />
+        </div>
       ) : (
         <p>Error fetching vacation pick data. please try again</p>
       )}

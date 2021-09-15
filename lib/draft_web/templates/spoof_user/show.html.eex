@@ -1,0 +1,3 @@
+<p>Spoofing User as Admin</p>
+<div id="app"></div>
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>

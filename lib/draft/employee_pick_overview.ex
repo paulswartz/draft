@@ -16,8 +16,8 @@ defmodule Draft.EmployeePickOverview do
           interval_type: Draft.IntervalType.t()
         }
 
-        @derive {Jason.Encoder, only: [:process_id, :round_id, :interval_type]}
-
+  @derive {Jason.Encoder,
+           only: [:process_id, :round_id, :interval_type, :cutoff_time, :rank, :employee_id]}
 
   defstruct [
     :division_id,

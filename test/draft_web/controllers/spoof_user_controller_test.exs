@@ -30,4 +30,16 @@ defmodule DraftWeb.SpoofUserControllerTest do
     conn = post(conn, "/admin/spoof")
     assert redirected_to(conn) == "/"
   end
+
+  @tag :authenticated_admin
+  test "GET /admin/spoof/operator with badge number that exists", %{conn: conn} do
+    Draft.Factory.insert_round_with_employees(1)
+
+    conn =
+      conn
+      |> put_session(:user_id, "00001")
+      |> get("/admin/spoof/operator")
+
+    assert html_response(conn, 200) =~ "Spoofing User as Admin"
+  end
 end

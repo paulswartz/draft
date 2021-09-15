@@ -15,7 +15,7 @@ import {
 } from "../models/vacationPreferenceSet";
 import { VacationPickRound } from "../models/vacationPickRound";
 
-type Props = {pickOverview: VacationPickRound}
+type Props = { pickOverview: VacationPickRound };
 
 const VacationPreferenceForm = (props: Props): JSX.Element => {
   const [state, dispatch] = useVacationPreferencesReducer();
