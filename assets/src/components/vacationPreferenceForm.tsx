@@ -156,16 +156,20 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
     return <p>{state.error_msg}</p>;
   };
 
-  const DisplayAvailableQuota = () => {
-    return availQuota.status == OK ? (
+  const DisplayAllAvailableQuota = () => {
+    if (availQuota.status != OK) {
+      return <p>{availQuota.value}</p>;
+    }
+    const quotaByStartDate = availQuota.value.sort((a, b) =>
+      a.startDate > b.startDate ? 1 : -1
+    );
+    return (
       <div>
         <h3>Available vacation {pickOverview.intervalType + "s"}</h3>
-        {availQuota.value.map((availVacation) =>
+        {quotaByStartDate.map((availVacation) =>
           AvailableVacationDisplay(availVacation)
         )}
       </div>
-    ) : (
-      <p>{availQuota.value}</p>
     );
   };
 
@@ -173,7 +177,7 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
     <div>
       {DisplaySelectedPreferences()}
       {DisplayErrorMessage()}
-      {DisplayAvailableQuota()}
+      {DisplayAllAvailableQuota()}
     </div>
   );
 };
