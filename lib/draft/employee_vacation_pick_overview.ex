@@ -35,7 +35,7 @@ defmodule Draft.EmployeeVacationPickOverview do
   Get an overview of an employee's standing in a currently active vacation pick, if
   any is ongoing.
   """
-  def open_round(badge_number) do
+  def open_round(employee_id) do
     current_est_date =
       DateTime.utc_now()
       |> DateTime.shift_zone!("America/New_York")
@@ -51,7 +51,8 @@ defmodule Draft.EmployeeVacationPickOverview do
           join: r in Draft.BidRound,
           on: g.round_id == r.round_id and g.process_id == r.process_id,
           where:
-            e.employee_id == ^badge_number and r.round_opening_date <= ^current_est_date and
+            r.bid_type == :vacation and e.employee_id == ^employee_id and
+              r.round_opening_date <= ^current_est_date and
               r.round_closing_date >= ^current_est_date,
           order_by: [desc: g.cutoff_datetime],
           select: %Draft.EmployeeVacationPickOverview{

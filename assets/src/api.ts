@@ -110,12 +110,12 @@ export const fetchLatestVacationPreferenceSet = (
   });
 
 export const fetchVacationPickOverview = (): Promise<
-  Result<VacationPickRound, string>
+  Result<VacationPickRound | null, string>
 > =>
   apiCall({
     url: "/api/vacation/pick_overview",
-    parser: (overview: VacationPickRoundData) =>
-      vacationPickRoundFromData(overview),
+    parser: (overview: VacationPickRoundData | null) =>
+      overview == null ? null : vacationPickRoundFromData(overview),
   });
 
 export const updateVacationPreferences = (

@@ -103,41 +103,27 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
     return preferences.some((pref) => pref.startDate === value);
   };
 
-  const VacationDayDisplay = (
-    day: DivisionAvailableVacationQuota
+  const AvailableVacationDisplay = (
+    availableVacation: DivisionAvailableVacationQuota
   ): JSX.Element => {
+    const label =
+      pickOverview.intervalType == "week"
+        ? `week of ${availableVacation.startDate}`
+        : availableVacation.startDate;
     return (
-      <div>
+      <div key={availableVacation.startDate.toString()}>
         <label>
-          {day.startDate}{" "}
+          {label}
           <input
             type="checkbox"
-            value={[day.startDate, day.endDate].join(":")}
+            value={[
+              availableVacation.startDate,
+              availableVacation.endDate,
+            ].join(":")}
             onChange={(e) => handleInputChange(e)}
             checked={alreadySelected(
               state.vacation_preference_set.preferences,
-              day.startDate.toString()
-            )}
-          />
-        </label>
-      </div>
-    );
-  };
-
-  const VacationWeekDisplay = (
-    week: DivisionAvailableVacationQuota
-  ): JSX.Element => {
-    return (
-      <div>
-        <label>
-          week of {week.startDate}{" "}
-          <input
-            type="checkbox"
-            value={[week.startDate, week.endDate].join(":")}
-            onChange={(e) => handleInputChange(e)}
-            checked={alreadySelected(
-              state.vacation_preference_set.preferences,
-              week.startDate.toString()
+              availableVacation.startDate.toString()
             )}
           />
         </label>
@@ -148,7 +134,7 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
   const DisplaySelectedPreferences = (): JSX.Element => {
     return (
       <div>
-        <h3>Preferred Vacation {pickOverview.intervalType + "s"}</h3>
+        <h3>Preferred vacation {pickOverview.intervalType + "s"}</h3>
         <ul>
           {state.vacation_preference_set.preferences.map((pref) =>
             DisplayPreference(pref)
@@ -173,10 +159,10 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
   const DisplayAvailableQuota = () => {
     return availQuota.status == OK ? (
       <div>
-        <h3>Available Vacation {pickOverview.intervalType + "s"}</h3>
-        {pickOverview.intervalType == "week"
-          ? availQuota.value.map((week) => VacationWeekDisplay(week))
-          : availQuota.value.map((day) => VacationDayDisplay(day))}
+        <h3>Available vacation {pickOverview.intervalType + "s"}</h3>
+        {availQuota.value.map((availVacation) =>
+          AvailableVacationDisplay(availVacation)
+        )}
       </div>
     ) : (
       <p>{availQuota.value}</p>

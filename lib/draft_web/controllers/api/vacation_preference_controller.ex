@@ -37,15 +37,12 @@ defmodule DraftWeb.API.VacationPreferenceController do
       Draft.BidSession.vacation_session(%{round_id: round_id, process_id: process_id}).type_allowed
 
     preference_set_creation_result =
-      %{}
-      |> Map.put(:round_id, round_id)
-      |> Map.put(:process_id, process_id)
-      |> Map.put(:employee_id, employee_id)
-      |> Map.put(
-        :vacation_preferences,
-        to_vacation_preferences(interval_type, preferences)
-      )
-      |> EmployeeVacationPreferenceSet.create()
+      EmployeeVacationPreferenceSet.create(%{
+        round_id: round_id,
+        process_id: process_id,
+        employee_id: employee_id,
+        vacation_preferences: to_vacation_preferences(interval_type, preferences)
+      })
 
     build_json_response(conn, preference_set_creation_result)
   end
@@ -66,16 +63,13 @@ defmodule DraftWeb.API.VacationPreferenceController do
       Draft.BidSession.vacation_session(%{round_id: round_id, process_id: process_id}).type_allowed
 
     preference_set_update_result =
-      %{}
-      |> Map.put(:round_id, round_id)
-      |> Map.put(:process_id, process_id)
-      |> Map.put(:employee_id, employee_id)
-      |> Map.put(:previous_preference_set_id, previous_preference_set_id)
-      |> Map.put(
-        :vacation_preferences,
-        to_vacation_preferences(interval_type, preferences)
-      )
-      |> EmployeeVacationPreferenceSet.update()
+      EmployeeVacationPreferenceSet.update(%{
+        round_id: round_id,
+        process_id: process_id,
+        employee_id: employee_id,
+        previous_preference_set_id: previous_preference_set_id,
+        vacation_preferences: to_vacation_preferences(interval_type, preferences)
+      })
 
     build_json_response(conn, preference_set_update_result)
   end
@@ -118,8 +112,8 @@ defmodule DraftWeb.API.VacationPreferenceController do
   end
 
   defp to_vacation_preference(interval_type, preference) do
-    {:ok, start_date} = Date.from_iso8601(Map.get(preference, "start_date"))
-    {:ok, end_date} = Date.from_iso8601(Map.get(preference, "end_date"))
+    start_date = Date.from_iso8601!(Map.get(preference, "start_date"))
+    end_date = Date.from_iso8601!(Map.get(preference, "end_date"))
 
     %{
       start_date: start_date,
