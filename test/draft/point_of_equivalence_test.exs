@@ -130,8 +130,8 @@ defmodule Draft.PointOfEquivalenceTest do
     end
   end
 
-  describe "amount_to_force_employee/2" do
-    test "returns nil for day session" do
+  describe "below_point_of_forcing?/2" do
+    test "returns false for day session" do
       session =
         :day
         |> insert_round_with_employees_and_vacation(
@@ -141,10 +141,10 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.vacation_session()
 
-      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+      false = Draft.PointOfEquivalence.below_point_of_forcing?(session, "00001")
     end
 
-    test "returns nil if poe has not been reached" do
+    test "returns false if poe has not been reached" do
       session =
         :week
         |> insert_round_with_employees_and_vacation(
@@ -154,10 +154,10 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.vacation_session()
 
-      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+      false = Draft.PointOfEquivalence.below_point_of_forcing?(session, "00001")
     end
 
-    test "returns value if poe has been reached and given employee would be forced" do
+    test "returns true if poe has been reached and given employee would be forced" do
       session =
         :week
         |> insert_round_with_employees_and_vacation(
@@ -167,10 +167,10 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.vacation_session()
 
-      1 = Draft.PointOfEquivalence.amount_to_force_employee(session, "00001")
+      true = Draft.PointOfEquivalence.below_point_of_forcing?(session, "00001")
     end
 
-    test "returns nil if poe has been reached and given employee would not be forced" do
+    test "returns false if poe has been reached and given employee would not be forced" do
       session =
         :week
         |> insert_round_with_employees_and_vacation(
@@ -180,7 +180,7 @@ defmodule Draft.PointOfEquivalenceTest do
         )
         |> Draft.BidSession.vacation_session()
 
-      nil = Draft.PointOfEquivalence.amount_to_force_employee(session, "00000")
+      false = Draft.PointOfEquivalence.below_point_of_forcing?(session, "00000")
     end
   end
 end

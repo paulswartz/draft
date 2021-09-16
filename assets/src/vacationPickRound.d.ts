@@ -5,5 +5,5 @@ export interface VacationPickRoundData {
   employee_id: string;
   rank: number;
   cutoff_time: string;
-  amount_to_force: number | null;
+  is_below_point_of_forcing: boolean;
 }

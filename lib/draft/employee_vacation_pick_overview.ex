@@ -14,7 +14,7 @@ defmodule Draft.EmployeeVacationPickOverview do
           process_id: String.t(),
           round_id: String.t(),
           interval_type: Draft.IntervalType.t(),
-          amount_to_force: non_neg_integer() | nil
+          is_below_point_of_forcing: boolean()
         }
 
   @derive {Jason.Encoder,
@@ -25,7 +25,7 @@ defmodule Draft.EmployeeVacationPickOverview do
              :cutoff_time,
              :rank,
              :employee_id,
-             :amount_to_force
+             :is_below_point_of_forcing
            ]}
 
   defstruct [
@@ -37,7 +37,7 @@ defmodule Draft.EmployeeVacationPickOverview do
     :process_id,
     :round_id,
     :interval_type,
-    :amount_to_force
+    :is_below_point_of_forcing
   ]
 
   @spec open_round(String.t()) :: Draft.EmployeeVacationPickOverview.t() | nil
@@ -82,7 +82,8 @@ defmodule Draft.EmployeeVacationPickOverview do
       %{
         overview
         | interval_type: session.type_allowed,
-          amount_to_force: Draft.PointOfEquivalence.amount_to_force_employee(session, employee_id)
+          is_below_point_of_forcing:
+            Draft.PointOfEquivalence.below_point_of_forcing?(session, employee_id)
       }
     end
   end

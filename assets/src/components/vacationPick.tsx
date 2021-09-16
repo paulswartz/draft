@@ -27,9 +27,8 @@ const VacationPick = (): JSX.Element => {
         <p>Rank in group: {overview.rank}</p>
         <p>Cutoff time: {overview.cutoffTime}</p>
         <p>
-          {overview.amountToForce
-            ? `You will be forced to take ${overview.amountToForce} of your vacation ${overview.intervalType}s in this upcoming rating.`
-            : "You may be forced to take vacation in this upcoming rating."}
+          You {overview.isBelowPointOfForcing ? "will" : "may"} be forced to
+          take vacation in this upcoming rating.
         </p>
         <VacationPreferenceForm pickOverview={overview} />
       </div>

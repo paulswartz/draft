@@ -94,24 +94,22 @@ defmodule Draft.PointOfEquivalence do
     }
   end
 
-  @spec amount_to_force_employee(Draft.BidSession.t(), String.t()) :: non_neg_integer() | nil
+  @spec below_point_of_forcing?(Draft.BidSession.t(), String.t()) :: boolean()
   @doc """
-  How much vacation the given operator will be forced, if it is known (poe has been reached)
-  For days sessions, always returns nil, since POE is not calculated for vacation days.
+  Is the given operator below the point of forcing, and therefore will be forced to take vacation?
+  Returns false if the point of forcing has not yet been reached (and therefore is not certain), or if the employee will not be forced.
   """
-  def amount_to_force_employee(%{type: :vacation, type_allowed: :day}, _employee_id) do
-    nil
+  def below_point_of_forcing?(%{type: :vacation, type_allowed: :day}, _employee_id) do
+    false
   end
 
-  def amount_to_force_employee(%{type: :vacation, type_allowed: :week} = session, employee_id) do
+  def below_point_of_forcing?(%{type: :vacation, type_allowed: :week} = session, employee_id) do
     poe = calculate(session)
 
     if poe.reached? do
-      poe.employees_to_force
-      |> Map.new()
-      |> Map.get(employee_id)
+      List.keymember?(poe.employees_to_force, employee_id, 0)
     else
-      nil
+      false
     end
   end
 end
