@@ -37,31 +37,27 @@ defmodule Draft.EmployeeVacationQuotaSummary do
         end_date
       )
 
-    minutes_per_interval = default_minutes_per_interval(employee_ranking.job_class, interval_type)
-
     {total_interval_quota, anniversary_quota} =
       case interval_type do
         :week -> {quota.weekly_quota, quota.available_after_weekly_quota || 0}
         :day -> {quota.dated_quota, quota.available_after_dated_quota || 0}
       end
 
-    total_minute_quota = min(total_interval_quota * minutes_per_interval, quota.maximum_minutes)
+    existing_vacations = existing_vacation_counts(quota, employee_ranking.job_class)
 
-    # look at the full year for vacation. ideally we would get these dates as part
-    # of some record, but we don't currently. -ps
-    start_of_year = %{quota.interval_end_date | month: 1, day: 1}
-    end_of_year = %{quota.interval_end_date | month: 12, day: 31}
+    # total used minutes across weeks and days
+    used_minutes = existing_vacations |> Map.values() |> Enum.map(&elem(&1, 2)) |> Enum.sum()
 
-    existing_vacation =
-      Draft.EmployeeVacationSelection.assigned_vacation_count(
-        employee_ranking.employee_id,
-        start_of_year,
-        end_of_year,
-        interval_type
-      )
+    # count of used weeks or days (whichever we're currently checking), and
+    # how many minutes that represents
+    {used_interval, minutes_per_interval, _} = Map.fetch!(existing_vacations, interval_type)
 
-    total_interval_quota_reduced =
-      subtract_quota(total_minute_quota, existing_vacation * minutes_per_interval)
+    remaining_interval = subtract_quota(total_interval_quota, used_interval)
+
+    # total remaining is the lesser of 1) remaining interval * minutes per
+    # interval or 2) maximum minutes - used minutes (across all intervals)
+    total_available_minutes =
+      min(remaining_interval * minutes_per_interval, quota.maximum_minutes - used_minutes)
 
     %__MODULE__{
       employee_id: employee_ranking.employee_id,
@@ -69,10 +65,45 @@ defmodule Draft.EmployeeVacationQuotaSummary do
       group_number: employee_ranking.group_number,
       rank: employee_ranking.rank,
       interval_type: interval_type,
-      total_available_minutes: total_interval_quota_reduced,
+      total_available_minutes: total_available_minutes,
       anniversary_date: quota.available_after_date,
       minutes_only_available_as_of_anniversary: anniversary_quota * minutes_per_interval
     }
+  end
+
+  @spec existing_vacation_counts(Draft.EmployeeVacationQuota.t(), String.t()) :: %{
+          week: {quota, minutes_per_interval, minutes},
+          day: {quota, minutes_per_interval, minutes}
+        }
+        when quota: non_neg_integer(),
+             minutes_per_interval: pos_integer(),
+             minutes: non_neg_integer()
+  defp existing_vacation_counts(
+         %{
+           employee_id: employee_id,
+           interval_end_date: date
+         },
+         job_class
+       ) do
+    # look at the full year for vacation. ideally we would get these dates as part
+    # of some record, but we don't currently. -ps
+    start_of_year = %{date | month: 1, day: 1}
+    end_of_year = %{date | month: 12, day: 31}
+
+    Map.new([:week, :day], fn interval_type ->
+      existing_vacation =
+        Draft.EmployeeVacationSelection.assigned_vacation_count(
+          employee_id,
+          start_of_year,
+          end_of_year,
+          interval_type
+        )
+
+      minutes_per_interval = default_minutes_per_interval(job_class, interval_type)
+
+      {interval_type,
+       {existing_vacation, minutes_per_interval, existing_vacation * minutes_per_interval}}
+    end)
   end
 
   @doc """

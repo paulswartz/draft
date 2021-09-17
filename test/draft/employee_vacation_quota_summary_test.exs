@@ -180,6 +180,89 @@ defmodule Draft.EmployeeVacationQuotaSummaryTest do
                  :week
                )
     end
+
+    test "selecting days counts against a week quota", %{employee_ranking: employee_ranking} do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 5,
+        maximum_minutes: 4800
+      })
+
+      # took 5 days of vacation
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-05],
+        vacation_interval_type: :day,
+        status: :assigned
+      })
+
+      # 4800 minutes - 5 days = 2400 minutes
+      assert %{total_available_minutes: 2400} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-01-01],
+                 ~D[2021-03-01],
+                 :week
+               )
+    end
+
+    test "selecting weeks counts against a day quota", %{employee_ranking: employee_ranking} do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 5,
+        maximum_minutes: 4800
+      })
+
+      # took 1 week
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        status: :assigned
+      })
+
+      # 4800 minutes - 1 week = 2400 minutes
+      assert %{total_available_minutes: 2400} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-01-01],
+                 ~D[2021-03-01],
+                 :day
+               )
+    end
+
+    test "cannot select more days than they have in the quota, even if minutes are remaining", %{
+      employee_ranking: employee_ranking
+    } do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        dated_quota: 5,
+        maximum_minutes: 4800
+      })
+
+      # took 5 days already
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-05],
+        vacation_interval_type: :day,
+        status: :assigned
+      })
+
+      # they have minutes remaining, but not for days
+      assert %{total_available_minutes: 0} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-01-01],
+                 ~D[2021-03-01],
+                 :day
+               )
+    end
   end
 
   describe "minutes_available_as_of_date/2" do
