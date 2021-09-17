@@ -126,17 +126,19 @@ defmodule Draft.Factory do
   end
 
   def build(:employee_vacation_quota) do
+    weekly_quota = 2
+
     %Draft.EmployeeVacationQuota{
       employee_id: "00001",
       interval_start_date: ~D[2021-01-01],
       interval_end_date: ~D[2021-12-31],
-      weekly_quota: 2,
+      weekly_quota: weekly_quota,
       dated_quota: 5,
       restricted_week_quota: 0,
       available_after_date: nil,
       available_after_weekly_quota: 0,
       available_after_dated_quota: 0,
-      maximum_minutes: 600
+      maximum_minutes: weekly_quota * 40 * 60
     }
   end
 

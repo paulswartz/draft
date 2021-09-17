@@ -45,15 +45,23 @@ defmodule Draft.EmployeeVacationQuotaSummary do
         :day -> {quota.dated_quota, quota.available_after_dated_quota || 0}
       end
 
+    total_minute_quota = min(total_interval_quota * minutes_per_interval, quota.maximum_minutes)
+
+    # look at the full year for vacation. ideally we would get these dates as part
+    # of some record, but we don't currently. -ps
+    start_of_year = %{quota.interval_end_date | month: 1, day: 1}
+    end_of_year = %{quota.interval_end_date | month: 12, day: 31}
+
     existing_vacation =
       Draft.EmployeeVacationSelection.assigned_vacation_count(
         employee_ranking.employee_id,
-        start_date,
-        end_date,
+        start_of_year,
+        end_of_year,
         interval_type
       )
 
-    total_interval_quota_reduced = subtract_quota(total_interval_quota, existing_vacation)
+    total_interval_quota_reduced =
+      subtract_quota(total_minute_quota, existing_vacation * minutes_per_interval)
 
     %__MODULE__{
       employee_id: employee_ranking.employee_id,
@@ -61,11 +69,7 @@ defmodule Draft.EmployeeVacationQuotaSummary do
       group_number: employee_ranking.group_number,
       rank: employee_ranking.rank,
       interval_type: interval_type,
-      total_available_minutes:
-        min(
-          total_interval_quota_reduced * minutes_per_interval,
-          quota.maximum_minutes
-        ),
+      total_available_minutes: total_interval_quota_reduced,
       anniversary_date: quota.available_after_date,
       minutes_only_available_as_of_anniversary: anniversary_quota * minutes_per_interval
     }

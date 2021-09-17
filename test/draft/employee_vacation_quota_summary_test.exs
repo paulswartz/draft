@@ -117,6 +117,69 @@ defmodule Draft.EmployeeVacationQuotaSummaryTest do
                  :week
                )
     end
+
+    test "looks at the full calendar year for already selected vacation", %{
+      employee_ranking: employee_ranking
+    } do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        maximum_minutes: 4800
+      })
+
+      # earlier in the year
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        status: :assigned
+      })
+
+      # later in the year
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-05-01],
+        end_date: ~D[2021-05-07],
+        vacation_interval_type: :week,
+        status: :assigned
+      })
+
+      assert %{total_available_minutes: 0} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-03-01],
+                 ~D[2021-04-01],
+                 :week
+               )
+    end
+
+    test "subtracts both selected vacation and FMLA", %{employee_ranking: employee_ranking} do
+      insert!(:employee_vacation_quota, %{
+        employee_id: "00001",
+        weekly_quota: 2,
+        # took a week of FMLA, down from 4800
+        maximum_minutes: 2400
+      })
+
+      # took 1 week of vacation
+      insert!(:employee_vacation_selection, %{
+        employee_id: "00001",
+        start_date: ~D[2021-02-01],
+        end_date: ~D[2021-02-07],
+        vacation_interval_type: :week,
+        status: :assigned
+      })
+
+      # 2 weeks of vacation - 1 week of FMLA - 1 week of vacation = 0 remaining minutes
+      assert %{total_available_minutes: 0} =
+               EmployeeVacationQuotaSummary.get(
+                 employee_ranking,
+                 ~D[2021-01-01],
+                 ~D[2021-03-01],
+                 :week
+               )
+    end
   end
 
   describe "minutes_available_as_of_date/2" do
