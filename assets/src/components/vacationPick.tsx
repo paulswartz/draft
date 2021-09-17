@@ -11,9 +11,7 @@ const VacationPick = (): JSX.Element => {
   > | null>(null);
 
   useEffect(() => {
-    fetchVacationPickOverview().then((result) => {
-      setPickOverview(result);
-    });
+    fetchVacationPickOverview().then(setPickOverview);
   }, []);
 
   const pickOverviewDisplay = (

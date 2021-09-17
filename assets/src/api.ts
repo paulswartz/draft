@@ -96,8 +96,7 @@ export const fetchDivisionAvailableVacationQuota = (
 ): Promise<Result<DivisionAvailableVacationQuota[], string>> =>
   apiCall({
     url: `/api/vacation_availability?${encodeRoundKeyParams(roundKey)}`,
-    parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData[]) =>
-      divisionVacationQuotaFromData(divisionVacationQuotas),
+    parser: divisionVacationQuotaFromData,
   });
 
 export const fetchLatestVacationPreferenceSet = (
@@ -105,8 +104,7 @@ export const fetchLatestVacationPreferenceSet = (
 ): Promise<Result<VacationPreferenceSet, string>> =>
   apiCall({
     url: `/api/vacation/preferences/latest?${encodeRoundKeyParams(roundKey)}`,
-    parser: (vacationPreferenceSet) =>
-      preferenceSetFromData(vacationPreferenceSet),
+    parser: preferenceSetFromData,
   });
 
 export const fetchVacationPickOverview = (): Promise<
@@ -132,7 +130,7 @@ export const updateVacationPreferences = (
       process_id: processId,
       preferences: preferences,
     }),
-    successParser: (preferenceSet) => preferenceSetFromData(preferenceSet),
+    successParser: preferenceSetFromData,
   });
 };
 
@@ -149,7 +147,7 @@ const saveInitialVacationPreferences = (
       process_id: processId,
       preferences: preferences,
     }),
-    successParser: (preferenceSet) => preferenceSetFromData(preferenceSet),
+    successParser: preferenceSetFromData,
   });
 };
 
@@ -159,7 +157,7 @@ export const upsertVacationPreferences = (
   previousPreferenceSetId: number | null,
   preferences: VacationPreference[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
-  const preferenceData = preferences.map((pref) => preferenceToData(pref));
+  const preferenceData = preferences.map(preferenceToData);
   return previousPreferenceSetId == null
     ? saveInitialVacationPreferences(roundId, processId, preferenceData)
     : updateVacationPreferences(

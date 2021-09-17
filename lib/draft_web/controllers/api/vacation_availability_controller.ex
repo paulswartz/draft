@@ -15,6 +15,7 @@ defmodule DraftWeb.API.VacationAvailabilityController do
         |> Draft.BidSession.vacation_session()
         |> Draft.DivisionQuota.all_available_quota_ranked(employee_id)
         |> Enum.map(&Map.take(&1, [:start_date, :end_date, :quota, :preference_rank]))
+        |> Enum.sort_by(& &1.start_date, Date)
 
       json(conn, %{data: all_available_vacation})
     else

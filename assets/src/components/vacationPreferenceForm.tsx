@@ -50,7 +50,7 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
       pickOverview.processId,
       state.vacation_preference_set.preference_set_id,
       updatedWeeksPreferences
-    ).then((response) => processUpdateVacationResponse(response));
+    ).then(processUpdateVacationResponse);
   };
 
   const processUpdateVacationResponse = (
@@ -120,7 +120,7 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
               availableVacation.startDate,
               availableVacation.endDate,
             ].join(":")}
-            onChange={(e) => handleInputChange(e)}
+            onChange={handleInputChange}
             checked={alreadySelected(
               state.vacation_preference_set.preferences,
               availableVacation.startDate.toString()
@@ -160,15 +160,10 @@ const VacationPreferenceForm = (props: Props): JSX.Element => {
     if (availQuota.status != OK) {
       return <p>{availQuota.value}</p>;
     }
-    const quotaByStartDate = availQuota.value.sort((a, b) =>
-      a.startDate > b.startDate ? 1 : -1
-    );
     return (
       <div>
         <h3>Available vacation {pickOverview.intervalType + "s"}</h3>
-        {quotaByStartDate.map((availVacation) =>
-          AvailableVacationDisplay(availVacation)
-        )}
+        {availQuota.value.map(AvailableVacationDisplay)}
       </div>
     );
   };
