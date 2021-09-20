@@ -1,9 +1,5 @@
 import * as React from "react";
-import {
-  DivisionAvailableVacationQuotaData,
-  VacationDayQuotaData,
-  VacationWeekQuotaData,
-} from "../models/divisionVacationQuotaData";
+import { DivisionAvailableVacationQuota } from "../models/divisionVacationQuota";
 import useDivisionAvailableVacationQuotas from "../hooks/useDivisionAvailableVacationQuotas";
 import { useVacationPreferencesReducer } from "../hooks/useVacationPreferencesReducer";
 import {
@@ -17,41 +13,44 @@ import {
   VacationPreference,
   VacationPreferenceSet,
 } from "../models/vacationPreferenceSet";
+import { VacationPickRound } from "../models/vacationPickRound";
 
-const VacationPreferenceForm = (): JSX.Element => {
+type Props = { pickOverview: VacationPickRound };
+
+const VacationPreferenceForm = (props: Props): JSX.Element => {
   const [state, dispatch] = useVacationPreferencesReducer();
+  const { pickOverview } = props;
 
-  const handleWeekInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const [selectedStartDate, selectedEndDay] = event.target.value.split(":");
+  const availQuota: Result<DivisionAvailableVacationQuota[], string> =
+    useDivisionAvailableVacationQuotas(pickOverview);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const [selectedStartDate, selectedEndDate] = event.target.value.split(":");
     const updatedWeeksPreferences = event.target.checked
       ? [
-          ...state.vacation_preference_set.weeks,
+          ...state.vacation_preference_set.preferences,
           {
-            start_date: selectedStartDate,
-            end_date: selectedEndDay,
-            rank: state.vacation_preference_set.weeks.length + 1,
+            startDate: selectedStartDate,
+            endDate: selectedEndDate,
+            rank: state.vacation_preference_set.preferences.length + 1,
           },
         ]
       : updateRanking(
-          state.vacation_preference_set.weeks.filter(
-            (week) => week.start_date.toString() !== selectedStartDate
+          state.vacation_preference_set.preferences.filter(
+            (pref) => pref.startDate.toString() !== selectedStartDate
           )
         );
 
     dispatch({
       type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
-      payload: {
-        weeks: updatedWeeksPreferences,
-        days: state.vacation_preference_set.days,
-      },
+      payload: { preferences: updatedWeeksPreferences },
     });
     upsertVacationPreferences(
+      pickOverview.roundId,
+      pickOverview.processId,
       state.vacation_preference_set.preference_set_id,
-      updatedWeeksPreferences,
-      state.vacation_preference_set.days
-    ).then((response) => processUpdateVacationResponse(response));
+      updatedWeeksPreferences
+    ).then(processUpdateVacationResponse);
   };
 
   const processUpdateVacationResponse = (
@@ -62,8 +61,7 @@ const VacationPreferenceForm = (): JSX.Element => {
         type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
         payload: {
           preference_set_id: response.value.id,
-          weeks: response.value.weeks,
-          days: response.value.days,
+          preferences: response.value.preferences,
         },
       });
     } else {
@@ -75,50 +73,19 @@ const VacationPreferenceForm = (): JSX.Element => {
   };
 
   useEffect(() => {
-    fetchLatestVacationPreferenceSet().then((result) => {
+    fetchLatestVacationPreferenceSet(pickOverview).then((result) => {
       if (result.status == OK) {
         const preferenceSet = result.value;
         dispatch({
           type: "UPDATE_VACATION_PREFERENCES_SUCCESS",
           payload: {
             preference_set_id: preferenceSet.id,
-            weeks: preferenceSet.weeks,
-            days: preferenceSet.days,
+            preferences: preferenceSet.preferences,
           },
         });
       }
     });
   }, []);
-
-  const handleDayInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const updatedDaysPreferences = event.target.checked
-      ? [
-          ...state.vacation_preference_set.days,
-          {
-            start_date: event.target.value,
-            end_date: event.target.value,
-            rank: state.vacation_preference_set.days.length + 1,
-          },
-        ]
-      : updateRanking(
-          state.vacation_preference_set.days.filter(
-            (day) => day.start_date.toString() !== event.target.value
-          )
-        );
-
-    dispatch({
-      type: "UPDATE_VACATION_PREFERENCES_REQUESTED",
-      payload: {
-        weeks: state.vacation_preference_set.weeks,
-        days: updatedDaysPreferences,
-      },
-    });
-    upsertVacationPreferences(
-      state.vacation_preference_set.preference_set_id,
-      state.vacation_preference_set.weeks,
-      updatedDaysPreferences
-    ).then((response) => processUpdateVacationResponse(response));
-  };
 
   const updateRanking = (
     preferences: VacationPreference[]
@@ -133,40 +100,30 @@ const VacationPreferenceForm = (): JSX.Element => {
     preferences: VacationPreference[],
     value: string
   ): boolean => {
-    return preferences.some((pref) => pref.start_date === value);
+    return preferences.some((pref) => pref.startDate === value);
   };
 
-  const VacationDayDisplay = (day: VacationDayQuotaData): JSX.Element => {
+  const AvailableVacationDisplay = (
+    availableVacation: DivisionAvailableVacationQuota
+  ): JSX.Element => {
+    const label =
+      pickOverview.intervalType == "week"
+        ? `week of ${availableVacation.startDate}`
+        : availableVacation.startDate;
     return (
-      <div>
+      <div key={availableVacation.startDate.toString()}>
         <label>
-          {day.date}{" "}
+          {label}
           <input
             type="checkbox"
-            value={day.date}
-            onChange={(e) => handleDayInputChange(e)}
+            value={[
+              availableVacation.startDate,
+              availableVacation.endDate,
+            ].join(":")}
+            onChange={handleInputChange}
             checked={alreadySelected(
-              state.vacation_preference_set.days,
-              day.date.toString()
-            )}
-          />
-        </label>
-      </div>
-    );
-  };
-
-  const VacationWeekDisplay = (week: VacationWeekQuotaData): JSX.Element => {
-    return (
-      <div>
-        <label>
-          week of {week.start_date}{" "}
-          <input
-            type="checkbox"
-            value={[week.start_date, week.end_date].join(":")}
-            onChange={(e) => handleWeekInputChange(e)}
-            checked={alreadySelected(
-              state.vacation_preference_set.weeks,
-              week.start_date.toString()
+              state.vacation_preference_set.preferences,
+              availableVacation.startDate.toString()
             )}
           />
         </label>
@@ -177,17 +134,10 @@ const VacationPreferenceForm = (): JSX.Element => {
   const DisplaySelectedPreferences = (): JSX.Element => {
     return (
       <div>
-        <h3>Preferred Vacation</h3>
-        <h4>Weeks</h4>
+        <h3>Preferred vacation {pickOverview.intervalType + "s"}</h3>
         <ul>
-          {state.vacation_preference_set.weeks.map((week) =>
-            DisplayPreference(week)
-          )}
-        </ul>
-        <h4>Days</h4>
-        <ul>
-          {state.vacation_preference_set.days.map((day) =>
-            DisplayPreference(day)
+          {state.vacation_preference_set.preferences.map((pref) =>
+            DisplayPreference(pref)
           )}
         </ul>
       </div>
@@ -196,8 +146,8 @@ const VacationPreferenceForm = (): JSX.Element => {
 
   const DisplayPreference = (preference: VacationPreference): JSX.Element => {
     return (
-      <li key={preference.start_date.toString()}>
-        {preference.rank + ". " + preference.start_date}
+      <li key={preference.startDate.toString()}>
+        {preference.rank + ". " + preference.startDate}
       </li>
     );
   };
@@ -206,21 +156,15 @@ const VacationPreferenceForm = (): JSX.Element => {
     return <p>{state.error_msg}</p>;
   };
 
-  const availQuota: Result<DivisionAvailableVacationQuotaData, string> =
-    useDivisionAvailableVacationQuotas();
-
-  const DisplayAvailableQuota = () => {
-    return availQuota.status == OK ? (
+  const DisplayAllAvailableQuota = () => {
+    if (availQuota.status != OK) {
+      return <p>{availQuota.value}</p>;
+    }
+    return (
       <div>
-        <h3>Available Vacation Time</h3>
-        <h4>Weeks</h4>
-        {availQuota.value.weeks.map((week) => VacationWeekDisplay(week))}
-
-        <h4>Days</h4>
-        {availQuota.value.days.map((day) => VacationDayDisplay(day))}
+        <h3>Available vacation {pickOverview.intervalType + "s"}</h3>
+        {availQuota.value.map(AvailableVacationDisplay)}
       </div>
-    ) : (
-      <p>availableDivisionQuotaResult.value</p>
     );
   };
 
@@ -228,7 +172,7 @@ const VacationPreferenceForm = (): JSX.Element => {
     <div>
       {DisplaySelectedPreferences()}
       {DisplayErrorMessage()}
-      {DisplayAvailableQuota()}
+      {DisplayAllAvailableQuota()}
     </div>
   );
 };

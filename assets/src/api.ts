@@ -1,11 +1,25 @@
-import { DivisionAvailableVacationQuotaData } from "./models/divisionVacationQuotaData";
+import { DivisionAvailableVacationQuotaData } from "./divisionVacationQuota";
+import {
+  DivisionAvailableVacationQuota,
+  divisionVacationQuotaFromData,
+} from "./models/divisionVacationQuota";
+import {
+  VacationPickRound,
+  vacationPickRoundFromData,
+} from "./models/vacationPickRound";
 import {
   VacationPreferenceSet,
   VacationPreference,
+  preferenceToData,
+  preferenceSetFromData,
 } from "./models/vacationPreferenceSet";
+import { VacationPickRoundData } from "./vacationPickRound";
+import { VacationPreferenceData } from "./vacationPreferenceSet";
 
 export const OK = "ok";
 export const ERROR = "error";
+
+export type RoundKey = { roundId: string; processId: string };
 
 type ResultOk<T> = { status: typeof OK; value: T };
 type ResultError<E> = { status: typeof ERROR; value: E };
@@ -72,57 +86,84 @@ export const apiSend = <T>({
     });
 };
 
-export const fetchDivisionAvailableVacationQuota = (): Promise<
-  Result<DivisionAvailableVacationQuotaData, string>
-> =>
+const encodeRoundKeyParams = (roundKey: RoundKey): string =>
+  `round_id=${encodeURIComponent(
+    roundKey.roundId
+  )}&process_id=${encodeURIComponent(roundKey.processId)}`;
+
+export const fetchDivisionAvailableVacationQuota = (
+  roundKey: RoundKey
+): Promise<Result<DivisionAvailableVacationQuota[], string>> =>
   apiCall({
-    url: "/api/vacation_availability",
-    parser: (divisionVacationQuotas: DivisionAvailableVacationQuotaData) =>
-      divisionVacationQuotas,
+    url: `/api/vacation_availability?${encodeRoundKeyParams(roundKey)}`,
+    parser: divisionVacationQuotaFromData,
   });
 
-export const fetchLatestVacationPreferenceSet = (): Promise<
-  Result<VacationPreferenceSet, string>
+export const fetchLatestVacationPreferenceSet = (
+  roundKey: RoundKey
+): Promise<Result<VacationPreferenceSet, string>> =>
+  apiCall({
+    url: `/api/vacation/preferences/latest?${encodeRoundKeyParams(roundKey)}`,
+    parser: preferenceSetFromData,
+  });
+
+export const fetchVacationPickOverview = (): Promise<
+  Result<VacationPickRound | null, string>
 > =>
   apiCall({
-    url: "/api/vacation/preferences/latest",
-    parser: (vacationPreferenceSet: VacationPreferenceSet) =>
-      vacationPreferenceSet,
+    url: "/api/vacation/pick_overview",
+    parser: (overview: VacationPickRoundData | null) =>
+      overview == null ? null : vacationPickRoundFromData(overview),
   });
 
 export const updateVacationPreferences = (
+  roundId: string,
+  processId: string,
   previous_preverence_set_id: number,
-  preferred_weeks: VacationPreference[],
-  preferred_days: VacationPreference[]
+  preferences: VacationPreferenceData[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
   return apiSend({
     url: "/api/vacation/preferences/" + previous_preverence_set_id,
     method: "PUT",
-    json: JSON.stringify({ weeks: preferred_weeks, days: preferred_days }),
+    json: JSON.stringify({
+      round_id: roundId,
+      process_id: processId,
+      preferences: preferences,
+    }),
+    successParser: preferenceSetFromData,
   });
 };
 
-export const saveInitialVacationPreferences = (
-  preferred_weeks: VacationPreference[],
-  preferred_days: VacationPreference[]
+const saveInitialVacationPreferences = (
+  roundId: string,
+  processId: string,
+  preferences: VacationPreferenceData[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
   return apiSend({
     url: "/api/vacation/preferences",
     method: "POST",
-    json: JSON.stringify({ weeks: preferred_weeks, days: preferred_days }),
+    json: JSON.stringify({
+      round_id: roundId,
+      process_id: processId,
+      preferences: preferences,
+    }),
+    successParser: preferenceSetFromData,
   });
 };
 
 export const upsertVacationPreferences = (
-  previous_preverence_set_id: number | null,
-  preferred_weeks: VacationPreference[],
-  preferred_days: VacationPreference[]
+  roundId: string,
+  processId: string,
+  previousPreferenceSetId: number | null,
+  preferences: VacationPreference[]
 ): Promise<Result<VacationPreferenceSet, string>> => {
-  return previous_preverence_set_id == null
-    ? saveInitialVacationPreferences(preferred_weeks, preferred_days)
+  const preferenceData = preferences.map(preferenceToData);
+  return previousPreferenceSetId == null
+    ? saveInitialVacationPreferences(roundId, processId, preferenceData)
     : updateVacationPreferences(
-        previous_preverence_set_id,
-        preferred_weeks,
-        preferred_days
+        roundId,
+        processId,
+        previousPreferenceSetId,
+        preferenceData
       );
 };

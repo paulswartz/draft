@@ -54,6 +54,32 @@ defmodule Draft.EmployeeRanking do
     }
   end
 
+  @spec exists?(%{round_id: String.t(), process_id: String.t(), employee_id: String.t()}) ::
+          boolean()
+  @doc """
+  Is this employee a part of the given round?
+  """
+  def exists?(%{round_id: round_id, process_id: process_id, employee_id: employee_id}) do
+    Draft.Repo.exists?(
+      from e in __MODULE__,
+        where:
+          e.round_id == ^round_id and
+            e.process_id == ^process_id and
+            e.employee_id == ^employee_id
+    )
+  end
+
+  @spec valid_employee_id?(String.t()) :: boolean()
+  @doc """
+  Does there exist an employee with the given badge number?
+  """
+  def valid_employee_id?(employee_id) do
+    Draft.Repo.exists?(
+      from e in __MODULE__,
+        where: e.employee_id == ^employee_id
+    )
+  end
+
   @spec all_remaining_employees(
           %{:round_id => String.t(), :process_id => String.t(), optional(atom()) => any()},
           :asc | :desc

@@ -1,15 +1,6 @@
-export interface VacationDayQuota {
-  date: number;
-  quota: number;
-}
-
-export interface VacationWeekQuota {
+export interface DivisionAvailableVacationQuotaData {
   start_date: Date;
   end_date: Date;
   quota: number;
-}
-
-export interface DivisionAvailableVacationQuota {
-  days: VacationDayQuota[];
-  weeks: VacationWeekQuota[];
+  preference_rank: number | null;
 }

@@ -3,8 +3,7 @@ import { VacationPreference } from "./models/vacationPreferenceSet";
 
 export interface VacationPreferenceSetState {
   preference_set_id: number | null;
-  weeks: VacationPreference[];
-  days: VacationPreference[];
+  preferences: VacationPreference[];
 }
 
 export interface State {
@@ -15,8 +14,7 @@ export interface State {
 export const initialState: State = {
   vacation_preference_set: {
     preference_set_id: null,
-    weeks: [],
-    days: [],
+    preferences: [],
   },
   error_msg: null,
 };
@@ -33,16 +31,14 @@ export type Action =
 interface UpdatePreferencesRequestedAction {
   type: "UPDATE_VACATION_PREFERENCES_REQUESTED";
   payload: {
-    weeks: VacationPreference[];
-    days: VacationPreference[];
+    preferences: VacationPreference[];
   };
 }
 
 interface UpdatePreferencesSuccessAction {
   type: "UPDATE_VACATION_PREFERENCES_SUCCESS";
   payload: {
-    weeks: VacationPreference[];
-    days: VacationPreference[];
+    preferences: VacationPreference[];
     preference_set_id: number | null;
   };
 }

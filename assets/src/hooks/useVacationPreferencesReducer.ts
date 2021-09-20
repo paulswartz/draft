@@ -7,8 +7,7 @@ const reducer = (state: State, action: Action): State => {
         ...state,
         vacation_preference_set: {
           preference_set_id: state.vacation_preference_set.preference_set_id,
-          weeks: action.payload.weeks,
-          days: action.payload.days,
+          preferences: action.payload.preferences,
         },
       };
 
@@ -16,8 +15,7 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         vacation_preference_set: {
-          weeks: action.payload.weeks,
-          days: action.payload.days,
+          preferences: action.payload.preferences,
           preference_set_id: action.payload.preference_set_id,
         },
       };

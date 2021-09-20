@@ -57,7 +57,7 @@ defmodule DraftWeb.Router do
 
     get "/", SpoofUserController, :index
     post "/", SpoofUserController, :create
-    get "/operator", OperatorOverviewController, :show
+    get "/operator", SpoofUserController, :show
   end
 
   scope "/api", DraftWeb.API do
@@ -70,6 +70,8 @@ defmodule DraftWeb.Router do
       param: "previous_preference_set_id"
 
     get "/vacation/preferences/latest", VacationPreferenceController, :show_latest
+
+    get "/vacation/pick_overview", EmployeeVacationPickController, :show
   end
 
   # Enables LiveDashboard only for development

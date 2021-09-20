@@ -40,6 +40,7 @@ defmodule Draft.EmployeeVacationPreferenceSet do
       |> cast(preference_set_attrs, [:employee_id, :process_id, :round_id])
       |> cast_assoc(:vacation_preferences)
       |> validate_required([:employee_id, :process_id, :round_id])
+      |> validate_employee_is_part_of_round()
       |> foreign_key_constraint(:round_id, name: :employee_vacation_preference_sets_round_id_fkey)
 
     if preference_set_changeset.valid? do
@@ -72,6 +73,22 @@ defmodule Draft.EmployeeVacationPreferenceSet do
     |> validate_required([:employee_id, :process_id, :round_id, :previous_preference_set_id])
     |> validate_previous_id_belongs_to_employee_pick()
     |> foreign_key_constraint(:round_id, name: :employee_vacation_preference_sets_round_id_fkey)
+  end
+
+  defp validate_employee_is_part_of_round(changeset) do
+    if Draft.EmployeeRanking.exists?(%{
+         round_id: get_field(changeset, :round_id),
+         process_id: get_field(changeset, :process_id),
+         employee_id: get_field(changeset, :employee_id)
+       }) do
+      changeset
+    else
+      add_error(
+        changeset,
+        :round_id,
+        "Employee not part of round #{get_field(changeset, :round_id)} with process_id #{get_field(changeset, :process_id)}"
+      )
+    end
   end
 
   defp validate_previous_id_belongs_to_employee_pick(changeset) do

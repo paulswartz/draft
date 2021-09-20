@@ -1,13 +1,13 @@
-export interface VacationPreference {
-  start_date: Date;
-  end_date: Date;
+export interface VacationPreferenceData {
+  start_date: string;
+  end_date: string;
   rank: number;
 }
 
-export interface VacationPreferenceSet {
+export interface VacationPreferenceSetData {
   process_id: string;
   round_id: string;
   employee_id: string;
   id: number;
-  vacation_preferences: VacationPreference[];
+  preferences: VacationPreferenceData[];
 }
