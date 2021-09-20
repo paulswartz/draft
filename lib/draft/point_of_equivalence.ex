@@ -93,4 +93,23 @@ defmodule Draft.PointOfEquivalence do
       employees_to_force: employees_to_force
     }
   end
+
+  @spec below_point_of_forcing?(Draft.BidSession.t(), String.t()) :: boolean()
+  @doc """
+  Is the given operator below the point of forcing, and therefore will be forced to take vacation?
+  Returns false if the point of forcing has not yet been reached (and therefore is not certain), or if the employee will not be forced.
+  """
+  def below_point_of_forcing?(%{type: :vacation, type_allowed: :day}, _employee_id) do
+    false
+  end
+
+  def below_point_of_forcing?(%{type: :vacation, type_allowed: :week} = session, employee_id) do
+    poe = calculate(session)
+
+    if poe.reached? do
+      List.keymember?(poe.employees_to_force, employee_id, 0)
+    else
+      false
+    end
+  end
 end

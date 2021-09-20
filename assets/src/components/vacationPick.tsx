@@ -24,6 +24,10 @@ const VacationPick = (): JSX.Element => {
         <p>Badge number: {overview.employeeId}</p>
         <p>Rank in group: {overview.rank}</p>
         <p>Cutoff time: {overview.cutoffTime}</p>
+        <p>
+          You {overview.isBelowPointOfForcing ? "will" : "may"} be forced to
+          take vacation in this upcoming rating.
+        </p>
         <VacationPreferenceForm pickOverview={overview} />
       </div>
     );
@@ -34,7 +38,7 @@ const VacationPick = (): JSX.Element => {
       {pickOverviewResult == null ? (
         <p>Loading</p>
       ) : pickOverviewResult.status == OK ? (
-        <div>{pickOverviewDisplay(pickOverviewResult.value)}</div>
+        pickOverviewDisplay(pickOverviewResult.value)
       ) : (
         <p>Error fetching vacation pick data. please try again</p>
       )}

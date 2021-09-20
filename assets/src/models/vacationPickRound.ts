@@ -7,6 +7,7 @@ export interface VacationPickRound {
   rank: number;
   cutoffTime: string;
   intervalType: "week" | "day";
+  isBelowPointOfForcing: boolean;
 }
 
 export const vacationPickRoundFromData = (
@@ -18,4 +19,5 @@ export const vacationPickRoundFromData = (
   employeeId: pickRoundData.employee_id,
   rank: pickRoundData.rank,
   cutoffTime: pickRoundData.cutoff_time,
+  isBelowPointOfForcing: pickRoundData.is_below_point_of_forcing,
 });
