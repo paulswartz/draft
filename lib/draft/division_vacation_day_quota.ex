@@ -80,7 +80,9 @@ defmodule Draft.DivisionVacationDayQuota do
           order_by: [desc: d.date]
       )
 
-    filter_cancelled_quotas(quotas, session.job_class_category)
+    quotas
+    |> filter_cancelled_quotas(session.job_class_category)
+    |> filter_off_days(employee_id)
   end
 
   @spec conflicting_selected_dates_for_employee(String.t()) :: Ecto.Queryable.t()
@@ -125,6 +127,28 @@ defmodule Draft.DivisionVacationDayQuota do
         cancelled_count = Map.get(cancelled_date_counts, quota.date, 0),
         quota.quota > cancelled_count do
       %{quota | quota: quota.quota - cancelled_count}
+    end
+  end
+
+  @spec filter_off_days([t()], String.t()) :: [t()]
+  defp filter_off_days(quotas, employee_id) do
+    dates = Enum.map(quotas, & &1.date)
+
+    case Repo.all(
+           from w in Draft.WorkAssignment,
+             where:
+               w.operating_date in ^dates and
+                 w.employee_id == ^employee_id and
+                 w.hours_worked == 0,
+             select: w.operating_date
+         ) do
+      [] ->
+        quotas
+
+      off_days ->
+        off_days_set = MapSet.new(off_days)
+
+        Enum.filter(quotas, &(not MapSet.member?(off_days_set, &1.date)))
     end
   end
 end

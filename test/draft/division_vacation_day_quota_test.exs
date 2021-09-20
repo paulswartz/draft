@@ -323,5 +323,55 @@ defmodule Draft.DivisionVacationDayQuotaTest do
       assert [%{date: ~D[2021-02-01]}] =
                Draft.DivisionVacationDayQuota.available_quota(session, "00002")
     end
+
+    test "does not include days which are OFF in the operators work assignment" do
+      Draft.Factory.insert_round_with_employees(
+        %{
+          rank: 1,
+          rating_period_start_date: ~D[2021-02-01],
+          rating_period_end_date: ~D[2021-03-01],
+          process_id: "process_1",
+          round_id: "vacation_1",
+          division_id: "101"
+        },
+        %{
+          employee_count: 1,
+          group_size: 10
+        }
+      )
+
+      session = Repo.one!(from(s in Draft.BidSession))
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        job_class_category: :ft,
+        date: ~D[2021-02-01],
+        quota: 1
+      })
+
+      insert!(:division_vacation_day_quota, %{
+        division_id: "101",
+        job_class_category: :ft,
+        date: ~D[2021-02-02],
+        quota: 1
+      })
+
+      # working, so available for selection
+      insert!(:work_assignment, %{
+        division_id: "101",
+        operating_date: ~D[2021-02-01]
+      })
+
+      # already not working, so not available for selection
+      insert!(:work_assignment, %{
+        division_id: "101",
+        assignment: "OFF",
+        hours_worked: 0,
+        operating_date: ~D[2021-02-02]
+      })
+
+      assert [%{date: ~D[2021-02-01]}] =
+               Draft.DivisionVacationDayQuota.available_quota(session, "00001")
+    end
   end
 end
